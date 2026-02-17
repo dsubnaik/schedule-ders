@@ -1,16 +1,24 @@
-﻿namespace schedule_ders.Models
+using System.ComponentModel.DataAnnotations;
+
+namespace schedule_ders.Models;
+
+public class Session
 {
-    public class Session
-    {
-        public int SessionID { get; set; }
-        public string Day { get; set; }
-        public string Time { get; set; }
-        public string Location { get; set; }
+    public int SessionID { get; set; }
 
-        // Foreign Key
-        public int CourseID { get; set; }
+    [Required]
+    [StringLength(20)]
+    public string Day { get; set; } = string.Empty;
 
-        // Navigation Property
-        public Course Course { get; set; }
-    }
+    [Required]
+    [StringLength(40)]
+    public string Time { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(120)]
+    public string Location { get; set; } = string.Empty;
+
+    public int CourseID { get; set; }
+
+    public Course? Course { get; set; }
 }

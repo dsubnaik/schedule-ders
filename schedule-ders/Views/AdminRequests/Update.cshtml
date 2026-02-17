@@ -1,0 +1,55 @@
+@model schedule_ders.ViewModels.AdminRequestStatusUpdateViewModel
+@{
+    ViewData["Title"] = "Review SI Request";
+}
+
+<section class="page-shell">
+<h1 class="page-title">Review SI Request</h1>
+<p class="page-subtitle">@Model.CourseDisplay</p>
+
+<div class="row">
+    <div class="col-lg-8">
+        <dl class="row surface-card p-3">
+            <dt class="col-sm-3">Professor</dt>
+            <dd class="col-sm-9">@Model.ProfessorName (@Model.ProfessorEmail)</dd>
+
+            <dt class="col-sm-3">Submitted</dt>
+            <dd class="col-sm-9">@Model.SubmittedAtUtc.ToLocalTime().ToString("f")</dd>
+
+            <dt class="col-sm-3">Request Notes</dt>
+            <dd class="col-sm-9">@Model.RequestNotes</dd>
+        </dl>
+    </div>
+</div>
+
+<form asp-action="Update" method="post" class="form-card">
+    <input type="hidden" asp-for="SIRequestID" />
+    <input type="hidden" asp-for="CourseID" />
+    <input type="hidden" asp-for="CourseDisplay" />
+    <input type="hidden" asp-for="ProfessorName" />
+    <input type="hidden" asp-for="ProfessorEmail" />
+    <input type="hidden" asp-for="RequestNotes" />
+    <input type="hidden" asp-for="SubmittedAtUtc" />
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label asp-for="Status" class="form-label"></label>
+            <select asp-for="Status" asp-items="ViewBag.Statuses" class="form-select"></select>
+            <span asp-validation-for="Status" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="AdminNotes" class="form-label"></label>
+        <textarea asp-for="AdminNotes" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="AdminNotes" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Status</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

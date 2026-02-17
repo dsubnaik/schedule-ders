@@ -1,0 +1,76 @@
+@model IEnumerable<schedule_ders.Models.Course>
+@{
+    ViewData["Title"] = "Courses";
+    var currentSearch = ViewData["CurrentSearch"] as string;
+}
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">Courses</h1>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-primary">Add Course</a>
+    </div>
+</div>
+
+<form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
+    <div class="col-md-6">
+        <input type="text"
+               name="search"
+               value="@currentSearch"
+               class="form-control"
+               placeholder="Search by course, section, professor, or meeting times" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Search</button>
+    </div>
+    <div class="col-auto">
+        <a asp-action="Index" class="btn btn-link">Clear</a>
+    </div>
+</form>
+
+<div class="table-responsive data-table">
+    <table class="table table-striped table-hover align-middle data-table-compact">
+        <thead>
+            <tr>
+                <th>@Html.DisplayNameFor(model => model.CourseCrn)</th>
+                <th>@Html.DisplayNameFor(model => model.CourseName)</th>
+                <th>@Html.DisplayNameFor(model => model.CourseSection)</th>
+                <th>@Html.DisplayNameFor(model => model.CourseProfessor)</th>
+                <th>@Html.DisplayNameFor(model => model.CourseMeetingDays)</th>
+                <th>@Html.DisplayNameFor(model => model.CourseMeetingTime)</th>
+                <th>Sessions</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.CourseCrn</td>
+                <td>@item.CourseName</td>
+                <td>@item.CourseSection</td>
+                <td>@item.CourseProfessor</td>
+                <td>@item.CourseMeetingDays</td>
+                <td>@item.CourseMeetingTime</td>
+                <td>
+                    @if (item.Sessions.Count == 0)
+                    {
+                        <span class="badge text-bg-warning">No sessions yet</span>
+                    }
+                    else
+                    {
+                        @item.Sessions.Count
+                    }
+                </td>
+                <td class="text-nowrap">
+                    <a asp-action="Details" asp-route-id="@item.CourseID">Details</a> |
+                    <a asp-action="Edit" asp-route-id="@item.CourseID">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@item.CourseID">Delete</a> |
+                    <a asp-controller="Sessions" asp-action="Index" asp-route-courseId="@item.CourseID">Sessions</a>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>
+</section>

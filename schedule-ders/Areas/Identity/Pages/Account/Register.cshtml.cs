@@ -97,6 +97,11 @@ namespace schedule_ders.Areas.Identity.Pages.Account
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
+
+            [Required]
+            [Display(Name = "Role")]
+            [RegularExpression("Student|Professor", ErrorMessage = "Please choose Student or Professor.")]
+            public string Role { get; set; }
         }
 
 
@@ -120,6 +125,17 @@ namespace schedule_ders.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
+                    var addRoleResult = await _userManager.AddToRoleAsync(user, Input.Role);
+                    if (!addRoleResult.Succeeded)
+                    {
+                        await _userManager.DeleteAsync(user);
+                        foreach (var error in addRoleResult.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+                        return Page();
+                    }
+
                     _logger.LogInformation("User created a new account with password.");
 
                     var userId = await _userManager.GetUserIdAsync(user);

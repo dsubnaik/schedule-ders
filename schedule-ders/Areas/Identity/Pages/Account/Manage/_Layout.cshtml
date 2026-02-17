@@ -9,20 +9,18 @@
     }
 }
 
-<h1>Manage your account</h1>
-
-<div>
-    <h2>Change your account settings</h2>
-    <hr />
-    <div class="row">
+<section class="page-shell manage-shell">
+    <h1 class="page-title">Manage your account</h1>
+    <p class="page-subtitle">Change your account settings</p>
+    <div class="row g-3">
         <div class="col-md-3">
             <partial name="_ManageNav" />
         </div>
-        <div class="col-md-9">
+        <div class="col-md-9 form-card">
             @RenderBody()
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     @RenderSection("Scripts", required: false)

@@ -1,0 +1,114 @@
+@model schedule_ders.ViewModels.StudentScheduleSearchViewModel
+@{
+    ViewData["Title"] = "SI Schedule";
+    var dayOptions = ViewData["DayOptions"] as List<string> ?? [];
+    var groupedResults = Model.Results
+        .GroupBy(r => new { r.CourseID, r.CourseName, r.CourseSection, r.Professor, r.SILeader })
+        .OrderByDescending(g => Model.FavoriteCourseIds.Contains(g.Key.CourseID))
+        .ThenBy(g => g.Key.CourseName)
+        .ThenBy(g => g.Key.CourseSection)
+        .ToList();
+    var currentUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<section class="student-schedule-page page-shell">
+    <div class="student-schedule-hero mb-4">
+        <h1 class="mb-2">Find SI Sessions</h1>
+        <p class="mb-0">Search by course, day, professor, or location. Each course card below shows all matching SI sessions.</p>
+    </div>
+
+    <div class="card shadow-sm mb-2">
+        <div class="card-body">
+            <form asp-action="Index" method="get" class="row g-2 align-items-end">
+                <div class="col-lg-4">
+                    <label class="form-label mb-1">Search</label>
+                    <input name="search" value="@Model.Search" class="form-control" placeholder="Course, section, location, or SI leader" />
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label mb-1">Day</label>
+                    <select name="day" class="form-select">
+                        <option value="">All days</option>
+                        @foreach (var day in dayOptions)
+                        {
+                            if (Model.Day == day)
+                            {
+                                <option value="@day" selected>@day</option>
+                            }
+                            else
+                            {
+                                <option value="@day">@day</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <label class="form-label mb-1">Professor</label>
+                    <input name="professor" value="@Model.Professor" class="form-control" placeholder="Professor name" />
+                </div>
+                <div class="col-lg-2 d-grid">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+            <div class="mt-2">
+                <a asp-action="Index" class="btn btn-link ps-0">Clear filters</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="student-schedule-meta mb-3">
+        <div class="student-meta-pill">Courses: @groupedResults.Count</div>
+        <div class="student-meta-pill">Sessions: @Model.Results.Count</div>
+    </div>
+
+    @if (!groupedResults.Any())
+    {
+        <div class="alert alert-secondary">No SI sessions match the selected filters.</div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var course in groupedResults)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <article class="card h-100 shadow-sm student-course-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                                <h2 class="h5 mb-0">@course.Key.CourseName</h2>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge text-bg-light border">Section @course.Key.CourseSection</span>
+                                    @if (Model.CanManageFavorites)
+                                    {
+                                        var isFavorite = Model.FavoriteCourseIds.Contains(course.Key.CourseID);
+                                        <form method="post"
+                                              asp-action="@(isFavorite ? "Unfavorite" : "Favorite")"
+                                              class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="courseId" value="@course.Key.CourseID" />
+                                            <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                            <button type="submit" class="btn btn-sm @(isFavorite ? "btn-warning" : "btn-outline-secondary")">
+                                                @(isFavorite ? "Favorited" : "Add Favorite")
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                            <p class="mb-1"><strong>Professor:</strong> @course.Key.Professor</p>
+                            <p class="mb-3"><strong>SI Leader:</strong> @course.Key.SILeader</p>
+
+                            <div class="d-flex flex-column gap-2">
+                                @foreach (var session in course.OrderBy(s => s.Day).ThenBy(s => s.Time))
+                                {
+                                    <div class="student-session-item">
+                                        <div class="student-session-day">@session.Day</div>
+                                        <div class="student-session-time">@session.Time</div>
+                                        <div class="student-session-location">@session.Location</div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    }
+</section>

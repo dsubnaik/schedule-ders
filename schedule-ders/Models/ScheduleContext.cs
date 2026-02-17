@@ -10,5 +10,21 @@ public class ScheduleContext : IdentityDbContext
     }
 
     public DbSet<Course> Courses { get; set; }
+    public DbSet<CourseCatalogEntry> CourseCatalogEntries { get; set; }
     public DbSet<Session> Sessions { get; set; }
+    public DbSet<SIRequest> SIRequests { get; set; }
+    public DbSet<StudentFavoriteCourse> StudentFavoriteCourses { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<StudentFavoriteCourse>()
+            .HasIndex(f => new { f.UserId, f.CourseID })
+            .IsUnique();
+
+        builder.Entity<CourseCatalogEntry>()
+            .HasIndex(c => c.CourseCrn)
+            .IsUnique();
+    }
 }

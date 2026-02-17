@@ -1,0 +1,42 @@
+@model schedule_ders.Models.SIRequest
+@{
+    ViewData["Title"] = "Request Details";
+}
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">Request Details</h1>
+    <div class="page-actions"><a asp-action="Index" class="btn btn-secondary">Back</a></div>
+</div>
+
+@{
+    var courseDisplay = Model.Course is not null
+        ? $"{Model.Course.CourseName} ({Model.Course.CourseSection})"
+        : (!string.IsNullOrWhiteSpace(Model.RequestedCourseName)
+            ? $"{Model.RequestedCourseName} ({Model.RequestedCourseSection})"
+            : "Manual Course Entry");
+}
+
+<dl class="row surface-card p-3">
+    <dt class="col-sm-3">Course</dt>
+    <dd class="col-sm-9">@courseDisplay</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.ProfessorName)</dt>
+    <dd class="col-sm-9">@Model.ProfessorName</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.ProfessorEmail)</dt>
+    <dd class="col-sm-9">@Model.ProfessorEmail</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.SubmittedAtUtc)</dt>
+    <dd class="col-sm-9">@Model.SubmittedAtUtc.ToLocalTime().ToString("f")</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.Status)</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.RequestNotes)</dt>
+    <dd class="col-sm-9">@Model.RequestNotes</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.AdminNotes)</dt>
+    <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.AdminNotes) ? "No admin notes yet." : Model.AdminNotes)</dd>
+</dl>
+</section>

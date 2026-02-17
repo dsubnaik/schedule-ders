@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>schedule_ders</RootNamespace>
+    <UserSecretsId>78cb79af-806d-460d-ba84-9a6a4e884b68</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

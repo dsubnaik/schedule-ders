@@ -1,10 +1,32 @@
-﻿@{
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
-<btn>login</btn>
-</btn>register</btn>
+<section class="landing-hero">
+    <div class="landing-hero-glow landing-hero-glow-left"></div>
+    <div class="landing-hero-glow landing-hero-glow-right"></div>
+
+    <div class="landing-hero-content">
+        <div class="landing-brand-wrap landing-brand-wrap-lg">
+            <img src="~/images/schedule-ders-logo.png"
+                 alt="Schedule-Ders logo"
+                 class="landing-logo"
+                 asp-append-version="true" />
+        </div>
+
+        <div class="landing-actions">
+            @if (User.Identity?.IsAuthenticated ?? false)
+            {
+                @if (User.IsInRole("Student"))
+                {
+                    <a class="btn btn-primary btn-lg" asp-controller="Dashboard" asp-action="Index">Open Dashboard</a>
+                }
+            }
+            else
+            {
+                <a class="btn btn-primary btn-lg" asp-area="Identity" asp-page="/Account/Login">Login</a>
+                <a class="btn btn-outline-light btn-lg" asp-area="Identity" asp-page="/Account/Register">Register</a>
+            }
+        </div>
+    </div>
+</section>

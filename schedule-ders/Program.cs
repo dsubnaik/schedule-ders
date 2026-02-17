@@ -1,6 +1,7 @@
+using schedule_ders.Data;
 using schedule_ders.Models;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,14 +9,28 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 
+var candidateConnectionStrings = new[]
+{
+    builder.Configuration["AZURE_SQL_CONNECTIONSTRING"],
+    builder.Configuration.GetConnectionString("AzureSqlConnection"),
+    builder.Configuration.GetConnectionString("DefaultConnection")
+};
+
+var connectionString = candidateConnectionStrings
+    .FirstOrDefault(cs => !string.IsNullOrWhiteSpace(cs))
+    ?? throw new InvalidOperationException("No SQL connection string configured.");
+
 builder.Services.AddDbContext<ScheduleContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     options.SignIn.RequireConfirmedAccount = false)
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ScheduleContext>();
 
 var app = builder.Build();
+
+await IdentitySeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());
 
 if (!app.Environment.IsDevelopment())
 {
@@ -26,7 +41,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseAuthentication();   // REQUIRED
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();
@@ -36,6 +51,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-app.MapRazorPages();   // REQUIRED for Identity UI
+app.MapRazorPages();
 
 app.Run();

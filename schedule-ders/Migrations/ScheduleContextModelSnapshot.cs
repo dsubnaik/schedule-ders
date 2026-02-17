@@ -231,33 +231,157 @@ namespace schedule_ders.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseID"));
 
+                    b.Property<string>("CourseCrn")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("CourseLeader")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
-                    b.Property<string>("CourseMeetingTimes")
+                    b.Property<string>("CourseMeetingDays")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<string>("CourseMeetingTime")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
 
                     b.Property<string>("CourseName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("CourseProfessor")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("CourseSection")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
-                    b.Property<string>("OfficeHours")
+                    b.Property<string>("OfficeHoursDay")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("OfficeHoursLocation")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("OfficeHoursTime")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
 
                     b.HasKey("CourseID");
 
                     b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.CourseCatalogEntry", b =>
+                {
+                    b.Property<int>("CourseCatalogEntryID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CourseCatalogEntryID"));
+
+                    b.Property<string>("CourseCrn")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CourseName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("CourseSection")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("CourseCatalogEntryID");
+
+                    b.HasIndex("CourseCrn")
+                        .IsUnique();
+
+                    b.ToTable("CourseCatalogEntries");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.SIRequest", b =>
+                {
+                    b.Property<int>("SIRequestID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SIRequestID"));
+
+                    b.Property<string>("AdminNotes")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("CourseID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("LastUpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProfessorEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("ProfessorName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("RequestNotes")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("RequestedCourseName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("RequestedCourseProfessor")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("RequestedCourseSection")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("SubmittedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SIRequestID");
+
+                    b.HasIndex("CourseID");
+
+                    b.ToTable("SIRequests");
                 });
 
             modelBuilder.Entity("schedule_ders.Models.Session", b =>
@@ -273,21 +397,50 @@ namespace schedule_ders.Migrations
 
                     b.Property<string>("Day")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("Location")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("Time")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
 
                     b.HasKey("SessionID");
 
                     b.HasIndex("CourseID");
 
                     b.ToTable("Sessions");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.StudentFavoriteCourse", b =>
+                {
+                    b.Property<int>("StudentFavoriteCourseID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("StudentFavoriteCourseID"));
+
+                    b.Property<int>("CourseID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("StudentFavoriteCourseID");
+
+                    b.HasIndex("CourseID");
+
+                    b.HasIndex("UserId", "CourseID")
+                        .IsUnique();
+
+                    b.ToTable("StudentFavoriteCourses");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -341,10 +494,30 @@ namespace schedule_ders.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("schedule_ders.Models.SIRequest", b =>
+                {
+                    b.HasOne("schedule_ders.Models.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseID");
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("schedule_ders.Models.Session", b =>
                 {
                     b.HasOne("schedule_ders.Models.Course", "Course")
                         .WithMany("Sessions")
+                        .HasForeignKey("CourseID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.StudentFavoriteCourse", b =>
+                {
+                    b.HasOne("schedule_ders.Models.Course", "Course")
+                        .WithMany()
                         .HasForeignKey("CourseID")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

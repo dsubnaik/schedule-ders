@@ -1,0 +1,64 @@
+@model IEnumerable<schedule_ders.Models.SIRequest>
+@{
+    ViewData["Title"] = "My SI Requests";
+}
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">My SI Requests</h1>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-primary">New Request</a>
+    </div>
+</div>
+
+<div class="table-responsive data-table">
+    <table class="table table-striped align-middle data-table-compact">
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Submitted</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="4" class="text-muted">No SI requests yet.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model)
+            {
+                var courseDisplay = item.Course is not null
+                    ? $"{item.Course.CourseName} ({item.Course.CourseSection})"
+                    : (!string.IsNullOrWhiteSpace(item.RequestedCourseName)
+                        ? $"{item.RequestedCourseName} ({item.RequestedCourseSection})"
+                        : "Manual Course Entry");
+                <tr>
+                    <td>@courseDisplay</td>
+                    <td>@item.SubmittedAtUtc.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <span class="status-pill @(item.Status switch
+                              {
+                                  schedule_ders.Models.SIRequestStatus.Pending => "status-pill-pending",
+                                  schedule_ders.Models.SIRequestStatus.UnderReview => "status-pill-review",
+                                  schedule_ders.Models.SIRequestStatus.Approved => "status-pill-approved",
+                                  _ => "status-pill-denied"
+                              })">
+                            @item.Status
+                        </span>
+                    </td>
+                    <td class="text-nowrap">
+                        <a asp-action="Track" asp-route-id="@item.SIRequestID">Track</a> |
+                        <a asp-action="Details" asp-route-id="@item.SIRequestID">Details</a>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>
+</section>

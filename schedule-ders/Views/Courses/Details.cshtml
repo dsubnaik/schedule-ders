@@ -1,0 +1,87 @@
+@model schedule_ders.Models.Course
+@{
+    ViewData["Title"] = "Course Details";
+}
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">Course Details</h1>
+    <div class="page-actions">
+        <a asp-action="Edit" asp-route-id="@Model.CourseID" class="btn btn-outline-primary">Edit Course</a>
+        <a asp-action="Index" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<dl class="row surface-card p-3">
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CourseCrn)</dt>
+    <dd class="col-sm-9">@Model.CourseCrn</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CourseName)</dt>
+    <dd class="col-sm-9">@Model.CourseName</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CourseSection)</dt>
+    <dd class="col-sm-9">@Model.CourseSection</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CourseProfessor)</dt>
+    <dd class="col-sm-9">@Model.CourseProfessor</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CourseMeetingDays)</dt>
+    <dd class="col-sm-9">@Model.CourseMeetingDays</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CourseMeetingTime)</dt>
+    <dd class="col-sm-9">@Model.CourseMeetingTime</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CourseLeader)</dt>
+    <dd class="col-sm-9">@Model.CourseLeader</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.OfficeHoursDay)</dt>
+    <dd class="col-sm-9">@Model.OfficeHoursDay</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.OfficeHoursTime)</dt>
+    <dd class="col-sm-9">@Model.OfficeHoursTime</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(model => model.OfficeHoursLocation)</dt>
+    <dd class="col-sm-9">@Model.OfficeHoursLocation</dd>
+</dl>
+
+<div class="page-header mt-2 mb-1">
+    <h2 class="h4 mb-0">Sessions</h2>
+    <a asp-controller="Sessions" asp-action="Create" asp-route-courseId="@Model.CourseID" asp-route-returnUrl="@Url.Action("Details","Courses", new { id = Model.CourseID })" class="btn btn-primary btn-sm">Add Session</a>
+</div>
+
+<div class="table-responsive data-table">
+    <table class="table table-striped data-table-compact">
+        <thead>
+            <tr>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Location</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (Model.Sessions.Count == 0)
+        {
+            <tr>
+                <td colspan="4" class="text-muted">No sessions added yet.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var session in Model.Sessions)
+            {
+                <tr>
+                    <td>@session.Day</td>
+                    <td>@session.Time</td>
+                    <td>@session.Location</td>
+                    <td class="text-nowrap">
+                        <a asp-controller="Sessions" asp-action="Edit" asp-route-id="@session.SessionID" asp-route-returnUrl="@Url.Action("Details","Courses", new { id = Model.CourseID })">Edit</a> |
+                        <a asp-controller="Sessions" asp-action="Delete" asp-route-id="@session.SessionID" asp-route-returnUrl="@Url.Action("Details","Courses", new { id = Model.CourseID })">Delete</a>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>
+</section>

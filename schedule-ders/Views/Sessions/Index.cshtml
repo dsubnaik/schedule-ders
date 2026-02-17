@@ -1,0 +1,98 @@
+@model IEnumerable<schedule_ders.Models.Session>
+@{
+    ViewData["Title"] = "SI Sessions";
+    var currentSearch = ViewData["CurrentSearch"] as string ?? string.Empty;
+    var currentDay = ViewData["CurrentDay"] as string ?? string.Empty;
+    var currentCourseId = ViewData["CurrentCourseId"] as int?;
+    var dayOptions = ViewBag.DayOptions as List<string> ?? [];
+    var currentUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">SI Sessions</h1>
+    @if (currentCourseId.HasValue)
+    {
+        <div class="page-actions"><a asp-action="Create" asp-route-courseId="@currentCourseId.Value" asp-route-returnUrl="@currentUrl" class="btn btn-primary">Add Session</a></div>
+    }
+    else
+    {
+        <div class="page-actions"><a asp-action="Create" asp-route-returnUrl="@currentUrl" class="btn btn-primary">Add Session</a></div>
+    }
+</div>
+
+<form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
+    <div class="col-md-4">
+        <input type="text" name="search" value="@currentSearch" class="form-control" placeholder="Course, day, time, location, SI leader" />
+    </div>
+    <div class="col-md-2">
+        <select name="day" class="form-select">
+            <option value="">All days</option>
+            @foreach (var day in dayOptions)
+            {
+                if (currentDay == day)
+                {
+                    <option value="@day" selected>@day</option>
+                }
+                else
+                {
+                    <option value="@day">@day</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-4">
+        <select name="courseId" class="form-select" asp-items="ViewBag.CourseFilterOptions">
+            <option value="">All courses</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-grid">
+        <button type="submit" class="btn btn-outline-secondary">Filter</button>
+    </div>
+</form>
+
+<div class="mb-3">
+    <a asp-action="Index" class="btn btn-link p-0">Clear filters</a>
+</div>
+
+<div class="table-responsive data-table">
+    <table class="table table-striped align-middle data-table-compact">
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>SI Leader</th>
+                <th>Day</th>
+                <th>Time</th>
+                <th>Location</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="6" class="text-muted">No sessions found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var session in Model)
+            {
+                <tr>
+                    <td>@(session.Course is null ? "Unknown Course" : $"{session.Course.CourseName} ({session.Course.CourseSection})")</td>
+                    <td>@session.Course?.CourseLeader</td>
+                    <td>@session.Day</td>
+                    <td>@session.Time</td>
+                    <td>@session.Location</td>
+                    <td class="text-nowrap">
+                        <a asp-action="Edit" asp-route-id="@session.SessionID" asp-route-returnUrl="@currentUrl">Edit</a> |
+                        <a asp-action="Delete" asp-route-id="@session.SessionID" asp-route-returnUrl="@currentUrl">Delete</a> |
+                        <a asp-controller="Courses" asp-action="Details" asp-route-id="@session.CourseID">Course</a>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>
+</section>

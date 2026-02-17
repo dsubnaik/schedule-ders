@@ -1,0 +1,71 @@
+@model schedule_ders.ViewModels.ProfessorRequestCreateViewModel
+@{
+    ViewData["Title"] = "New SI Request";
+}
+
+<section class="page-shell">
+<h1 class="page-title">New SI Request</h1>
+<p class="page-subtitle">Submit a request for SI support for one of your courses.</p>
+
+<div class="row">
+    <div class="col-md-7">
+        <form asp-action="Create" method="post" class="form-card">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label asp-for="CourseID" class="form-label"></label>
+                <select asp-for="CourseID" asp-items="ViewBag.CourseID" class="form-select">
+                    <option value="">Course not listed (enter below)</option>
+                </select>
+                <span asp-validation-for="CourseID" class="text-danger"></span>
+            </div>
+
+            <div class="form-section mb-3">
+                <div class="card-body">
+                    <h2 class="h6 mb-3">If Course Is Not Listed</h2>
+                    <div class="mb-3">
+                        <label asp-for="RequestedCourseName" class="form-label"></label>
+                        <input asp-for="RequestedCourseName" class="form-control" placeholder="CHEM 1411" />
+                        <span asp-validation-for="RequestedCourseName" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="RequestedCourseSection" class="form-label"></label>
+                        <input asp-for="RequestedCourseSection" class="form-control" placeholder="002" />
+                        <span asp-validation-for="RequestedCourseSection" class="text-danger"></span>
+                    </div>
+                    <div class="mb-0">
+                        <label asp-for="RequestedCourseProfessor" class="form-label"></label>
+                        <input asp-for="RequestedCourseProfessor" class="form-control" placeholder="Professor name" />
+                        <span asp-validation-for="RequestedCourseProfessor" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ProfessorName" class="form-label"></label>
+                <input asp-for="ProfessorName" class="form-control" />
+                <span asp-validation-for="ProfessorName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ProfessorEmail" class="form-label"></label>
+                <input asp-for="ProfessorEmail" class="form-control" />
+                <span asp-validation-for="ProfessorEmail" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="RequestNotes" class="form-label"></label>
+                <textarea asp-for="RequestNotes" class="form-control" rows="6" placeholder="Describe why SI support is requested, target students, and preferred timing."></textarea>
+                <span asp-validation-for="RequestNotes" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit Request</button>
+            <a asp-action="Index" class="btn btn-secondary">Back</a>
+        </form>
+    </div>
+</div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

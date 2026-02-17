@@ -1,0 +1,86 @@
+@model schedule_ders.Models.SIRequest
+@{
+    ViewData["Title"] = "Track Request";
+    var progress = Model.Status switch
+    {
+        schedule_ders.Models.SIRequestStatus.Pending => 25,
+        schedule_ders.Models.SIRequestStatus.UnderReview => 60,
+        schedule_ders.Models.SIRequestStatus.Approved => 100,
+        schedule_ders.Models.SIRequestStatus.Denied => 100,
+        _ => 0
+    };
+    var isDenied = Model.Status == schedule_ders.Models.SIRequestStatus.Denied;
+    var trackColor = isDenied ? "bg-danger" : "request-progress-warning";
+    var progressWidthClass = progress switch
+    {
+        25 => "progress-w-25",
+        60 => "progress-w-60",
+        _ => "progress-w-100"
+    };
+}
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">Request Tracker</h1>
+    <div class="page-actions"><a asp-action="Index" class="btn btn-secondary">Back</a></div>
+</div>
+
+@{
+    var courseDisplay = Model.Course is not null
+        ? $"{Model.Course.CourseName} ({Model.Course.CourseSection})"
+        : (!string.IsNullOrWhiteSpace(Model.RequestedCourseName)
+            ? $"{Model.RequestedCourseName} ({Model.RequestedCourseSection})"
+            : "Manual Course Entry");
+}
+
+<p class="text-muted">
+    Course: @courseDisplay
+</p>
+
+<div class="card mb-2">
+    <div class="card-body">
+        <div class="d-flex justify-content-between small mb-2">
+            <span>Submitted</span>
+            <span>Under Review</span>
+            <span>@(isDenied ? "Denied" : "Approved")</span>
+        </div>
+        <div class="progress request-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@progress">
+            <div class="progress-bar @trackColor @progressWidthClass"></div>
+        </div>
+        <div class="d-flex justify-content-between small mt-2 text-muted">
+            <span>@(Model.Status is schedule_ders.Models.SIRequestStatus.Pending or schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
+            <span>@(Model.Status is schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
+            <span>@(Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-2">
+    <div class="col-md-4">
+        <div class="surface-card p-3 h-100">
+            <div class="small text-muted">Current Status</div>
+            <div class="fw-semibold">@Model.Status</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="surface-card p-3 h-100">
+            <div class="small text-muted">Submitted On</div>
+            <div class="fw-semibold">@Model.SubmittedAtUtc.ToLocalTime().ToString("f")</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="surface-card p-3 h-100">
+            <div class="small text-muted">Last Updated</div>
+            <div class="fw-semibold">@((Model.LastUpdatedAtUtc?.ToLocalTime().ToString("f")) ?? "No updates yet")</div>
+        </div>
+    </div>
+</div>
+
+<dl class="row surface-card p-3 mb-0">
+    <dt class="col-sm-3">Request Notes</dt>
+    <dd class="col-sm-9">@Model.RequestNotes</dd>
+
+    <dt class="col-sm-3 notes-section-break">Admin Notes</dt>
+    <dd class="col-sm-9 notes-section-break">@(string.IsNullOrWhiteSpace(Model.AdminNotes) ? "No updates yet." : Model.AdminNotes)</dd>
+</dl>
+</section>

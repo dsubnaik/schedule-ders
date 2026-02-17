@@ -3,18 +3,19 @@
     ViewData["Title"] = "Error";
 }
 
-<h1 class="text-danger">Error.</h1>
-<h2 class="text-danger">An error occurred while processing your request.</h2>
+<section class="page-shell">
+<h1 class="page-title text-danger">Error</h1>
+<h2 class="page-subtitle text-danger">An error occurred while processing your request.</h2>
 
 @if (Model.ShowRequestId)
 {
-    <p>
+    <p class="surface-card p-3">
         <strong>Request ID:</strong> <code>@Model.RequestId</code>
     </p>
 }
 
-<h3>Development Mode</h3>
-<p>
+<h3 class="h5 mt-2">Development Mode</h3>
+<p class="mb-2">
     Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.
 </p>
 <p>
@@ -23,3 +24,4 @@
     For local debugging, enable the <strong>Development</strong> environment by setting the <strong>ASPNETCORE_ENVIRONMENT</strong> environment variable to <strong>Development</strong>
     and restarting the app.
 </p>
+</section>
