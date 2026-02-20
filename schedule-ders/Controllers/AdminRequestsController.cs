@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using schedule_ders.Contracts.Api.V1.Requests;
 using schedule_ders.Models;
+using schedule_ders.Services.Interfaces;
 using schedule_ders.ViewModels;
 
 namespace schedule_ders.Controllers;
@@ -11,10 +13,12 @@ namespace schedule_ders.Controllers;
 public class AdminRequestsController : Controller
 {
     private readonly ScheduleContext _context;
+    private readonly IAdminRequestService _adminRequestService;
 
-    public AdminRequestsController(ScheduleContext context)
+    public AdminRequestsController(ScheduleContext context, IAdminRequestService adminRequestService)
     {
         _context = context;
+        _adminRequestService = adminRequestService;
     }
 
     public async Task<IActionResult> Index(string? status)
@@ -78,22 +82,17 @@ public class AdminRequestsController : Controller
             return View(input);
         }
 
-        var request = await _context.SIRequests.FirstOrDefaultAsync(r => r.SIRequestID == input.SIRequestID);
-        if (request is null)
+        var updated = await _adminRequestService.UpdateStatusAsync(input.SIRequestID, new UpdateRequestStatusDto
+        {
+            Status = input.Status,
+            AdminNotes = input.AdminNotes
+        });
+
+        if (updated is null)
         {
             return NotFound();
         }
 
-        request.Status = input.Status;
-        request.AdminNotes = input.AdminNotes.Trim();
-        request.LastUpdatedAtUtc = DateTime.UtcNow;
-
-        if (request.Status == SIRequestStatus.Approved)
-        {
-            await EnsureCourseLinkedForApprovedRequestAsync(request);
-        }
-
-        await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
 
@@ -117,54 +116,4 @@ public class AdminRequestsController : Controller
         return string.IsNullOrWhiteSpace(professor) ? title : $"{title} - {professor}";
     }
 
-    private async Task EnsureCourseLinkedForApprovedRequestAsync(SIRequest request)
-    {
-        if (request.CourseID.HasValue)
-        {
-            var linkedExists = await _context.Courses.AnyAsync(c => c.CourseID == request.CourseID.Value);
-            if (linkedExists)
-            {
-                return;
-            }
-        }
-
-        var requestedName = request.RequestedCourseName.Trim();
-        var requestedSection = request.RequestedCourseSection.Trim();
-        var requestedProfessor = request.RequestedCourseProfessor.Trim();
-
-        if (string.IsNullOrWhiteSpace(requestedName) || string.IsNullOrWhiteSpace(requestedSection))
-        {
-            return;
-        }
-
-        var existingCourse = await _context.Courses
-            .FirstOrDefaultAsync(c =>
-                c.CourseName == requestedName &&
-                c.CourseSection == requestedSection);
-
-        if (existingCourse is not null)
-        {
-            request.CourseID = existingCourse.CourseID;
-            return;
-        }
-
-        var createdCourse = new Course
-        {
-            CourseCrn = $"REQ-{request.SIRequestID}",
-            CourseName = requestedName,
-            CourseSection = requestedSection,
-            CourseMeetingDays = "T",
-            CourseMeetingTime = "12:00pm-1:00pm",
-            CourseProfessor = string.IsNullOrWhiteSpace(requestedProfessor) ? "TBD" : requestedProfessor,
-            CourseLeader = "TBD",
-            OfficeHoursDay = "",
-            OfficeHoursTime = "",
-            OfficeHoursLocation = ""
-        };
-
-        _context.Courses.Add(createdCourse);
-        await _context.SaveChangesAsync();
-
-        request.CourseID = createdCourse.CourseID;
-    }
 }

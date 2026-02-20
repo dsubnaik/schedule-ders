@@ -22,7 +22,12 @@
     </div>
 </div>
 
-<form asp-action="Update" method="post" class="form-card">
+<form asp-action="Update"
+      method="post"
+      class="form-card"
+      data-admin-request-update-form="true"
+      data-api-url="@Url.Content($"~/api/v1/admin/requests/{Model.SIRequestID}/status")"
+      data-success-url="@Url.Action("Index", "AdminRequests")">
     <input type="hidden" asp-for="SIRequestID" />
     <input type="hidden" asp-for="CourseID" />
     <input type="hidden" asp-for="CourseDisplay" />

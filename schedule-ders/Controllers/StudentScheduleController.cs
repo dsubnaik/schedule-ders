@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using schedule_ders.Models;
+using schedule_ders.Services.Interfaces;
 using schedule_ders.ViewModels;
 
 namespace schedule_ders.Controllers;
@@ -11,57 +12,42 @@ public class StudentScheduleController : Controller
 {
     private readonly ScheduleContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly IScheduleQueryService _scheduleQueryService;
 
-    public StudentScheduleController(ScheduleContext context, UserManager<IdentityUser> userManager)
+    public StudentScheduleController(
+        ScheduleContext context,
+        UserManager<IdentityUser> userManager,
+        IScheduleQueryService scheduleQueryService)
     {
         _context = context;
         _userManager = userManager;
+        _scheduleQueryService = scheduleQueryService;
     }
 
     [AllowAnonymous]
     public async Task<IActionResult> Index(string? search, string? day, string? professor)
     {
-        var query = _context.Sessions
-            .AsNoTracking()
-            .Include(s => s.Course)
-            .AsQueryable();
+        var sessionSearch = await _scheduleQueryService.SearchSessionsAsync(
+            search,
+            day,
+            professor,
+            courseId: null,
+            page: 1,
+            pageSize: 500);
 
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            query = query.Where(s =>
-                (s.Course != null && s.Course.CourseName.Contains(search)) ||
-                (s.Course != null && s.Course.CourseSection.Contains(search)) ||
-                (s.Course != null && s.Course.CourseLeader.Contains(search)) ||
-                s.Day.Contains(search) ||
-                s.Time.Contains(search) ||
-                s.Location.Contains(search));
-        }
-
-        if (!string.IsNullOrWhiteSpace(day))
-        {
-            query = query.Where(s => s.Day == day);
-        }
-
-        if (!string.IsNullOrWhiteSpace(professor))
-        {
-            query = query.Where(s => s.Course != null && s.Course.CourseProfessor.Contains(professor));
-        }
-
-        var results = await query
-            .OrderBy(s => s.Day)
-            .ThenBy(s => s.Time)
+        var results = sessionSearch.Items
             .Select(s => new StudentScheduleRowViewModel
             {
-                CourseID = s.CourseID,
-                CourseName = s.Course != null ? s.Course.CourseName : string.Empty,
-                CourseSection = s.Course != null ? s.Course.CourseSection : string.Empty,
-                Professor = s.Course != null ? s.Course.CourseProfessor : string.Empty,
+                CourseID = s.CourseId,
+                CourseName = s.CourseName,
+                CourseSection = s.CourseSection,
+                Professor = s.ProfessorName,
                 Day = s.Day,
-                Time = s.Time,
+                Time = string.IsNullOrWhiteSpace(s.EndTime) ? s.StartTime : $"{s.StartTime}-{s.EndTime}",
                 Location = s.Location,
-                SILeader = s.Course != null ? s.Course.CourseLeader : string.Empty
+                SILeader = s.SiLeaderName
             })
-            .ToListAsync();
+            .ToList();
 
         ViewData["DayOptions"] = await _context.Sessions
             .AsNoTracking()

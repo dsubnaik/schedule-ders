@@ -3,7 +3,11 @@
     ViewData["Title"] = "Course Details";
 }
 
-<section class="page-shell">
+<section class="page-shell"
+         data-course-sessions-api="true"
+         data-api-url="@Url.Content($"~/api/v1/courses/{Model.CourseID}/sessions")"
+         data-edit-url-template="@Url.Action("Edit", "Sessions", new { id = "__id__", returnUrl = Url.Action("Details","Courses", new { id = Model.CourseID }) })"
+         data-delete-url-template="@Url.Action("Delete", "Sessions", new { id = "__id__", returnUrl = Url.Action("Details","Courses", new { id = Model.CourseID }) })">
 <div class="page-header mb-1">
     <h1 class="page-title">Course Details</h1>
     <div class="page-actions">
@@ -59,7 +63,7 @@
                 <th></th>
             </tr>
         </thead>
-        <tbody>
+        <tbody data-course-sessions-tbody="true">
         @if (Model.Sessions.Count == 0)
         {
             <tr>

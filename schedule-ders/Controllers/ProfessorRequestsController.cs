@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using schedule_ders.Contracts.Api.V1.Requests;
 using schedule_ders.Models;
+using schedule_ders.Services.Interfaces;
 using schedule_ders.ViewModels;
 
 namespace schedule_ders.Controllers;
@@ -13,11 +15,16 @@ public class ProfessorRequestsController : Controller
 {
     private readonly ScheduleContext _context;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly IProfessorRequestService _professorRequestService;
 
-    public ProfessorRequestsController(ScheduleContext context, UserManager<IdentityUser> userManager)
+    public ProfessorRequestsController(
+        ScheduleContext context,
+        UserManager<IdentityUser> userManager,
+        IProfessorRequestService professorRequestService)
     {
         _context = context;
         _userManager = userManager;
+        _professorRequestService = professorRequestService;
     }
 
     public async Task<IActionResult> Index()
@@ -94,39 +101,33 @@ public class ProfessorRequestsController : Controller
             return Challenge();
         }
 
-        Course? selectedCourse = null;
-        if (input.CourseID.HasValue)
+        try
         {
-            selectedCourse = await _context.Courses
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.CourseID == input.CourseID.Value);
-
-            if (selectedCourse is null)
+            var created = await _professorRequestService.CreateRequestAsync(new CreateSiRequestDto
             {
-                ModelState.AddModelError(nameof(input.CourseID), "Selected course was not found.");
-                await PopulateCourseOptionsAsync(input.CourseID);
-                return View(input);
-            }
+                CourseId = input.CourseID,
+                RequestedCourseName = input.RequestedCourseName,
+                RequestedCourseSection = input.RequestedCourseSection,
+                RequestedCourseProfessor = input.RequestedCourseProfessor,
+                ProfessorName = input.ProfessorName,
+                ProfessorEmail = input.ProfessorEmail,
+                RequestNotes = input.RequestNotes
+            }, userId);
+
+            return RedirectToAction(nameof(Track), new { id = created.RequestId });
         }
-
-        var request = new SIRequest
+        catch (KeyNotFoundException)
         {
-            CourseID = input.CourseID,
-            RequestedCourseName = selectedCourse?.CourseName ?? input.RequestedCourseName,
-            RequestedCourseSection = selectedCourse?.CourseSection ?? input.RequestedCourseSection,
-            RequestedCourseProfessor = selectedCourse?.CourseProfessor ?? input.RequestedCourseProfessor,
-            ProfessorName = input.ProfessorName,
-            ProfessorEmail = input.ProfessorEmail,
-            RequestNotes = input.RequestNotes,
-            CreatedByUserId = userId,
-            Status = SIRequestStatus.Pending,
-            SubmittedAtUtc = DateTime.UtcNow
-        };
-
-        _context.SIRequests.Add(request);
-        await _context.SaveChangesAsync();
-
-        return RedirectToAction(nameof(Track), new { id = request.SIRequestID });
+            ModelState.AddModelError(nameof(input.CourseID), "Selected course was not found.");
+            await PopulateCourseOptionsAsync(input.CourseID);
+            return View(input);
+        }
+        catch (ArgumentException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            await PopulateCourseOptionsAsync(input.CourseID);
+            return View(input);
+        }
     }
 
     public async Task<IActionResult> Details(int id)
