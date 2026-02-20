@@ -1,0 +1,225 @@
+/* Theme CSS: color tokens and light/dark theme overrides */
+/* Edit this file when changing color palette or theme behavior only. */
+
+/* Light theme tokens */
+:root {
+  --sd-accent-blue: #0067C5;
+  --sd-accent-blue-soft: #e6f2fb;
+  --sd-accent-green: #007F3E;
+  --sd-accent-green-soft: #e7f4ec;
+  --sd-ink: #002E57;
+  --sd-border: #0067C5;
+  --sd-border-width: 3px;
+  --sd-surface: #ffffff;
+  --sd-surface-soft: #f6faff;
+  --sd-shadow-soft: 0 12px 24px rgba(20, 50, 80, 0.06);
+  --sd-shadow-card: 0 10px 20px rgba(14, 41, 74, 0.08);
+  --sd-danger-soft: #fff1f3;
+}
+/* Dark theme: page foundation */
+html[data-theme="dark"] body {
+  background: #0f2034;
+  color: #d7e3f0;
+}
+html[data-theme="dark"] {
+  --sd-border: #007F3E;
+}
+/* Dark theme: navbar */
+html[data-theme="dark"] .navbar {
+  background-color: #273142 !important;
+  border-bottom-color: #007f3e !important;
+}
+html[data-theme="dark"] .navbar-brand,
+html[data-theme="dark"] .navbar .nav-link {
+  color: #d4e5f8 !important;
+}
+html[data-theme="dark"] .brand-logo {
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.45)) saturate(1.2) brightness(1.18);
+}
+html[data-theme="dark"] .navbar .nav-link:hover,
+html[data-theme="dark"] .navbar .nav-link:focus {
+  color: #8ec2ff !important;
+}
+html[data-theme="dark"] .page-title {
+  color: #d8e8fa;
+}
+html[data-theme="dark"] .page-subtitle,
+html[data-theme="dark"] .field-help,
+html[data-theme="dark"] .empty-state-note {
+  color: #9fb5cc;
+}
+/* Dark theme: footer */
+html[data-theme="dark"] .footer {
+  background: #0f141b;
+  border-top-color: #2a3f57 !important;
+  color: #9eb2c8 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+html[data-theme="dark"] .footer a {
+  color: #8ec2ff;
+}
+html[data-theme="dark"] .footer-brand {
+  color: #d8e8fa;
+}
+html[data-theme="dark"] .footer-sep {
+  color: #6f849b;
+}
+/* Dark theme: student schedule */
+html[data-theme="dark"] .student-schedule-hero {
+  background: linear-gradient(120deg, #18253a 0%, #121f32 66%, #143329 100%);
+}
+html[data-theme="dark"] .student-session-day {
+  color: #d8e7f7;
+}
+html[data-theme="dark"] .student-session-time {
+  color: #c2d6eb;
+}
+html[data-theme="dark"] .student-session-location {
+  background: #21354d !important;
+  color: #eef6ff !important;
+}
+/* Dark theme: shared surfaces */
+html[data-theme="dark"] .student-meta-pill,
+html[data-theme="dark"] .student-course-card,
+html[data-theme="dark"] .student-session-item,
+html[data-theme="dark"] .student-session-location,
+html[data-theme="dark"] .surface-card,
+html[data-theme="dark"] .surface-card-soft,
+html[data-theme="dark"] .form-card,
+html[data-theme="dark"] .form-section,
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .data-table,
+html[data-theme="dark"] .list-group-item,
+html[data-theme="dark"] .table,
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] .input-group-text {
+  background-color: #152233 !important;
+  border-color: var(--sd-border) !important;
+  color: #d7e3f0 !important;
+}
+html[data-theme="dark"] .table td,
+html[data-theme="dark"] .table th {
+  color: #d7e3f0;
+  border-color: #30455f;
+}
+html[data-theme="dark"] .table,
+html[data-theme="dark"] .data-table table {
+  --bs-table-bg: #152233;
+  --bs-table-color: #d7e3f0;
+  --bs-table-border-color: #30455f;
+  --bs-table-striped-bg: #1b2a3e;
+  --bs-table-striped-color: #d7e3f0;
+  --bs-table-hover-bg: #22364d;
+  --bs-table-hover-color: #e6f0fb;
+}
+html[data-theme="dark"] .table thead th,
+html[data-theme="dark"] .data-table thead th {
+  background: #1c3047;
+  color: #d7e3f0;
+  border-bottom-color: #3a5575;
+}
+html[data-theme="dark"] .text-muted,
+html[data-theme="dark"] .form-text {
+  color: #9fb2c7 !important;
+}
+html[data-theme="dark"] .form-control::placeholder,
+html[data-theme="dark"] .form-select,
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: #9db3ca;
+}
+/* Dark theme: controls */
+html[data-theme="dark"] .btn-outline-secondary {
+  color: #cfe1f3;
+  border-color: #547293;
+}
+html[data-theme="dark"] .btn-outline-secondary:hover,
+html[data-theme="dark"] .btn-outline-secondary:focus {
+  color: #0f1722;
+  background: #cfe1f3;
+  border-color: #cfe1f3;
+}
+html[data-theme="dark"] .pagination .page-link {
+  color: #cde2f8;
+  border-color: #35506f;
+  background: #132134;
+}
+html[data-theme="dark"] .pagination .page-link:hover {
+  background: #1b2d43;
+}
+/* Dark theme: status pills */
+html[data-theme="dark"] .status-pill-pending {
+  background: #2a3b4d;
+  color: #d2deea;
+}
+html[data-theme="dark"] .status-pill-review {
+  background: #1d4158;
+  color: #a9ddf6;
+}
+html[data-theme="dark"] .status-pill-approved {
+  background: #1d4335;
+  color: #a9f1cf;
+}
+html[data-theme="dark"] .status-pill-denied {
+  background: #4b2830;
+  color: #ffc5cf;
+}
+html[data-theme="dark"] .btn-outline-light {
+  color: #d4e5f8;
+  border-color: #7f9abb;
+  background-color: transparent;
+}
+html[data-theme="dark"] .btn-outline-light:hover,
+html[data-theme="dark"] .btn-outline-light:focus {
+  color: #0f1722;
+  background-color: #d4e5f8;
+  border-color: #d4e5f8;
+}
+/* Dark theme: auth pages */
+html[data-theme="dark"] .auth-card {
+  background: #152233;
+  border-color: var(--sd-border) !important;
+  color: #d7e3f0;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+}
+html[data-theme="dark"] .auth-title {
+  color: #d7e7f9;
+}
+html[data-theme="dark"] .auth-subtitle {
+  color: #9fb5cc;
+}
+html[data-theme="dark"] .auth-card .form-label,
+html[data-theme="dark"] .auth-card .form-check-label {
+  color: #cddff2;
+}
+html[data-theme="dark"] .auth-input {
+  background: #101b29;
+  border-color: #39526d;
+  color: #c3d5ea;
+}
+html[data-theme="dark"] .auth-input:focus {
+  border-color: #78aee7;
+  box-shadow: 0 0 0 0.2rem rgba(120, 174, 231, 0.2);
+}
+html[data-theme="dark"] .auth-card .form-floating > label {
+  color: #36516e !important;
+}
+html[data-theme="dark"] .auth-card .form-floating > .form-control::placeholder {
+  color: #9fb5cc;
+}
+html[data-theme="dark"] .auth-links a,
+html[data-theme="dark"] .auth-link-row a {
+  color: #9ec8f5;
+}
+html[data-theme="dark"] .manage-nav .nav-link {
+  color: #c7dcf1;
+}
+html[data-theme="dark"] .manage-nav .nav-link:hover,
+html[data-theme="dark"] .manage-nav .nav-link:focus {
+  background: #243852;
+  color: #d7e7f9;
+}
+
+
