@@ -130,7 +130,7 @@ public class CoursesController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> LookupByCrn(string? crn, int? excludeId)
+    public async Task<IActionResult> LookupByCrn(string? crn)
     {
         if (string.IsNullOrWhiteSpace(crn))
         {
@@ -292,3 +292,4 @@ public class CoursesController : Controller
         entry.CourseSection = courseSection.Trim();
     }
 }
+

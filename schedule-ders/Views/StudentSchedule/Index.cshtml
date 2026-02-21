@@ -19,7 +19,11 @@
 
     <div class="card shadow-sm mb-2">
         <div class="card-body">
-            <form asp-action="Index" method="get" class="row g-2 align-items-end">
+            <form asp-action="Index"
+                  method="get"
+                  class="row g-2 align-items-end"
+                  data-student-schedule-form="true"
+                  data-api-url="@Url.Content("~/api/v1/schedule/sessions")">
                 <div class="col-lg-4">
                     <label class="form-label mb-1">Search</label>
                     <input name="search" value="@Model.Search" class="form-control" placeholder="Course, section, location, or SI leader" />
@@ -56,8 +60,8 @@
     </div>
 
     <div class="student-schedule-meta mb-3">
-        <div class="student-meta-pill">Courses: @groupedResults.Count</div>
-        <div class="student-meta-pill">Sessions: @Model.Results.Count</div>
+        <div class="student-meta-pill">Courses: <span data-student-course-count="true">@groupedResults.Count</span></div>
+        <div class="student-meta-pill">Sessions: <span data-student-session-count="true">@Model.Results.Count</span></div>
     </div>
 
     @if (!groupedResults.Any())

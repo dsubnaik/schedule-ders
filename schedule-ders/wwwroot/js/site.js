@@ -182,7 +182,7 @@
             }
 
             try {
-                const response = await fetch(`${lookupBaseUrl}?crn=${encodeURIComponent(crn)}&excludeId=${encodeURIComponent(excludeId)}`);
+                const response = await fetch(`${lookupBaseUrl}?crn=${encodeURIComponent(crn)}`);
                 if (!response.ok) {
                     return;
                 }
@@ -262,9 +262,407 @@
         applyTime();
     };
 
+    const htmlEncode = (value) => {
+        const div = document.createElement("div");
+        div.textContent = value ?? "";
+        return div.innerHTML;
+    };
+
+    const formatLocalDate = (value) => {
+        if (!value) {
+            return "No updates yet";
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return "No updates yet";
+        }
+
+        return parsed.toLocaleString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit"
+        });
+    };
+
+    const statusClass = (status) => {
+        const normalized = (status || "").toLowerCase();
+        if (normalized === "pending") {
+            return "status-pill-pending";
+        }
+        if (normalized === "underreview" || normalized === "under review") {
+            return "status-pill-review";
+        }
+        if (normalized === "approved") {
+            return "status-pill-approved";
+        }
+        return "status-pill-denied";
+    };
+
+    const statusToApiValue = (rawStatus) => {
+        const numeric = Number(rawStatus);
+        if (!Number.isNaN(numeric)) {
+            return numeric;
+        }
+
+        const map = {
+            pending: 0,
+            underreview: 1,
+            approved: 2,
+            denied: 3
+        };
+
+        const normalized = String(rawStatus || "").replace(/\s+/g, "").toLowerCase();
+        return Object.prototype.hasOwnProperty.call(map, normalized) ? map[normalized] : rawStatus;
+    };
+
+    const showApiError = (form, message) => {
+        if (!form) {
+            return;
+        }
+
+        let errorBox = form.querySelector("[data-api-error='true']");
+        if (!errorBox) {
+            errorBox = document.createElement("div");
+            errorBox.setAttribute("data-api-error", "true");
+            errorBox.className = "alert alert-danger";
+            form.prepend(errorBox);
+        }
+
+        errorBox.textContent = message;
+    };
+
+    const initProfessorCreateApiSubmit = () => {
+        const form = document.querySelector("[data-professor-request-create-form='true']");
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const apiUrl = form.getAttribute("data-api-url");
+            const trackUrlTemplate = form.getAttribute("data-track-url-template");
+            if (!apiUrl || !trackUrlTemplate) {
+                showApiError(form, "Request API is not configured.");
+                return;
+            }
+
+            const payload = {
+                courseId: form.querySelector("[name='CourseID']")?.value || null,
+                requestedCourseName: form.querySelector("[name='RequestedCourseName']")?.value || "",
+                requestedCourseSection: form.querySelector("[name='RequestedCourseSection']")?.value || "",
+                requestedCourseProfessor: form.querySelector("[name='RequestedCourseProfessor']")?.value || "",
+                professorName: form.querySelector("[name='ProfessorName']")?.value || "",
+                professorEmail: form.querySelector("[name='ProfessorEmail']")?.value || "",
+                requestNotes: form.querySelector("[name='RequestNotes']")?.value || ""
+            };
+
+            if (payload.courseId === "") {
+                payload.courseId = null;
+            } else if (payload.courseId !== null) {
+                payload.courseId = Number(payload.courseId);
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    showApiError(form, "Unable to submit request right now. Please try again.");
+                    return;
+                }
+
+                const created = await response.json();
+                if (!created?.requestId) {
+                    showApiError(form, "Request was created, but the response was invalid.");
+                    return;
+                }
+
+                const target = trackUrlTemplate.replace("__id__", String(created.requestId));
+                window.location.assign(target);
+            } catch {
+                showApiError(form, "Network error while submitting request.");
+            }
+        });
+    };
+
+    const initProfessorTrackApiRefresh = () => {
+        const container = document.querySelector("[data-professor-request-track='true']");
+        if (!container) {
+            return;
+        }
+
+        const apiUrl = container.getAttribute("data-status-api-url");
+        if (!apiUrl) {
+            return;
+        }
+
+        const progressBar = container.querySelector("[data-track-progress-bar='true']");
+        const statusText = container.querySelector("[data-track-current-status='true']");
+        const lastUpdatedText = container.querySelector("[data-track-last-updated='true']");
+        const adminNotesText = container.querySelector("[data-track-admin-notes='true']");
+        const submittedStage = container.querySelector("[data-track-stage-submitted='true']");
+        const reviewStage = container.querySelector("[data-track-stage-review='true']");
+        const finalStage = container.querySelector("[data-track-stage-final='true']");
+
+        const progressClassMap = ["progress-w-25", "progress-w-60", "progress-w-100"];
+
+        fetch(apiUrl)
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                if (!data) {
+                    return;
+                }
+
+                const progress = Number(data.progressPercent || 0);
+                const status = data.status || "Pending";
+                const isDenied = String(status).toLowerCase() === "denied";
+
+                if (progressBar) {
+                    progressClassMap.forEach((cssClass) => progressBar.classList.remove(cssClass));
+                    const widthClass = progress >= 100 ? "progress-w-100" : progress >= 60 ? "progress-w-60" : "progress-w-25";
+                    progressBar.classList.add(widthClass);
+                    progressBar.classList.toggle("bg-danger", isDenied);
+                    progressBar.classList.toggle("request-progress-warning", !isDenied);
+                }
+
+                if (statusText) {
+                    statusText.textContent = status;
+                }
+
+                if (lastUpdatedText) {
+                    lastUpdatedText.textContent = formatLocalDate(data.lastUpdatedAtUtc);
+                }
+
+                if (adminNotesText) {
+                    adminNotesText.textContent = (data.adminNotes || "").trim() || "No updates yet.";
+                }
+
+                if (submittedStage) {
+                    submittedStage.textContent = "Complete";
+                }
+                if (reviewStage) {
+                    reviewStage.textContent = progress >= 60 ? "Complete" : "Pending";
+                }
+                if (finalStage) {
+                    finalStage.textContent = progress >= 100 ? "Complete" : "Pending";
+                }
+            })
+            .catch(() => {
+                // Keep server-rendered values on API failure.
+            });
+    };
+
+    const initAdminRequestsApiList = () => {
+        const form = document.querySelector("[data-admin-requests-filter='true']");
+        const tbody = document.querySelector("[data-admin-requests-tbody='true']");
+        if (!form || !tbody) {
+            return;
+        }
+
+        const apiUrl = form.getAttribute("data-api-url");
+        const reviewTemplate = form.getAttribute("data-review-url-template");
+        if (!apiUrl || !reviewTemplate) {
+            return;
+        }
+
+        const renderRows = (items) => {
+            if (!Array.isArray(items) || items.length === 0) {
+                tbody.innerHTML = "<tr><td colspan=\"5\" class=\"text-muted\">No SI requests found.</td></tr>";
+                return;
+            }
+
+            tbody.innerHTML = items.map((item) => {
+                const reviewUrl = reviewTemplate.replace("__id__", String(item.requestId));
+                return `<tr>
+                    <td>${htmlEncode(item.courseDisplay || "Manual Course Entry")}</td>
+                    <td>${htmlEncode(item.professorName || "")}</td>
+                    <td>${htmlEncode(formatLocalDate(item.submittedAtUtc))}</td>
+                    <td><span class="status-pill ${statusClass(item.status)}">${htmlEncode(item.status || "")}</span></td>
+                    <td><a href="${reviewUrl}">Review</a></td>
+                </tr>`;
+            }).join("");
+        };
+
+        const load = async () => {
+            const status = form.querySelector("[name='status']")?.value || "";
+            const query = new URLSearchParams();
+            if (status) {
+                query.set("status", status);
+            }
+            query.set("page", "1");
+            query.set("pageSize", "200");
+
+            const response = await fetch(`${apiUrl}?${query.toString()}`);
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+            renderRows(data.items || []);
+        };
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            try {
+                await load();
+            } catch {
+                showApiError(form, "Unable to load requests from API.");
+            }
+        });
+
+        load().catch(() => {
+            // Keep server-rendered list on API failure.
+        });
+    };
+
+    const initAdminRequestApiUpdate = () => {
+        const form = document.querySelector("[data-admin-request-update-form='true']");
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const apiUrl = form.getAttribute("data-api-url");
+            const successUrl = form.getAttribute("data-success-url");
+            if (!apiUrl || !successUrl) {
+                showApiError(form, "Update API is not configured.");
+                return;
+            }
+
+            const rawStatus = form.querySelector("[name='Status']")?.value;
+            const adminNotes = form.querySelector("[name='AdminNotes']")?.value || "";
+            const payload = { status: statusToApiValue(rawStatus), adminNotes };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: "PATCH",
+                    credentials: "same-origin",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let apiMessage = "Unable to save status right now. Please try again.";
+                    try {
+                        const errorBody = await response.json();
+                        if (errorBody?.message) {
+                            apiMessage = String(errorBody.message);
+                        }
+                    } catch {
+                        // Keep default message.
+                    }
+                    showApiError(form, apiMessage);
+                    return;
+                }
+
+                window.location.assign(successUrl);
+            } catch {
+                showApiError(form, "Network error while saving status.");
+            }
+        });
+    };
+
+    const initCourseDetailsApiSessions = () => {
+        const container = document.querySelector("[data-course-sessions-api='true']");
+        const tbody = container?.querySelector("[data-course-sessions-tbody='true']");
+        if (!container || !tbody) {
+            return;
+        }
+
+        const apiUrl = container.getAttribute("data-api-url");
+        const editTemplate = container.getAttribute("data-edit-url-template");
+        const deleteTemplate = container.getAttribute("data-delete-url-template");
+        if (!apiUrl || !editTemplate || !deleteTemplate) {
+            return;
+        }
+
+        fetch(apiUrl)
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                const sessions = data?.sessions || [];
+                if (!Array.isArray(sessions) || sessions.length === 0) {
+                    tbody.innerHTML = "<tr><td colspan=\"4\" class=\"text-muted\">No sessions added yet.</td></tr>";
+                    return;
+                }
+
+                tbody.innerHTML = sessions.map((session) => {
+                    const editUrl = editTemplate.replace("__id__", String(session.sessionId));
+                    const deleteUrl = deleteTemplate.replace("__id__", String(session.sessionId));
+                    const time = session.endTime ? `${session.startTime}-${session.endTime}` : session.startTime;
+                    return `<tr>
+                        <td>${htmlEncode(session.day || "")}</td>
+                        <td>${htmlEncode(time || "")}</td>
+                        <td>${htmlEncode(session.location || "")}</td>
+                        <td class="text-nowrap"><a href="${editUrl}">Edit</a> | <a href="${deleteUrl}">Delete</a></td>
+                    </tr>`;
+                }).join("");
+            })
+            .catch(() => {
+                // Keep server-rendered list on API failure.
+            });
+    };
+
+    const initStudentScheduleApiSummary = () => {
+        const form = document.querySelector("[data-student-schedule-form='true']");
+        if (!form) {
+            return;
+        }
+
+        const apiUrl = form.getAttribute("data-api-url");
+        const courseCountEl = document.querySelector("[data-student-course-count='true']");
+        const sessionCountEl = document.querySelector("[data-student-session-count='true']");
+        if (!apiUrl || !courseCountEl || !sessionCountEl) {
+            return;
+        }
+
+        const search = form.querySelector("[name='search']")?.value || "";
+        const day = form.querySelector("[name='day']")?.value || "";
+        const professor = form.querySelector("[name='professor']")?.value || "";
+
+        const query = new URLSearchParams();
+        if (search) query.set("search", search);
+        if (day) query.set("day", day);
+        if (professor) query.set("professor", professor);
+        query.set("page", "1");
+        query.set("pageSize", "500");
+
+        fetch(`${apiUrl}?${query.toString()}`)
+            .then((response) => (response.ok ? response.json() : null))
+            .then((data) => {
+                const items = data?.items || [];
+                if (!Array.isArray(items)) {
+                    return;
+                }
+
+                const uniqueCourses = new Set(items.map((item) => `${item.courseId}|${item.courseSection}`));
+                courseCountEl.textContent = String(uniqueCourses.size);
+                sessionCountEl.textContent = String(items.length);
+            })
+            .catch(() => {
+                // Keep server-rendered counts on API failure.
+            });
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
         initThemeToggle();
         initCourseFormEnhancer();
         initSessionFormEnhancer();
+        initProfessorCreateApiSubmit();
+        initProfessorTrackApiRefresh();
+        initAdminRequestsApiList();
+        initAdminRequestApiUpdate();
+        initCourseDetailsApiSessions();
+        initStudentScheduleApiSummary();
     });
 })();
+

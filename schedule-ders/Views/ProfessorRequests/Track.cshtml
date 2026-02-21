@@ -19,7 +19,10 @@
     };
 }
 
-<section class="page-shell">
+<section class="page-shell"
+         data-professor-request-track="true"
+         data-request-id="@Model.SIRequestID"
+         data-status-api-url="@Url.Content($"~/api/v1/professor/requests/{Model.SIRequestID}/status")">
 <div class="page-header mb-1">
     <h1 class="page-title">Request Tracker</h1>
     <div class="page-actions"><a asp-action="Index" class="btn btn-secondary">Back</a></div>
@@ -45,12 +48,12 @@
             <span>@(isDenied ? "Denied" : "Approved")</span>
         </div>
         <div class="progress request-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@progress">
-            <div class="progress-bar @trackColor @progressWidthClass"></div>
+            <div class="progress-bar @trackColor @progressWidthClass" data-track-progress-bar="true"></div>
         </div>
         <div class="d-flex justify-content-between small mt-2 text-muted">
-            <span>@(Model.Status is schedule_ders.Models.SIRequestStatus.Pending or schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
-            <span>@(Model.Status is schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
-            <span>@(Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
+            <span data-track-stage-submitted="true">@(Model.Status is schedule_ders.Models.SIRequestStatus.Pending or schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
+            <span data-track-stage-review="true">@(Model.Status is schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
+            <span data-track-stage-final="true">@(Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
         </div>
     </div>
 </div>
@@ -59,7 +62,7 @@
     <div class="col-md-4">
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Current Status</div>
-            <div class="fw-semibold">@Model.Status</div>
+            <div class="fw-semibold" data-track-current-status="true">@Model.Status</div>
         </div>
     </div>
     <div class="col-md-4">
@@ -71,7 +74,7 @@
     <div class="col-md-4">
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Last Updated</div>
-            <div class="fw-semibold">@((Model.LastUpdatedAtUtc?.ToLocalTime().ToString("f")) ?? "No updates yet")</div>
+            <div class="fw-semibold" data-track-last-updated="true">@((Model.LastUpdatedAtUtc?.ToLocalTime().ToString("f")) ?? "No updates yet")</div>
         </div>
     </div>
 </div>
@@ -81,6 +84,6 @@
     <dd class="col-sm-9">@Model.RequestNotes</dd>
 
     <dt class="col-sm-3 notes-section-break">Admin Notes</dt>
-    <dd class="col-sm-9 notes-section-break">@(string.IsNullOrWhiteSpace(Model.AdminNotes) ? "No updates yet." : Model.AdminNotes)</dd>
+    <dd class="col-sm-9 notes-section-break" data-track-admin-notes="true">@(string.IsNullOrWhiteSpace(Model.AdminNotes) ? "No updates yet." : Model.AdminNotes)</dd>
 </dl>
 </section>
