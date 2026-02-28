@@ -33,10 +33,10 @@ public class ProfessorRequestService : IProfessorRequestService
         else
         {
             if (string.IsNullOrWhiteSpace(input.RequestedCourseName) ||
-                string.IsNullOrWhiteSpace(input.RequestedCourseSection) ||
-                string.IsNullOrWhiteSpace(input.RequestedCourseProfessor))
+                string.IsNullOrWhiteSpace(input.RequestedCourseTitle) ||
+                string.IsNullOrWhiteSpace(input.RequestedCourseSection))
             {
-                throw new ArgumentException("Manual course fields are required when CourseId is not provided.");
+                throw new ArgumentException("Course, course name, and section are required when CourseId is not provided.");
             }
         }
 
@@ -44,10 +44,11 @@ public class ProfessorRequestService : IProfessorRequestService
         {
             CourseID = input.CourseId,
             RequestedCourseName = selectedCourse?.CourseName ?? input.RequestedCourseName!.Trim(),
+            RequestedCourseTitle = selectedCourse?.CourseTitle ?? input.RequestedCourseTitle!.Trim(),
             RequestedCourseSection = selectedCourse?.CourseSection ?? input.RequestedCourseSection!.Trim(),
-            RequestedCourseProfessor = selectedCourse?.CourseProfessor ?? input.RequestedCourseProfessor!.Trim(),
-            ProfessorName = input.ProfessorName.Trim(),
-            ProfessorEmail = input.ProfessorEmail.Trim(),
+            RequestedCourseProfessor = selectedCourse?.CourseProfessor ?? (input.ProfessorName ?? string.Empty).Trim(),
+            ProfessorName = (input.ProfessorName ?? string.Empty).Trim(),
+            ProfessorEmail = (input.ProfessorEmail ?? string.Empty).Trim(),
             RequestNotes = input.RequestNotes.Trim(),
             CreatedByUserId = createdByUserId,
             Status = SIRequestStatus.Pending,
@@ -104,6 +105,7 @@ public class ProfessorRequestService : IProfessorRequestService
     private static string BuildCourseDisplay(SIRequest request)
     {
         var name = request.RequestedCourseName.Trim();
+        var title = request.RequestedCourseTitle.Trim();
         var section = request.RequestedCourseSection.Trim();
         var professor = request.RequestedCourseProfessor.Trim();
 
@@ -112,8 +114,13 @@ public class ProfessorRequestService : IProfessorRequestService
             return "Manual Course Entry";
         }
 
-        var title = string.IsNullOrWhiteSpace(section) ? name : $"{name} ({section})";
-        return string.IsNullOrWhiteSpace(professor) ? title : $"{title} - {professor}";
+        var courseDisplay = string.IsNullOrWhiteSpace(section) ? name : $"{name} ({section})";
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            courseDisplay = $"{courseDisplay} - {title}";
+        }
+
+        return string.IsNullOrWhiteSpace(professor) ? courseDisplay : $"{courseDisplay} - {professor}";
     }
 
     private static int GetProgressPercent(SIRequestStatus status) =>

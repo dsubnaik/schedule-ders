@@ -1,7 +1,23 @@
 @model IEnumerable<schedule_ders.Models.Course>
 @{
     ViewData["Title"] = "Courses";
-    var currentSearch = ViewData["CurrentSearch"] as string;
+    var currentCrn = ViewData["CurrentCrn"] as string ?? string.Empty;
+    var currentCourse = ViewData["CurrentCourse"] as string ?? string.Empty;
+    var currentTime = ViewData["CurrentTime"] as string ?? string.Empty;
+    var currentProfessor = ViewData["CurrentProfessor"] as string ?? string.Empty;
+    var currentDay = ViewData["CurrentDay"] as string ?? string.Empty;
+    var professorOptions = ViewBag.ProfessorOptions as List<string> ?? [];
+    var dayOptions = ViewBag.DayOptions as List<string> ?? [];
+    var timeSuggestions = new List<string>();
+    for (var hour = 6; hour <= 22; hour++)
+    {
+        foreach (var minute in new[] { 0, 15, 30, 45, 50 })
+        {
+            var displayHour = hour % 12 == 0 ? 12 : hour % 12;
+            var suffix = hour >= 12 ? "pm" : "am";
+            timeSuggestions.Add($"{displayHour}:{minute:00}{suffix}");
+        }
+    }
 }
 
 <section class="page-shell">
@@ -12,19 +28,75 @@
     </div>
 </div>
 
+@if (ViewData["AdminNotification"] is string adminNotice && !string.IsNullOrWhiteSpace(adminNotice))
+{
+    <div class="alert alert-info mb-2" role="status">
+        @adminNotice
+    </div>
+}
+
 <form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
-    <div class="col-md-6">
+    <div class="col">
         <input type="text"
-               name="search"
-               value="@currentSearch"
+               name="crn"
+               value="@currentCrn"
                class="form-control"
-               placeholder="Search by course, section, professor, or meeting times" />
+               placeholder="CRN" />
+    </div>
+    <div class="col">
+        <input type="text"
+               name="course"
+               value="@currentCourse"
+               class="form-control"
+               placeholder="Course or name" />
+    </div>
+    <div class="col">
+        <input type="text"
+               name="professor"
+               value="@currentProfessor"
+               class="form-control"
+               list="course-professor-options"
+               placeholder="Professor" />
+        <datalist id="course-professor-options">
+            @foreach (var option in professorOptions)
+            {
+                <option value="@option"></option>
+            }
+        </datalist>
+    </div>
+    <div class="col">
+        <input type="text"
+               name="day"
+               value="@currentDay"
+               class="form-control"
+               list="course-day-options"
+               placeholder="Meeting day(s)" />
+        <datalist id="course-day-options">
+            @foreach (var option in dayOptions)
+            {
+                <option value="@option"></option>
+            }
+        </datalist>
+    </div>
+    <div class="col">
+        <input type="text"
+               name="time"
+               value="@currentTime"
+               class="form-control"
+               list="course-search-time-options"
+               placeholder="Time (e.g. 10:03)" />
+        <datalist id="course-search-time-options">
+            @foreach (var option in timeSuggestions)
+            {
+                <option value="@option"></option>
+            }
+        </datalist>
     </div>
     <div class="col-auto">
-        <button type="submit" class="btn btn-outline-secondary">Search</button>
+        <button type="submit" class="btn btn-outline-secondary">Apply</button>
     </div>
     <div class="col-auto">
-        <a asp-action="Index" class="btn btn-link">Clear</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
     </div>
 </form>
 
@@ -34,6 +106,7 @@
             <tr>
                 <th>@Html.DisplayNameFor(model => model.CourseCrn)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseName)</th>
+                <th>@Html.DisplayNameFor(model => model.CourseTitle)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseSection)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseProfessor)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseMeetingDays)</th>
@@ -48,6 +121,7 @@
             <tr>
                 <td>@item.CourseCrn</td>
                 <td>@item.CourseName</td>
+                <td>@item.CourseTitle</td>
                 <td>@item.CourseSection</td>
                 <td>@item.CourseProfessor</td>
                 <td>@item.CourseMeetingDays</td>
@@ -59,14 +133,28 @@
                     }
                     else
                     {
-                        @item.Sessions.Count
+                        @(item.Sessions
+                            .Select(s => $"{s.Day}|{s.Time}|{s.Location}")
+                            .Distinct()
+                            .Count())
                     }
                 </td>
                 <td class="text-nowrap">
-                    <a asp-action="Details" asp-route-id="@item.CourseID">Details</a> |
-                    <a asp-action="Edit" asp-route-id="@item.CourseID">Edit</a> |
-                    <a asp-action="Delete" asp-route-id="@item.CourseID">Delete</a> |
-                    <a asp-controller="Sessions" asp-action="Index" asp-route-courseId="@item.CourseID">Sessions</a>
+                    @{
+                        var courseDisplay = $"{item.CourseName} ({item.CourseSection}) - {item.CourseTitle}";
+                    }
+                    <span class="professor-request-actions">
+                        <a asp-action="Details" asp-route-id="@item.CourseID" class="request-action-link">Details</a>
+                        <a asp-action="Edit" asp-route-id="@item.CourseID" class="request-action-link">Edit</a>
+                        <a asp-controller="Sessions" asp-action="Index" asp-route-courseId="@item.CourseID" class="request-action-link">Sessions</a>
+                        <button type="button"
+                                class="request-action-link request-action-delete"
+                                data-course-delete-trigger="true"
+                                data-course-id="@item.CourseID"
+                                data-course-display="@courseDisplay"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteCourseModal">Delete</button>
+                    </span>
                 </td>
             </tr>
         }
@@ -74,3 +162,26 @@
     </table>
 </div>
 </section>
+
+<div class="modal fade" id="deleteCourseModal" tabindex="-1" aria-labelledby="deleteCourseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content request-delete-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCourseModalLabel">Delete Course</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to delete this course?</p>
+                <p class="mb-0 text-muted"><strong>Course:</strong> <span id="deleteCourseName">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteCourseIdInput" />
+                    <button type="submit" class="btn btn-danger">Delete Course</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

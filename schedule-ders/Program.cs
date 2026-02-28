@@ -38,6 +38,11 @@ builder.Services.AddScoped<IAdminRequestService, AdminRequestService>();
 var app = builder.Build();
 
 await IdentitySeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());
+var removedDuplicateSessions = await SessionDeduper.DeduplicateAsync(app.Services);
+if (removedDuplicateSessions > 0)
+{
+    app.Logger.LogInformation("Removed {Count} duplicate session rows during startup cleanup.", removedDuplicateSessions);
+}
 
 if (!app.Environment.IsDevelopment())
 {

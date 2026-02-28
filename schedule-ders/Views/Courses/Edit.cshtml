@@ -1,24 +1,16 @@
 @model schedule_ders.Models.Course
 @{
     ViewData["Title"] = "Edit Course";
+    ViewData["PageTitle"] = "Edit Course";
+    ViewData["PageSubtitle"] = "Update course, office hours, and SI defaults.";
+    ViewData["SubmitLabel"] = "Save";
+    ViewData["FormId"] = "editCourseForm";
+    ViewData["FormAction"] = "Edit";
+    ViewData["IncludeCourseId"] = true;
+    ViewData["EditorWidthClass"] = "col-12 col-lg-9 col-xl-8";
 }
 
-<section class="page-shell">
-<h1 class="page-title">Edit Course</h1>
-<p class="page-subtitle">Update course, office hours, and SI defaults.</p>
-
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Edit" method="post" class="form-card">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="CourseID" />
-            <partial name="_CourseFormFields" model="Model" />
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a asp-action="Index" class="btn btn-secondary">Back</a>
-        </form>
-    </div>
-</div>
-</section>
+<partial name="_CourseEditor" model="Model" />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

@@ -2,10 +2,25 @@
 @{
     ViewData["Title"] = "SI Sessions";
     var currentSearch = ViewData["CurrentSearch"] as string ?? string.Empty;
+    var currentTime = ViewData["CurrentTime"] as string ?? string.Empty;
+    var currentLeader = ViewData["CurrentLeader"] as string ?? string.Empty;
+    var currentLocation = ViewData["CurrentLocation"] as string ?? string.Empty;
     var currentDay = ViewData["CurrentDay"] as string ?? string.Empty;
     var currentCourseId = ViewData["CurrentCourseId"] as int?;
     var dayOptions = ViewBag.DayOptions as List<string> ?? [];
+    var leaderOptions = ViewBag.LeaderOptions as List<string> ?? [];
+    var locationOptions = ViewBag.LocationOptions as List<string> ?? [];
     var currentUrl = Context.Request.Path + Context.Request.QueryString;
+    var timeSuggestions = new List<string>();
+    for (var hour = 6; hour <= 22; hour++)
+    {
+        foreach (var minute in new[] { 0, 15, 30, 45, 50 })
+        {
+            var displayHour = hour % 12 == 0 ? 12 : hour % 12;
+            var suffix = hour >= 12 ? "pm" : "am";
+            timeSuggestions.Add($"{displayHour}:{minute:00}{suffix}");
+        }
+    }
 }
 
 <section class="page-shell">
@@ -22,10 +37,56 @@
 </div>
 
 <form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
-    <div class="col-md-4">
-        <input type="text" name="search" value="@currentSearch" class="form-control" placeholder="Course, day, time, location, SI leader" />
+    <div class="col">
+        <input type="text"
+               name="search"
+               value="@currentSearch"
+               class="form-control"
+               placeholder="Course or section" />
     </div>
-    <div class="col-md-2">
+    <div class="col">
+        <input type="text"
+               name="time"
+               value="@currentTime"
+               class="form-control"
+               list="session-search-time-options"
+               placeholder="Time (e.g. 10:03)" />
+        <datalist id="session-search-time-options">
+            @foreach (var option in timeSuggestions)
+            {
+                <option value="@option"></option>
+            }
+        </datalist>
+    </div>
+    <div class="col">
+        <input type="text"
+               name="leader"
+               value="@currentLeader"
+               class="form-control"
+               list="session-leader-options"
+               placeholder="SI leader" />
+        <datalist id="session-leader-options">
+            @foreach (var option in leaderOptions)
+            {
+                <option value="@option"></option>
+            }
+        </datalist>
+    </div>
+    <div class="col">
+        <input type="text"
+               name="location"
+               value="@currentLocation"
+               class="form-control"
+               list="session-location-options"
+               placeholder="Location" />
+        <datalist id="session-location-options">
+            @foreach (var option in locationOptions)
+            {
+                <option value="@option"></option>
+            }
+        </datalist>
+    </div>
+    <div class="col">
         <select name="day" class="form-select">
             <option value="">All days</option>
             @foreach (var day in dayOptions)
@@ -41,58 +102,126 @@
             }
         </select>
     </div>
-    <div class="col-md-4">
+    <div class="col">
         <select name="courseId" class="form-select" asp-items="ViewBag.CourseFilterOptions">
             <option value="">All courses</option>
         </select>
     </div>
-    <div class="col-md-2 d-grid">
-        <button type="submit" class="btn btn-outline-secondary">Filter</button>
+    <div class="col-auto d-grid">
+        <button type="submit" class="btn btn-outline-secondary">Apply</button>
+    </div>
+    <div class="col-auto d-grid">
+        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
     </div>
 </form>
 
-<div class="mb-3">
-    <a asp-action="Index" class="btn btn-link p-0">Clear filters</a>
-</div>
+@if (!Model.Any())
+{
+    <div class="empty-state">
+        <p class="empty-state-title">No sessions found.</p>
+        <p class="empty-state-note">Try changing filters or create a new session slot.</p>
+    </div>
+}
+else
+{
+    var groupedSessions = Model
+        .GroupBy(s => new
+        {
+            CourseName = s.Course?.CourseName ?? "Unknown Course",
+            CourseTitle = s.Course?.CourseTitle ?? string.Empty,
+            Leader = s.Course?.CourseLeader ?? string.Empty,
+            s.Day,
+            s.Time,
+            s.Location
+        })
+        .OrderBy(g => g.Key.CourseName)
+        .ThenBy(g => g.Key.Day)
+        .ThenBy(g => g.Key.Time)
+        .ToList();
 
-<div class="table-responsive data-table">
-    <table class="table table-striped align-middle data-table-compact">
-        <thead>
-            <tr>
-                <th>Course</th>
-                <th>SI Leader</th>
-                <th>Day</th>
-                <th>Time</th>
-                <th>Location</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-        @if (!Model.Any())
+    <div class="row g-3">
+        @foreach (var group in groupedSessions)
         {
-            <tr>
-                <td colspan="6" class="text-muted">No sessions found.</td>
-            </tr>
+            var rows = group
+                .OrderBy(s => s.Course?.CourseSection)
+                .ThenBy(s => s.SessionID)
+                .ToList();
+            var sectionSummary = string.Join(", ", rows
+                .Select(s => s.Course?.CourseSection)
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Distinct());
+            var firstSession = rows.First();
+            var groupedIds = string.Join(",", rows.Select(s => s.SessionID));
+            var groupedDisplay = $"{group.Key.CourseName} ({(string.IsNullOrWhiteSpace(sectionSummary) ? "-" : sectionSummary)}) - {group.Key.CourseTitle} - {group.Key.Day} {group.Key.Time} @ {group.Key.Location}";
+
+            <div class="col-12 col-md-6 col-lg-4">
+                <article class="card h-100 shadow-sm student-course-card">
+                    <div class="card-body">
+                        <div class="session-card-top mb-2">
+                            <h2 class="h5 mb-0">
+                                <span class="fw-bold">@group.Key.CourseName</span>
+                                @if (!string.IsNullOrWhiteSpace(group.Key.CourseTitle))
+                                {
+                                    <span class="text-muted"> - @group.Key.CourseTitle</span>
+                                }
+                            </h2>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                            <span class="badge session-meta-badge session-meta-badge-sections">Sections @(string.IsNullOrWhiteSpace(sectionSummary) ? "-" : sectionSummary)</span>
+                            <span class="badge session-meta-badge session-meta-badge-leader">SI Leader: @group.Key.Leader</span>
+                        </div>
+                        <div class="student-session-item session-card-slot mb-2">
+                            <div class="student-session-day">@group.Key.Day</div>
+                            <div class="student-session-time">@group.Key.Time</div>
+                            <div class="student-session-location">@group.Key.Location</div>
+                        </div>
+                        <div class="session-card-actions-row">
+                            <span class="professor-request-actions">
+                                <a asp-action="Edit"
+                                   asp-route-id="@firstSession.SessionID"
+                                   asp-route-sessionIds="@groupedIds"
+                                   asp-route-returnUrl="@currentUrl"
+                                   class="request-action-link request-action-link-compact">Edit</a>
+                                <a asp-controller="Courses" asp-action="Details" asp-route-id="@firstSession.CourseID" class="request-action-link request-action-link-compact">Course</a>
+                                <button type="button"
+                                        class="request-action-link request-action-delete request-action-link-compact"
+                                        data-session-delete-trigger="true"
+                                        data-session-id="@firstSession.SessionID"
+                                        data-session-ids="@groupedIds"
+                                        data-session-display="@groupedDisplay"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteSessionModal">Delete</button>
+                            </span>
+                        </div>
+                    </div>
+                </article>
+            </div>
         }
-        else
-        {
-            @foreach (var session in Model)
-            {
-                <tr>
-                    <td>@(session.Course is null ? "Unknown Course" : $"{session.Course.CourseName} ({session.Course.CourseSection})")</td>
-                    <td>@session.Course?.CourseLeader</td>
-                    <td>@session.Day</td>
-                    <td>@session.Time</td>
-                    <td>@session.Location</td>
-                    <td class="text-nowrap">
-                        <a asp-action="Edit" asp-route-id="@session.SessionID" asp-route-returnUrl="@currentUrl">Edit</a> |
-                        <a asp-action="Delete" asp-route-id="@session.SessionID" asp-route-returnUrl="@currentUrl">Delete</a> |
-                        <a asp-controller="Courses" asp-action="Details" asp-route-id="@session.CourseID">Course</a>
-                    </td>
-                </tr>
-            }
-        }
-        </tbody>
-    </table>
-</div>
+    </div>
+}
 </section>
+
+<div class="modal fade" id="deleteSessionModal" tabindex="-1" aria-labelledby="deleteSessionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content request-delete-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSessionModalLabel">Delete Session</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to delete this session?</p>
+                <p class="mb-0 text-muted"><strong>Session:</strong> <span id="deleteSessionName">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteSessionIdInput" />
+                    <input type="hidden" name="sessionIds" id="deleteSessionIdsInput" />
+                    <input type="hidden" name="returnUrl" value="@currentUrl" />
+                    <button type="submit" class="btn btn-danger">Delete Session</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

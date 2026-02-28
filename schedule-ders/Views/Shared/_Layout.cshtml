@@ -22,7 +22,11 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/schedule-ders.styles.css" asp-append-version="true" />
 </head>
-<body>
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<body class="@((currentController == "Home" && currentAction == "Index") ? "home-landing" : string.Empty)">
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -38,35 +42,48 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
                         @if (User.Identity?.IsAuthenticated ?? false)
                         {
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
-                            </li>
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Courses" asp-action="Index">Courses</a>
+                                    <a class="nav-link text-dark @(currentController == "Courses" ? "active" : string.Empty)"
+                                       asp-controller="Courses"
+                                       asp-action="Index">Courses</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Sessions" asp-action="Index">Sessions</a>
+                                    <a class="nav-link text-dark @(currentController == "Sessions" ? "active" : string.Empty)"
+                                       asp-controller="Sessions"
+                                       asp-action="Index">Sessions</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="AdminRequests" asp-action="Index">SI Requests</a>
+                                    <a class="nav-link text-dark @(currentController == "AdminRequests" ? "active" : string.Empty)"
+                                       asp-controller="AdminRequests"
+                                       asp-action="Index">SI Requests</a>
                                 </li>
                             }
                             @if (User.IsInRole("Professor"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="ProfessorRequests" asp-action="Index">My Requests</a>
+                                    <a class="nav-link text-dark @(currentController == "ProfessorRequests" ? "active" : string.Empty)"
+                                       asp-controller="ProfessorRequests"
+                                       asp-action="Index">My Requests</a>
                                 </li>
                             }
                         }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @((currentController == "Home" && currentAction == "Index") ? "active" : string.Empty)"
+                                   asp-area=""
+                                   asp-controller="Home"
+                                   asp-action="Index">Home</a>
+                            </li>
+                        }
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="StudentSchedule" asp-action="Index">SI Schedule</a>
+                            <a class="nav-link text-dark @(currentController == "StudentSchedule" ? "active" : string.Empty)"
+                               asp-controller="StudentSchedule"
+                               asp-action="Index">SI Schedule</a>
                         </li>
                     </ul>
 
@@ -95,7 +112,7 @@
     <footer class="footer text-muted">
         <div class="container footer-content">
             <span>&copy; @DateTime.UtcNow.Year</span>
-            <span class="footer-brand">Schedule-Ders</span>
+            <span class="footer-brand">Schedule-Ders. All rights reserved</span>
             <span class="footer-sep" aria-hidden="true">|</span>
             <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>

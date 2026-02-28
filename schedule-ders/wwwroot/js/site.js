@@ -37,19 +37,21 @@
         });
     };
 
-    const setTimeSelectValue = (select, value) => {
-        if (!select || !value) {
+    const setTimeFieldValue = (field, value) => {
+        if (!field || !value) {
             return;
         }
 
-        const optionExists = Array.from(select.options).some((o) => o.value === value);
-        if (!optionExists) {
-            const extra = document.createElement("option");
-            extra.value = value;
-            extra.textContent = value;
-            select.appendChild(extra);
+        if (field.tagName === "SELECT") {
+            const optionExists = Array.from(field.options).some((o) => o.value === value);
+            if (!optionExists) {
+                const extra = document.createElement("option");
+                extra.value = value;
+                extra.textContent = value;
+                field.appendChild(extra);
+            }
         }
-        select.value = value;
+        field.value = value;
     };
 
     const initCourseFormEnhancer = () => {
@@ -64,9 +66,34 @@
         const startInput = document.getElementById("meetingStartInput");
         const endInput = document.getElementById("meetingEndInput");
         const officeHoursTimeInput = document.getElementById("officeHoursTimeInput");
+        const officeHoursDayInput = document.getElementById("officeHoursDayInput");
         const officeStartInput = document.getElementById("officeStartInput");
         const officeEndInput = document.getElementById("officeEndInput");
         const dayButtons = Array.from(document.querySelectorAll(".day-toggle"));
+        const officeDayButtons = Array.from(document.querySelectorAll(".office-day-toggle"));
+
+        const officeDayMap = {
+            monday: "M",
+            tuesday: "T",
+            wednesday: "W",
+            thursday: "R",
+            friday: "F"
+        };
+
+        const normalizeOfficeDay = (value) => {
+            const trimmed = (value || "").trim();
+            if (!trimmed) {
+                return "";
+            }
+
+            const upper = trimmed.toUpperCase();
+            if (["M", "T", "W", "R", "F"].includes(upper)) {
+                return upper;
+            }
+
+            const mapped = officeDayMap[trimmed.toLowerCase()];
+            return mapped || trimmed;
+        };
 
         const applyDaysToButtons = () => {
             const selected = new Set((daysInput?.value || "").split(""));
@@ -92,8 +119,8 @@
             if (parts.length !== 2) {
                 return;
             }
-            setTimeSelectValue(startInput, parts[0].trim());
-            setTimeSelectValue(endInput, parts[1].trim());
+            setTimeFieldValue(startInput, parts[0].trim());
+            setTimeFieldValue(endInput, parts[1].trim());
         };
 
         const applyHiddenOfficeHoursToSelects = () => {
@@ -101,8 +128,17 @@
             if (parts.length !== 2) {
                 return;
             }
-            setTimeSelectValue(officeStartInput, parts[0].trim());
-            setTimeSelectValue(officeEndInput, parts[1].trim());
+            setTimeFieldValue(officeStartInput, parts[0].trim());
+            setTimeFieldValue(officeEndInput, parts[1].trim());
+        };
+
+        const applyOfficeDayToButtons = () => {
+            const selectedDay = normalizeOfficeDay(officeHoursDayInput?.value || "");
+            officeDayButtons.forEach((btn) => {
+                const isActive = btn.dataset.day === selectedDay;
+                btn.classList.toggle("btn-primary", isActive);
+                btn.classList.toggle("btn-outline-primary", !isActive);
+            });
         };
 
         const updateTimeHidden = () => {
@@ -135,18 +171,33 @@
             });
         });
 
+        officeDayButtons.forEach((btn) => {
+            btn.addEventListener("click", () => {
+                if (officeHoursDayInput) {
+                    officeHoursDayInput.value = btn.dataset.day || "";
+                }
+                applyOfficeDayToButtons();
+            });
+        });
+
+        startInput?.addEventListener("input", updateTimeHidden);
+        endInput?.addEventListener("input", updateTimeHidden);
         startInput?.addEventListener("change", updateTimeHidden);
         endInput?.addEventListener("change", updateTimeHidden);
+        officeStartInput?.addEventListener("input", updateOfficeHoursHidden);
+        officeEndInput?.addEventListener("input", updateOfficeHoursHidden);
         officeStartInput?.addEventListener("change", updateOfficeHoursHidden);
         officeEndInput?.addEventListener("change", updateOfficeHoursHidden);
 
         applyDaysToButtons();
+        applyOfficeDayToButtons();
         applyHiddenTimeToSelects();
         applyHiddenOfficeHoursToSelects();
 
         const lookupBtn = document.getElementById("lookupCrnBtn");
         const crnInput = document.getElementById("courseCrnInput");
         const courseNameInput = document.getElementById("courseNameInput");
+        const courseTitleInput = document.getElementById("courseTitleInput");
         const sectionInput = document.getElementById("courseSectionInput");
         const leaderInput = document.getElementById("courseLeaderInput");
         const lookupBaseUrl = config.getAttribute("data-lookup-url") || "";
@@ -191,6 +242,9 @@
                 if (courseNameInput) {
                     courseNameInput.value = data.courseName || "";
                 }
+                if (courseTitleInput) {
+                    courseTitleInput.value = data.courseTitle || "";
+                }
                 if (sectionInput) {
                     sectionInput.value = data.courseSection || "";
                 }
@@ -208,6 +262,80 @@
         });
     };
 
+    const initTimePickerDropdowns = () => {
+        const inputs = Array.from(document.querySelectorAll(".time-picker-input[data-time-options]"));
+        if (inputs.length === 0) {
+            return;
+        }
+
+        const closeAll = () => {
+            document.querySelectorAll("[data-time-picker-menu='true']").forEach((menu) => menu.classList.remove("show"));
+        };
+
+        const renderOptions = (input, filterText = "") => {
+            const sourceId = input.getAttribute("data-time-options");
+            const menu = input.parentElement?.querySelector("[data-time-picker-menu='true']");
+            if (!sourceId || !menu) {
+                return;
+            }
+
+            const datalist = document.getElementById(sourceId);
+            if (!datalist) {
+                return;
+            }
+
+            const options = Array.from(datalist.querySelectorAll("option"))
+                .map((o) => (o.getAttribute("value") || "").trim())
+                .filter((v) => v.length > 0);
+
+            const normalizedFilter = filterText.trim().toLowerCase();
+            const filtered = normalizedFilter
+                ? options.filter((o) => o.toLowerCase().includes(normalizedFilter))
+                : options;
+
+            menu.innerHTML = "";
+            if (filtered.length === 0) {
+                menu.classList.remove("show");
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            filtered.slice(0, 60).forEach((value) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "time-picker-option";
+                button.textContent = value;
+                button.addEventListener("click", () => {
+                    input.value = value;
+                    input.dispatchEvent(new Event("input", { bubbles: true }));
+                    menu.classList.remove("show");
+                });
+                fragment.appendChild(button);
+            });
+
+            menu.appendChild(fragment);
+            menu.classList.add("show");
+        };
+
+        inputs.forEach((input) => {
+            input.addEventListener("focus", () => renderOptions(input, input.value || ""));
+            input.addEventListener("input", () => renderOptions(input, input.value || ""));
+            input.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    const menu = input.parentElement?.querySelector("[data-time-picker-menu='true']");
+                    menu?.classList.remove("show");
+                }
+            });
+        });
+
+        document.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element) || !target.closest(".time-picker")) {
+                closeAll();
+            }
+        });
+    };
+
     const initSessionFormEnhancer = () => {
         const marker = document.querySelector("[data-session-form-enhancer='true']");
         if (!marker) {
@@ -219,6 +347,82 @@
         const startInput = document.getElementById("sessionStartInput");
         const endInput = document.getElementById("sessionEndInput");
         const dayButtons = Array.from(document.querySelectorAll(".session-day-toggle"));
+        const courseSelect = document.getElementById("CourseID");
+        const sectionTargetsContainer = document.querySelector("[data-section-targets-container='true']");
+        const sectionTargetsList = sectionTargetsContainer?.querySelector("[data-section-targets-list='true']");
+
+        const wireSectionTargetButtons = () => {
+            sectionTargetsList?.querySelectorAll("label.btn input[type='checkbox']").forEach((input) => {
+                const checkbox = input;
+                const label = checkbox.closest("label.btn");
+                if (!label) {
+                    return;
+                }
+
+                const applyState = () => {
+                    label.classList.toggle("btn-primary", checkbox.checked);
+                    label.classList.toggle("btn-outline-primary", !checkbox.checked);
+                };
+
+                checkbox.addEventListener("change", applyState);
+                applyState();
+            });
+        };
+
+        const renderSectionTargets = (items, selectedCourseId) => {
+            if (!sectionTargetsList) {
+                return;
+            }
+
+            if (!Array.isArray(items) || items.length === 0) {
+                sectionTargetsList.innerHTML = "<span class='text-muted small'>No sections found for this course.</span>";
+                return;
+            }
+
+            sectionTargetsList.innerHTML = items.map((item) => {
+                const id = Number(item.courseId || 0);
+                const section = htmlEncode(String(item.section || ""));
+                const checked = id === selectedCourseId ? "checked" : "";
+                const checkedClass = id === selectedCourseId ? "btn-primary" : "btn-outline-primary";
+                return `<label class="btn ${checkedClass} mb-0">
+                    <input type="checkbox" class="d-none" name="sectionCourseIds" value="${id}" ${checked} />
+                    ${section}
+                </label>`;
+            }).join("");
+
+            wireSectionTargetButtons();
+        };
+
+        const refreshSectionTargets = async () => {
+            if (!sectionTargetsContainer || !courseSelect) {
+                return;
+            }
+
+            const courseIdValue = Number(courseSelect.value || 0);
+            if (!courseIdValue) {
+                if (sectionTargetsList) {
+                    sectionTargetsList.innerHTML = "<span class='text-muted small'>Select a course to choose sections.</span>";
+                }
+                return;
+            }
+
+            const endpoint = sectionTargetsContainer.getAttribute("data-section-targets-url");
+            if (!endpoint) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${endpoint}?courseId=${encodeURIComponent(courseIdValue)}`);
+                if (!response.ok) {
+                    return;
+                }
+
+                const items = await response.json();
+                renderSectionTargets(items, courseIdValue);
+            } catch {
+                // Keep current selection if lookup fails.
+            }
+        };
 
         const applyDay = () => {
             dayButtons.forEach((btn) => {
@@ -233,8 +437,105 @@
             if (parts.length !== 2) {
                 return;
             }
-            setTimeSelectValue(startInput, parts[0].trim());
-            setTimeSelectValue(endInput, parts[1].trim());
+            setTimeFieldValue(startInput, parts[0].trim());
+            setTimeFieldValue(endInput, parts[1].trim());
+        };
+
+        const parseTimeToMinutes = (value) => {
+            const match = String(value || "").trim().toLowerCase().match(/^(\d{1,2}):(\d{2})(am|pm)$/);
+            if (!match) {
+                return null;
+            }
+
+            let hour = Number(match[1]);
+            const minute = Number(match[2]);
+            const suffix = match[3];
+            if (Number.isNaN(hour) || Number.isNaN(minute) || minute < 0 || minute > 59 || hour < 1 || hour > 12) {
+                return null;
+            }
+
+            if (hour === 12) {
+                hour = 0;
+            }
+            if (suffix === "pm") {
+                hour += 12;
+            }
+
+            return (hour * 60) + minute;
+        };
+
+        const findOneHourAfterOption = (startValue) => {
+            if (!endInput) {
+                return null;
+            }
+
+            const startMinutes = parseTimeToMinutes(startValue);
+            if (startMinutes == null) {
+                return null;
+            }
+
+            const target = startMinutes + 60;
+            const optionValues = Array.from(endInput.options)
+                .map((o) => (o.value || "").trim())
+                .filter((v) => v.length > 0);
+
+            let bestValue = null;
+            let bestMinutes = Number.POSITIVE_INFINITY;
+
+            optionValues.forEach((value) => {
+                const optionMinutes = parseTimeToMinutes(value);
+                if (optionMinutes == null || optionMinutes < target) {
+                    return;
+                }
+                if (optionMinutes < bestMinutes) {
+                    bestMinutes = optionMinutes;
+                    bestValue = value;
+                }
+            });
+
+            if (bestValue) {
+                return bestValue;
+            }
+
+            // If +1 hour is beyond available range, fall back to latest selectable end time.
+            for (let i = optionValues.length - 1; i >= 0; i--) {
+                if (parseTimeToMinutes(optionValues[i]) != null) {
+                    return optionValues[i];
+                }
+            }
+
+            return null;
+        };
+
+        let endWasManuallyChanged = false;
+        let lastAutoEndValue = "";
+        const autoFillEndFromStart = (force = false) => {
+            if (!startInput || !endInput) {
+                return;
+            }
+
+            const start = startInput.value.trim();
+            if (!start) {
+                return;
+            }
+
+            const canAutoFill = force
+                || !endWasManuallyChanged
+                || !endInput.value
+                || endInput.value === lastAutoEndValue;
+
+            if (!canAutoFill) {
+                return;
+            }
+
+            const suggestedEnd = findOneHourAfterOption(start);
+            if (!suggestedEnd) {
+                return;
+            }
+
+            setTimeFieldValue(endInput, suggestedEnd);
+            lastAutoEndValue = suggestedEnd;
+            updateTime();
         };
 
         dayButtons.forEach((btn) => btn.addEventListener("click", () => {
@@ -255,11 +556,21 @@
             }
         };
 
-        startInput?.addEventListener("change", updateTime);
-        endInput?.addEventListener("change", updateTime);
+        startInput?.addEventListener("change", () => {
+            autoFillEndFromStart();
+            updateTime();
+        });
+        endInput?.addEventListener("change", () => {
+            const current = (endInput?.value || "").trim();
+            endWasManuallyChanged = current.length > 0 && current !== lastAutoEndValue;
+            updateTime();
+        });
+        courseSelect?.addEventListener("change", refreshSectionTargets);
 
         applyDay();
         applyTime();
+        autoFillEndFromStart(true);
+        wireSectionTargetButtons();
     };
 
     const htmlEncode = (value) => {
@@ -287,6 +598,47 @@
         });
     };
 
+    const formatRelativeTime = (value) => {
+        if (!value) {
+            return "No updates yet";
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) {
+            return "No updates yet";
+        }
+
+        const now = new Date();
+        const deltaMs = now.getTime() - parsed.getTime();
+        const minute = 60 * 1000;
+        const hour = 60 * minute;
+        const day = 24 * hour;
+
+        if (deltaMs < minute) return "just now";
+        if (deltaMs < hour) {
+            const minutes = Math.max(1, Math.floor(deltaMs / minute));
+            return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+        }
+        if (deltaMs < day) {
+            const hours = Math.max(1, Math.floor(deltaMs / hour));
+            return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+        }
+        if (deltaMs < 7 * day) {
+            const days = Math.max(1, Math.floor(deltaMs / day));
+            return `${days} day${days === 1 ? "" : "s"} ago`;
+        }
+        if (deltaMs < 31 * day) {
+            const weeks = Math.max(1, Math.floor(deltaMs / (7 * day)));
+            return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
+        }
+        if (deltaMs < 365 * day) {
+            const months = Math.max(1, Math.floor(deltaMs / (30 * day)));
+            return `${months} month${months === 1 ? "" : "s"} ago`;
+        }
+        const years = Math.max(1, Math.floor(deltaMs / (365 * day)));
+        return `${years} year${years === 1 ? "" : "s"} ago`;
+    };
+
     const statusClass = (status) => {
         const normalized = (status || "").toLowerCase();
         if (normalized === "pending") {
@@ -299,6 +651,13 @@
             return "status-pill-approved";
         }
         return "status-pill-denied";
+    };
+
+    const requestReviewActionClass = (status) => {
+        const normalized = (status || "").toLowerCase().replace(/\s+/g, "");
+        return normalized === "pending" || normalized === "underreview"
+            ? "request-action-link-priority"
+            : "request-action-link-subtle";
     };
 
     const statusToApiValue = (rawStatus) => {
@@ -353,10 +712,9 @@
             const payload = {
                 courseId: form.querySelector("[name='CourseID']")?.value || null,
                 requestedCourseName: form.querySelector("[name='RequestedCourseName']")?.value || "",
+                requestedCourseTitle: form.querySelector("[name='RequestedCourseTitle']")?.value || "",
                 requestedCourseSection: form.querySelector("[name='RequestedCourseSection']")?.value || "",
                 requestedCourseProfessor: form.querySelector("[name='RequestedCourseProfessor']")?.value || "",
-                professorName: form.querySelector("[name='ProfessorName']")?.value || "",
-                professorEmail: form.querySelector("[name='ProfessorEmail']")?.value || "",
                 requestNotes: form.querySelector("[name='RequestNotes']")?.value || ""
             };
 
@@ -375,7 +733,21 @@
                 });
 
                 if (!response.ok) {
-                    showApiError(form, "Unable to submit request right now. Please try again.");
+                    let apiMessage = "Unable to submit request right now. Please try again.";
+                    try {
+                        const errorBody = await response.json();
+                        if (errorBody?.message) {
+                            apiMessage = String(errorBody.message);
+                        } else if (errorBody?.errors) {
+                            const firstError = Object.values(errorBody.errors)[0];
+                            if (Array.isArray(firstError) && firstError.length > 0) {
+                                apiMessage = String(firstError[0]);
+                            }
+                        }
+                    } catch {
+                        // Keep default message.
+                    }
+                    showApiError(form, apiMessage);
                     return;
                 }
 
@@ -393,6 +765,53 @@
         });
     };
 
+    const initProfessorRequestFormEnhancer = () => {
+        const form = document.querySelector("[data-professor-request-form='true']");
+        if (!form) {
+            return;
+        }
+
+        const sectionInput = form.querySelector("[name='RequestedCourseSection']");
+        const courseIdInput = form.querySelector("[name='CourseID']");
+        const courseNameInput = form.querySelector("[name='RequestedCourseName']");
+        const courseTitleInput = form.querySelector("[name='RequestedCourseTitle']");
+        const sectionButtons = Array.from(form.querySelectorAll("[data-section-value]"));
+
+        const setActiveSectionButton = (value) => {
+            sectionButtons.forEach((button) => {
+                const isActive = button.getAttribute("data-section-value") === value;
+                button.classList.toggle("btn-primary", isActive);
+                button.classList.toggle("btn-outline-primary", !isActive);
+            });
+        };
+
+        sectionButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                const selectedValue = button.getAttribute("data-section-value") || "";
+                if (sectionInput) {
+                    sectionInput.value = selectedValue;
+                }
+                if (courseIdInput) {
+                    courseIdInput.value = "";
+                }
+                setActiveSectionButton(selectedValue);
+            });
+        });
+
+        courseNameInput?.addEventListener("input", () => {
+            if (courseIdInput) {
+                courseIdInput.value = "";
+            }
+        });
+        courseTitleInput?.addEventListener("input", () => {
+            if (courseIdInput) {
+                courseIdInput.value = "";
+            }
+        });
+
+        setActiveSectionButton(sectionInput?.value || "");
+    };
+
     const initProfessorTrackApiRefresh = () => {
         const container = document.querySelector("[data-professor-request-track='true']");
         if (!container) {
@@ -406,7 +825,10 @@
 
         const progressBar = container.querySelector("[data-track-progress-bar='true']");
         const statusText = container.querySelector("[data-track-current-status='true']");
+        const statusPill = container.querySelector("[data-track-current-status-pill='true']");
         const lastUpdatedText = container.querySelector("[data-track-last-updated='true']");
+        const lastUpdatedRelative = container.querySelector("[data-track-last-updated-relative='true']");
+        const submittedRelative = container.querySelector("[data-track-submitted-relative='true']");
         const adminNotesText = container.querySelector("[data-track-admin-notes='true']");
         const submittedStage = container.querySelector("[data-track-stage-submitted='true']");
         const reviewStage = container.querySelector("[data-track-stage-review='true']");
@@ -436,9 +858,19 @@
                 if (statusText) {
                     statusText.textContent = status;
                 }
+                if (statusPill) {
+                    statusPill.classList.remove("status-pill-pending", "status-pill-review", "status-pill-approved", "status-pill-denied");
+                    statusPill.classList.add(statusClass(status));
+                }
 
                 if (lastUpdatedText) {
                     lastUpdatedText.textContent = formatLocalDate(data.lastUpdatedAtUtc);
+                }
+                if (lastUpdatedRelative) {
+                    lastUpdatedRelative.textContent = formatRelativeTime(data.lastUpdatedAtUtc);
+                }
+                if (submittedRelative) {
+                    submittedRelative.textContent = formatRelativeTime(data.submittedAtUtc);
                 }
 
                 if (adminNotesText) {
@@ -447,17 +879,57 @@
 
                 if (submittedStage) {
                     submittedStage.textContent = "Complete";
+                    submittedStage.classList.add("track-stage-complete");
                 }
                 if (reviewStage) {
-                    reviewStage.textContent = progress >= 60 ? "Complete" : "Pending";
+                    const isUnderReview = String(status).toLowerCase().replace(/\s+/g, "") === "underreview";
+                    reviewStage.textContent = progress >= 100 ? "Complete" : (isUnderReview ? "In Progress" : "Pending");
+                    reviewStage.classList.remove("track-stage-current", "track-stage-complete");
+                    if (isUnderReview) {
+                        reviewStage.classList.add("track-stage-current");
+                    } else if (progress >= 100) {
+                        reviewStage.classList.add("track-stage-complete");
+                    }
                 }
                 if (finalStage) {
-                    finalStage.textContent = progress >= 100 ? "Complete" : "Pending";
+                    const normalized = String(status).toLowerCase().replace(/\s+/g, "");
+                    finalStage.textContent = normalized === "approved" ? "Approved" : (normalized === "denied" ? "Denied" : "Pending");
+                    finalStage.classList.toggle("track-stage-complete", normalized === "approved" || normalized === "denied");
                 }
             })
             .catch(() => {
                 // Keep server-rendered values on API failure.
             });
+    };
+
+    const initDeleteModalBinding = (options) => {
+        const {
+            triggerSelector,
+            idInputId,
+            idsInputId,
+            displayTargetId,
+            idAttribute,
+            idsAttribute,
+            displayAttribute,
+            defaultDisplayText
+        } = options;
+
+        const idInput = document.getElementById(idInputId);
+        const idsInput = idsInputId ? document.getElementById(idsInputId) : null;
+        const displayTarget = document.getElementById(displayTargetId);
+        if (!idInput || !displayTarget) {
+            return;
+        }
+
+        document.querySelectorAll(triggerSelector).forEach((trigger) => {
+            trigger.addEventListener("click", () => {
+                idInput.value = trigger.getAttribute(idAttribute) || "";
+                if (idsInput && idsAttribute) {
+                    idsInput.value = trigger.getAttribute(idsAttribute) || "";
+                }
+                displayTarget.textContent = trigger.getAttribute(displayAttribute) || defaultDisplayText;
+            });
+        });
     };
 
     const initAdminRequestsApiList = () => {
@@ -469,9 +941,23 @@
 
         const apiUrl = form.getAttribute("data-api-url");
         const reviewTemplate = form.getAttribute("data-review-url-template");
-        if (!apiUrl || !reviewTemplate) {
+        const removeTemplate = form.getAttribute("data-remove-api-url-template");
+        const statusSelect = form.querySelector("[name='status']");
+        const statusChips = Array.from(form.querySelectorAll("[data-admin-status-chips='true'] [data-status-value]"));
+        if (!apiUrl || !reviewTemplate || !removeTemplate) {
             return;
         }
+
+        const normalizeStatusValue = (value) => String(value || "").replace(/\s+/g, "").toLowerCase();
+
+        const refreshStatusChipState = () => {
+            const current = normalizeStatusValue(statusSelect?.value || "");
+            statusChips.forEach((chip) => {
+                const chipValue = normalizeStatusValue(chip.getAttribute("data-status-value") || "");
+                const isActive = current === chipValue;
+                chip.classList.toggle("is-active", isActive);
+            });
+        };
 
         const renderRows = (items) => {
             if (!Array.isArray(items) || items.length === 0) {
@@ -481,12 +967,21 @@
 
             tbody.innerHTML = items.map((item) => {
                 const reviewUrl = reviewTemplate.replace("__id__", String(item.requestId));
+                const removeUrl = removeTemplate.replace("__id__", String(item.requestId));
+                const normalizedStatus = String(item.status || "").toLowerCase().replace(/\s+/g, "");
+                const canRemove = normalizedStatus === "approved" || normalizedStatus === "denied";
                 return `<tr>
                     <td>${htmlEncode(item.courseDisplay || "Manual Course Entry")}</td>
                     <td>${htmlEncode(item.professorName || "")}</td>
-                    <td>${htmlEncode(formatLocalDate(item.submittedAtUtc))}</td>
+                    <td>
+                        <div>${htmlEncode(formatLocalDate(item.submittedAtUtc))}</div>
+                        <span class="relative-time-pill">${htmlEncode(formatRelativeTime(item.submittedAtUtc))}</span>
+                    </td>
                     <td><span class="status-pill ${statusClass(item.status)}">${htmlEncode(item.status || "")}</span></td>
-                    <td><a href="${reviewUrl}">Review</a></td>
+                    <td class="text-nowrap text-center">
+                        <a class="request-action-link ${requestReviewActionClass(item.status)}" href="${reviewUrl}">Review</a>
+                        ${canRemove ? `<button type="button" class="request-action-link request-action-delete request-action-link-inline" data-admin-request-remove-btn="true" data-remove-url="${removeUrl}" data-request-id="${item.requestId}">Remove</button>` : ""}
+                    </td>
                 </tr>`;
             }).join("");
         };
@@ -517,6 +1012,60 @@
                 showApiError(form, "Unable to load requests from API.");
             }
         });
+
+        statusChips.forEach((chip) => {
+            chip.addEventListener("click", () => {
+                if (!statusSelect) {
+                    return;
+                }
+                statusSelect.value = chip.getAttribute("data-status-value") || "";
+                refreshStatusChipState();
+                form.requestSubmit();
+            });
+        });
+
+        tbody.addEventListener("click", async (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) {
+                return;
+            }
+
+            const removeButton = target.closest("[data-admin-request-remove-btn='true']");
+            if (!(removeButton instanceof HTMLElement)) {
+                return;
+            }
+
+            const requestId = removeButton.getAttribute("data-request-id") || "";
+            const removeUrl = removeButton.getAttribute("data-remove-url")
+                || removeTemplate.replace("__id__", requestId);
+            if (!removeUrl) {
+                return;
+            }
+
+            const confirmed = window.confirm("Remove this request from the list?");
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response = await fetch(removeUrl, {
+                    method: "DELETE",
+                    credentials: "same-origin"
+                });
+
+                if (!response.ok) {
+                    showApiError(form, "Unable to remove request.");
+                    return;
+                }
+
+                await load();
+            } catch {
+                showApiError(form, "Network error while removing request.");
+            }
+        });
+
+        statusSelect?.addEventListener("change", refreshStatusChipState);
+        refreshStatusChipState();
 
         load().catch(() => {
             // Keep server-rendered list on API failure.
@@ -574,43 +1123,99 @@
 
     const initCourseDetailsApiSessions = () => {
         const container = document.querySelector("[data-course-sessions-api='true']");
-        const tbody = container?.querySelector("[data-course-sessions-tbody='true']");
-        if (!container || !tbody) {
+        const cards = container?.querySelector("[data-course-sessions-cards='true']");
+        if (!container || !cards) {
             return;
         }
 
         const apiUrl = container.getAttribute("data-api-url");
         const editTemplate = container.getAttribute("data-edit-url-template");
-        const deleteTemplate = container.getAttribute("data-delete-url-template");
-        if (!apiUrl || !editTemplate || !deleteTemplate) {
+        if (!apiUrl || !editTemplate) {
             return;
         }
+
+        const wireDynamicDeleteButtons = () => {
+            cards.querySelectorAll("[data-session-delete-trigger='true']").forEach((trigger) => {
+                const button = trigger;
+                button.addEventListener("click", () => {
+                    const idInput = document.getElementById("deleteSessionIdInput");
+                    const idsInput = document.getElementById("deleteSessionIdsInput");
+                    const displayTarget = document.getElementById("deleteSessionName");
+                    if (!idInput || !displayTarget) {
+                        return;
+                    }
+
+                    idInput.value = button.getAttribute("data-session-id") || "";
+                    if (idsInput) {
+                        idsInput.value = button.getAttribute("data-session-ids") || "";
+                    }
+                    displayTarget.textContent = button.getAttribute("data-session-display") || "Session";
+                });
+            });
+        };
 
         fetch(apiUrl)
             .then((response) => (response.ok ? response.json() : null))
             .then((data) => {
                 const sessions = data?.sessions || [];
                 if (!Array.isArray(sessions) || sessions.length === 0) {
-                    tbody.innerHTML = "<tr><td colspan=\"4\" class=\"text-muted\">No sessions added yet.</td></tr>";
+                    cards.innerHTML = "<div class=\"col-12\"><div class=\"empty-state\"><p class=\"empty-state-title\">No sessions added yet.</p></div></div>";
                     return;
                 }
 
-                tbody.innerHTML = sessions.map((session) => {
+                cards.innerHTML = sessions.map((session) => {
                     const editUrl = editTemplate.replace("__id__", String(session.sessionId));
-                    const deleteUrl = deleteTemplate.replace("__id__", String(session.sessionId));
                     const time = session.endTime ? `${session.startTime}-${session.endTime}` : session.startTime;
-                    return `<tr>
-                        <td>${htmlEncode(session.day || "")}</td>
-                        <td>${htmlEncode(time || "")}</td>
-                        <td>${htmlEncode(session.location || "")}</td>
-                        <td class="text-nowrap"><a href="${editUrl}">Edit</a> | <a href="${deleteUrl}">Delete</a></td>
-                    </tr>`;
+                    const courseId = container.getAttribute("data-course-id") || "";
+                    const courseName = container.getAttribute("data-course-name") || "Course";
+                    const courseTitle = container.getAttribute("data-course-title") || "";
+                    const courseSection = container.getAttribute("data-course-section") || "";
+                    const courseLeader = container.getAttribute("data-course-leader") || "";
+                    const courseUrl = `/Courses/Details/${courseId}`;
+                    const sessionLabel = `${courseName} (${courseSection}) - ${courseTitle} ${session.day || ""} ${time || ""}`.trim();
+                    return `<div class="col-12 col-md-6 col-lg-4">
+                        <article class="card h-100 shadow-sm student-course-card">
+                            <div class="card-body">
+                                <div class="session-card-top mb-2">
+                                    <h3 class="h4 mb-0">
+                                        <span class="fw-bold">${htmlEncode(courseName)}</span>
+                                        ${courseTitle ? `<span class="text-muted"> - ${htmlEncode(courseTitle)}</span>` : ""}
+                                    </h3>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                    <span class="badge session-meta-badge session-meta-badge-sections">Sections ${htmlEncode(courseSection)}</span>
+                                    <span class="badge session-meta-badge session-meta-badge-leader">SI Leader: ${htmlEncode(courseLeader)}</span>
+                                </div>
+                                <div class="student-session-item session-card-slot mb-2">
+                                    <span class="student-session-day">${htmlEncode(session.day || "")}</span>
+                                    <span class="student-session-time">${htmlEncode(time || "")}</span>
+                                    <span class="student-session-location">${htmlEncode(session.location || "")}</span>
+                                </div>
+                                <div class="session-card-actions-row">
+                                    <div class="professor-request-actions">
+                                        <a class="request-action-link request-action-link-compact" href="${editUrl}">Edit</a>
+                                        <a class="request-action-link request-action-link-compact" href="${courseUrl}">Course</a>
+                                        <button type="button"
+                                                class="request-action-link request-action-delete request-action-link-compact"
+                                                data-session-delete-trigger="true"
+                                                data-session-id="${session.sessionId}"
+                                                data-session-ids="${session.sessionId}"
+                                                data-session-display="${htmlEncode(sessionLabel)}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteSessionModal">Delete</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>`;
                 }).join("");
+                wireDynamicDeleteButtons();
             })
             .catch(() => {
                 // Keep server-rendered list on API failure.
             });
     };
+
 
     const initStudentScheduleApiSummary = () => {
         const form = document.querySelector("[data-student-schedule-form='true']");
@@ -626,11 +1231,13 @@
         }
 
         const search = form.querySelector("[name='search']")?.value || "";
+        const time = form.querySelector("[name='time']")?.value || "";
         const day = form.querySelector("[name='day']")?.value || "";
         const professor = form.querySelector("[name='professor']")?.value || "";
 
         const query = new URLSearchParams();
         if (search) query.set("search", search);
+        if (time) query.set("time", time);
         if (day) query.set("day", day);
         if (professor) query.set("professor", professor);
         query.set("page", "1");
@@ -644,9 +1251,10 @@
                     return;
                 }
 
-                const uniqueCourses = new Set(items.map((item) => `${item.courseId}|${item.courseSection}`));
+                const uniqueCourses = new Set(items.map((item) => `${item.courseName}|${item.courseTitle}|${item.professorName}|${item.siLeaderName}`));
+                const uniqueSessions = new Set(items.map((item) => `${item.courseName}|${item.day}|${item.startTime}|${item.endTime}|${item.location}`));
                 courseCountEl.textContent = String(uniqueCourses.size);
-                sessionCountEl.textContent = String(items.length);
+                sessionCountEl.textContent = String(uniqueSessions.size);
             })
             .catch(() => {
                 // Keep server-rendered counts on API failure.
@@ -655,9 +1263,37 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         initThemeToggle();
+        initTimePickerDropdowns();
         initCourseFormEnhancer();
         initSessionFormEnhancer();
+        initProfessorRequestFormEnhancer();
         initProfessorCreateApiSubmit();
+        initDeleteModalBinding({
+            triggerSelector: "[data-request-delete-trigger='true']",
+            idInputId: "deleteRequestIdInput",
+            displayTargetId: "deleteRequestCourseName",
+            idAttribute: "data-request-id",
+            displayAttribute: "data-course-display",
+            defaultDisplayText: "Manual Course Entry"
+        });
+        initDeleteModalBinding({
+            triggerSelector: "[data-course-delete-trigger='true']",
+            idInputId: "deleteCourseIdInput",
+            displayTargetId: "deleteCourseName",
+            idAttribute: "data-course-id",
+            displayAttribute: "data-course-display",
+            defaultDisplayText: "Unknown Course"
+        });
+        initDeleteModalBinding({
+            triggerSelector: "[data-session-delete-trigger='true']",
+            idInputId: "deleteSessionIdInput",
+            idsInputId: "deleteSessionIdsInput",
+            displayTargetId: "deleteSessionName",
+            idAttribute: "data-session-id",
+            idsAttribute: "data-session-ids",
+            displayAttribute: "data-session-display",
+            defaultDisplayText: "Session"
+        });
         initProfessorTrackApiRefresh();
         initAdminRequestsApiList();
         initAdminRequestApiUpdate();

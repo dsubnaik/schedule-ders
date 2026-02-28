@@ -1,17 +1,6 @@
+@model schedule_ders.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Admin Dashboard";
 }
 
-<section class="page-shell py-2">
-    <h1 class="page-title">Admin Dashboard</h1>
-    <p class="page-subtitle">You are signed in with the <strong>Admin</strong> role.</p>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h2 class="h5">Schedule Management</h2>
-            <p class="mb-3">Create and manage courses, then add SI sessions under each course.</p>
-            <a class="btn btn-primary me-2" asp-controller="Courses" asp-action="Index">Manage Courses</a>
-            <a class="btn btn-outline-primary me-2" asp-controller="Sessions" asp-action="Index">Manage SI Sessions</a>
-            <a class="btn btn-outline-primary" asp-controller="AdminRequests" asp-action="Index">Review SI Requests</a>
-        </div>
-    </div>
-</section>
+<partial name="_DashboardShell" model="Model" />

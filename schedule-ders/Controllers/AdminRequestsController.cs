@@ -100,20 +100,19 @@ public class AdminRequestsController : Controller
     {
         if (request.Course is not null)
         {
-            return $"{request.Course.CourseName} ({request.Course.CourseSection})";
+            return $"{request.Course.CourseName} ({request.Course.CourseSection}) - {request.Course.CourseTitle}";
         }
 
         var name = request.RequestedCourseName.Trim();
+        var title = request.RequestedCourseTitle.Trim();
         var section = request.RequestedCourseSection.Trim();
-        var professor = request.RequestedCourseProfessor.Trim();
-
         if (string.IsNullOrWhiteSpace(name))
         {
             return "Manual Course Entry";
         }
 
-        var title = string.IsNullOrWhiteSpace(section) ? name : $"{name} ({section})";
-        return string.IsNullOrWhiteSpace(professor) ? title : $"{title} - {professor}";
+        var code = string.IsNullOrWhiteSpace(section) ? name : $"{name} ({section})";
+        return string.IsNullOrWhiteSpace(title) ? code : $"{code} - {title}";
     }
 
 }

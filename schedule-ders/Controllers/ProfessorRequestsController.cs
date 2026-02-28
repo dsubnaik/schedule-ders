@@ -27,7 +27,7 @@ public class ProfessorRequestsController : Controller
         _professorRequestService = professorRequestService;
     }
 
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? status)
     {
         var userId = _userManager.GetUserId(User);
         if (string.IsNullOrWhiteSpace(userId))
@@ -35,12 +35,55 @@ public class ProfessorRequestsController : Controller
             return Challenge();
         }
 
-        var requests = await _context.SIRequests
+        var query = _context.SIRequests
             .AsNoTracking()
             .Where(r => r.CreatedByUserId == userId)
             .Include(r => r.Course)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SIRequestStatus>(status, true, out var parsedStatus))
+        {
+            query = query.Where(r => r.Status == parsedStatus);
+        }
+
+        var requests = await query
             .OrderByDescending(r => r.SubmittedAtUtc)
             .ToListAsync();
+
+        var notificationCookieKey = "sd-prof-last-seen-status";
+        var lastSeenRaw = Request.Cookies[notificationCookieKey];
+        if (long.TryParse(lastSeenRaw, out var lastSeenUnix))
+        {
+            var lastSeenUtc = DateTimeOffset.FromUnixTimeSeconds(lastSeenUnix).UtcDateTime;
+            var changedCount = await _context.SIRequests
+                .AsNoTracking()
+                .Where(r => r.CreatedByUserId == userId
+                            && r.LastUpdatedAtUtc.HasValue
+                            && r.LastUpdatedAtUtc.Value > lastSeenUtc
+                            && r.Status != SIRequestStatus.Pending)
+                .CountAsync();
+
+            if (changedCount > 0)
+            {
+                ViewData["ProfessorNotification"] = changedCount == 1
+                    ? "1 request status was updated."
+                    : $"{changedCount} request statuses were updated.";
+            }
+        }
+
+        Response.Cookies.Append(
+            notificationCookieKey,
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+            new CookieOptions
+            {
+                HttpOnly = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.Lax,
+                Secure = Request.IsHttps,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+
+        ViewData["CurrentStatus"] = status ?? string.Empty;
 
         return View(requests);
     }
@@ -48,46 +91,14 @@ public class ProfessorRequestsController : Controller
     public async Task<IActionResult> Create()
     {
         await PopulateCourseOptionsAsync();
-        return View(new ProfessorRequestCreateViewModel
-        {
-            ProfessorEmail = User.Identity?.Name ?? string.Empty
-        });
+        return View(new ProfessorRequestCreateViewModel());
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ProfessorRequestCreateViewModel input)
     {
-        input.RequestedCourseName = input.RequestedCourseName.Trim();
-        input.RequestedCourseSection = input.RequestedCourseSection.Trim();
-        input.RequestedCourseProfessor = input.RequestedCourseProfessor.Trim();
-
-        var hasManualCourse = !string.IsNullOrWhiteSpace(input.RequestedCourseName) ||
-                              !string.IsNullOrWhiteSpace(input.RequestedCourseSection) ||
-                              !string.IsNullOrWhiteSpace(input.RequestedCourseProfessor);
-
-        if (!input.CourseID.HasValue && !hasManualCourse)
-        {
-            ModelState.AddModelError(nameof(input.CourseID), "Select a course or enter course details manually.");
-        }
-
-        if (!input.CourseID.HasValue && hasManualCourse)
-        {
-            if (string.IsNullOrWhiteSpace(input.RequestedCourseName))
-            {
-                ModelState.AddModelError(nameof(input.RequestedCourseName), "Course name is required when entering manually.");
-            }
-
-            if (string.IsNullOrWhiteSpace(input.RequestedCourseSection))
-            {
-                ModelState.AddModelError(nameof(input.RequestedCourseSection), "Course section is required when entering manually.");
-            }
-
-            if (string.IsNullOrWhiteSpace(input.RequestedCourseProfessor))
-            {
-                ModelState.AddModelError(nameof(input.RequestedCourseProfessor), "Course professor is required when entering manually.");
-            }
-        }
+        NormalizeAndValidateInput(input);
 
         if (!ModelState.IsValid)
         {
@@ -101,16 +112,21 @@ public class ProfessorRequestsController : Controller
             return Challenge();
         }
 
+        await TryAssignExistingCourseAsync(input);
+
         try
         {
+            var (professorName, professorEmail) = ResolveProfessorIdentity();
+
             var created = await _professorRequestService.CreateRequestAsync(new CreateSiRequestDto
             {
                 CourseId = input.CourseID,
                 RequestedCourseName = input.RequestedCourseName,
+                RequestedCourseTitle = input.RequestedCourseTitle,
                 RequestedCourseSection = input.RequestedCourseSection,
-                RequestedCourseProfessor = input.RequestedCourseProfessor,
-                ProfessorName = input.ProfessorName,
-                ProfessorEmail = input.ProfessorEmail,
+                RequestedCourseProfessor = professorName,
+                ProfessorName = professorName,
+                ProfessorEmail = professorEmail,
                 RequestNotes = input.RequestNotes
             }, userId);
 
@@ -132,13 +148,7 @@ public class ProfessorRequestsController : Controller
 
     public async Task<IActionResult> Details(int id)
     {
-        var request = await GetOwnedRequestAsync(id);
-        if (request is null)
-        {
-            return NotFound();
-        }
-
-        return View(request);
+        return RedirectToAction(nameof(Track), new { id });
     }
 
     public async Task<IActionResult> Track(int id)
@@ -150,6 +160,114 @@ public class ProfessorRequestsController : Controller
         }
 
         return View(request);
+    }
+
+    public async Task<IActionResult> Edit(int id)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Challenge();
+        }
+
+        var request = await _context.SIRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.SIRequestID == id && r.CreatedByUserId == userId);
+
+        if (request is null)
+        {
+            return NotFound();
+        }
+
+        await PopulateCourseOptionsAsync(request.CourseID);
+
+        return View(new ProfessorRequestCreateViewModel
+        {
+            CourseID = request.CourseID,
+            RequestedCourseName = request.RequestedCourseName,
+            RequestedCourseTitle = request.RequestedCourseTitle,
+            RequestedCourseSection = request.RequestedCourseSection,
+            RequestedCourseProfessor = request.RequestedCourseProfessor,
+            RequestNotes = request.RequestNotes
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, ProfessorRequestCreateViewModel input)
+    {
+        NormalizeAndValidateInput(input);
+
+        if (!ModelState.IsValid)
+        {
+            await PopulateCourseOptionsAsync(input.CourseID);
+            return View(input);
+        }
+
+        var userId = _userManager.GetUserId(User);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Challenge();
+        }
+
+        var request = await _context.SIRequests
+            .FirstOrDefaultAsync(r => r.SIRequestID == id && r.CreatedByUserId == userId);
+
+        if (request is null)
+        {
+            return NotFound();
+        }
+
+        await TryAssignExistingCourseAsync(input);
+
+        if (input.CourseID.HasValue)
+        {
+            var exists = await _context.Courses.AnyAsync(c => c.CourseID == input.CourseID.Value);
+            if (!exists)
+            {
+                ModelState.AddModelError(nameof(input.CourseID), "Selected course was not found.");
+                await PopulateCourseOptionsAsync(input.CourseID);
+                return View(input);
+            }
+        }
+
+        request.CourseID = input.CourseID;
+        request.RequestedCourseName = input.RequestedCourseName;
+        request.RequestedCourseTitle = input.RequestedCourseTitle;
+        request.RequestedCourseSection = input.RequestedCourseSection;
+        var (professorName, professorEmail) = ResolveProfessorIdentity();
+        request.RequestedCourseProfessor = professorName;
+        request.ProfessorName = professorName;
+        request.ProfessorEmail = professorEmail;
+        request.RequestNotes = input.RequestNotes;
+        request.LastUpdatedAtUtc = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return RedirectToAction(nameof(Details), new { id = request.SIRequestID });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Challenge();
+        }
+
+        var request = await _context.SIRequests
+            .FirstOrDefaultAsync(r => r.SIRequestID == id && r.CreatedByUserId == userId);
+
+        if (request is null)
+        {
+            return NotFound();
+        }
+
+        _context.SIRequests.Remove(request);
+        await _context.SaveChangesAsync();
+
+        return RedirectToAction(nameof(Index));
     }
 
     private async Task<SIRequest?> GetOwnedRequestAsync(int requestId)
@@ -171,13 +289,114 @@ public class ProfessorRequestsController : Controller
         var courses = await _context.Courses
             .AsNoTracking()
             .OrderBy(c => c.CourseName)
+            .ThenBy(c => c.CourseSection)
             .Select(c => new
             {
                 c.CourseID,
-                Label = $"{c.CourseName} ({c.CourseSection})"
+                c.CourseName,
+                c.CourseTitle,
+                Label = $"{c.CourseName} - {c.CourseTitle} ({c.CourseSection})"
             })
             .ToListAsync();
 
         ViewBag.CourseID = new SelectList(courses, "CourseID", "Label", selectedCourseId);
+        ViewBag.CourseCodeOptions = courses
+            .Select(c => c.CourseName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x)
+            .ToList();
+        ViewBag.CourseTitleOptions = courses
+            .Select(c => c.CourseTitle)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x)
+            .ToList();
+    }
+
+    private void NormalizeAndValidateInput(ProfessorRequestCreateViewModel input)
+    {
+        input.RequestedCourseName = input.RequestedCourseName.Trim();
+        input.RequestedCourseTitle = input.RequestedCourseTitle.Trim();
+        input.RequestedCourseSection = input.RequestedCourseSection.Trim();
+        input.RequestedCourseProfessor = input.RequestedCourseProfessor.Trim();
+
+        var hasManualCourse = !string.IsNullOrWhiteSpace(input.RequestedCourseName) ||
+                              !string.IsNullOrWhiteSpace(input.RequestedCourseTitle) ||
+                              !string.IsNullOrWhiteSpace(input.RequestedCourseSection);
+
+        if (!input.CourseID.HasValue && !hasManualCourse)
+        {
+            ModelState.AddModelError(nameof(input.CourseID), "Select a course or enter course details manually.");
+        }
+
+        if (!input.CourseID.HasValue && hasManualCourse)
+        {
+            if (string.IsNullOrWhiteSpace(input.RequestedCourseName))
+            {
+                ModelState.AddModelError(nameof(input.RequestedCourseName), "Course code is required when entering manually.");
+            }
+
+            if (string.IsNullOrWhiteSpace(input.RequestedCourseTitle))
+            {
+                ModelState.AddModelError(nameof(input.RequestedCourseTitle), "Course name is required when entering manually.");
+            }
+
+            if (string.IsNullOrWhiteSpace(input.RequestedCourseSection))
+            {
+                ModelState.AddModelError(nameof(input.RequestedCourseSection), "Course section is required when entering manually.");
+            }
+        }
+    }
+
+    private async Task TryAssignExistingCourseAsync(ProfessorRequestCreateViewModel input)
+    {
+        if (input.CourseID.HasValue)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(input.RequestedCourseName) || string.IsNullOrWhiteSpace(input.RequestedCourseSection))
+        {
+            return;
+        }
+
+        var name = input.RequestedCourseName.Trim();
+        var section = input.RequestedCourseSection.Trim();
+
+        var existingCourseId = await _context.Courses
+            .AsNoTracking()
+            .Where(c => c.CourseName == name
+                        && c.CourseSection == section
+                        && (string.IsNullOrWhiteSpace(input.RequestedCourseTitle) || c.CourseTitle == input.RequestedCourseTitle))
+            .Select(c => (int?)c.CourseID)
+            .FirstOrDefaultAsync();
+
+        if (existingCourseId.HasValue)
+        {
+            input.CourseID = existingCourseId.Value;
+        }
+    }
+
+    private (string Name, string Email) ResolveProfessorIdentity()
+    {
+        var email = (User.Identity?.Name ?? string.Empty).Trim();
+        var localPart = email.Contains('@') ? email.Split('@')[0] : email;
+        var safeLocalPart = string.IsNullOrWhiteSpace(localPart) ? "Professor" : localPart;
+        var displayName = safeLocalPart
+            .Replace('.', ' ')
+            .Replace('_', ' ')
+            .Replace('-', ' ')
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            displayName = "Professor";
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            email = "professor@schedule-ders.local";
+        }
+
+        return (displayName, email);
     }
 }

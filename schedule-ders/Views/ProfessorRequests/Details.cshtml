@@ -4,16 +4,28 @@
 }
 
 <section class="page-shell">
-<div class="page-header mb-1">
-    <h1 class="page-title">Request Details</h1>
-    <div class="page-actions"><a asp-action="Index" class="btn btn-secondary">Back</a></div>
+<div class="page-title-row mb-1">
+    <div>
+        <a asp-action="Index" class="btn page-back-btn">Back</a>
+    </div>
+    <div class="page-title-row-main">
+        <h1 class="page-title">Request Details</h1>
+    </div>
+    <div class="page-actions justify-content-end">
+        <a asp-action="Edit" asp-route-id="@Model.SIRequestID" class="btn btn-primary">Edit Request</a>
+    </div>
 </div>
 
 @{
+    var manualCode = string.IsNullOrWhiteSpace(Model.RequestedCourseSection)
+        ? Model.RequestedCourseName
+        : $"{Model.RequestedCourseName} ({Model.RequestedCourseSection})";
     var courseDisplay = Model.Course is not null
-        ? $"{Model.Course.CourseName} ({Model.Course.CourseSection})"
+        ? $"{Model.Course.CourseName} ({Model.Course.CourseSection}) - {Model.Course.CourseTitle}"
         : (!string.IsNullOrWhiteSpace(Model.RequestedCourseName)
-            ? $"{Model.RequestedCourseName} ({Model.RequestedCourseSection})"
+            ? (string.IsNullOrWhiteSpace(Model.RequestedCourseTitle)
+                ? manualCode
+                : $"{manualCode} - {Model.RequestedCourseTitle}")
             : "Manual Course Entry");
 }
 

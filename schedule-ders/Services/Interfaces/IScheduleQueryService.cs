@@ -6,6 +6,7 @@ public interface IScheduleQueryService
 {
     Task<PagedResultDto<SessionCardDto>> SearchSessionsAsync(
         string? search,
+        string? time,
         string? day,
         string? professor,
         int? courseId,

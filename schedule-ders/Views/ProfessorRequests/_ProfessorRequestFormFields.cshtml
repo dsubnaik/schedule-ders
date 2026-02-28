@@ -1,0 +1,64 @@
+@model schedule_ders.ViewModels.ProfessorRequestCreateViewModel
+@{
+    var courseCodeOptions = ViewBag.CourseCodeOptions as List<string> ?? [];
+    var courseTitleOptions = ViewBag.CourseTitleOptions as List<string> ?? [];
+    var sectionValue = string.IsNullOrWhiteSpace(Model.RequestedCourseSection) ? string.Empty : Model.RequestedCourseSection;
+    var sectionOptions = new[] { "001", "002", "003", "004", "005", "006" };
+}
+
+<input asp-for="CourseID" type="hidden" />
+<input asp-for="RequestedCourseProfessor" type="hidden" />
+
+<div class="mb-3">
+    <label asp-for="RequestedCourseName" class="form-label"></label>
+    <input asp-for="RequestedCourseName"
+           class="form-control"
+           placeholder="Start typing course code"
+           list="courseCodeOptions"
+           autocomplete="off" />
+    <datalist id="courseCodeOptions">
+        @foreach (var courseCode in courseCodeOptions)
+        {
+            <option value="@courseCode"></option>
+        }
+    </datalist>
+    <div class="form-text">Pick an existing course code from suggestions or enter a new one.</div>
+    <span asp-validation-for="RequestedCourseName" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="RequestedCourseTitle" class="form-label"></label>
+    <input asp-for="RequestedCourseTitle"
+           class="form-control"
+           placeholder="Start typing course name"
+           list="courseTitleOptions"
+           autocomplete="off" />
+    <datalist id="courseTitleOptions">
+        @foreach (var courseTitle in courseTitleOptions)
+        {
+            <option value="@courseTitle"></option>
+        }
+    </datalist>
+    <span asp-validation-for="RequestedCourseTitle" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="RequestedCourseSection" class="form-label"></label>
+    <input asp-for="RequestedCourseSection" type="hidden" id="requestSectionInput" />
+    <div class="d-flex flex-wrap gap-2" data-request-section-buttons="true">
+        @foreach (var sectionCode in sectionOptions)
+        {
+            var isActive = sectionCode == sectionValue;
+            <button type="button"
+                    class="btn @(isActive ? "btn-primary" : "btn-outline-primary") request-section-btn"
+                    data-section-value="@sectionCode">@sectionCode</button>
+        }
+    </div>
+    <span asp-validation-for="RequestedCourseSection" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="RequestNotes" class="form-label"></label>
+    <textarea asp-for="RequestNotes" class="form-control" rows="6" placeholder="Describe why SI support is requested, target students, and preferred timing."></textarea>
+    <span asp-validation-for="RequestNotes" class="text-danger"></span>
+</div>

@@ -36,4 +36,16 @@ public class AdminRequestsApiController : ControllerBase
         var updated = await _adminRequestService.UpdateStatusAsync(id, input);
         return updated is null ? NotFound() : Ok(updated);
     }
+
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> RemoveRequest([FromRoute] int id)
+    {
+        var result = await _adminRequestService.RemoveRequestAsync(id);
+        return result switch
+        {
+            RemoveAdminRequestResult.NotFound => NotFound(),
+            RemoveAdminRequestResult.NotAllowed => BadRequest(new { message = "Only approved or denied requests can be removed." }),
+            _ => NoContent()
+        };
+    }
 }

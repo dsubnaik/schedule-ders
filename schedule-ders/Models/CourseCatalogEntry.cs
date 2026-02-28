@@ -13,8 +13,13 @@ public class CourseCatalogEntry
 
     [Required]
     [StringLength(120)]
-    [Display(Name = "Course Name")]
+    [Display(Name = "Course")]
     public string CourseName { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(200)]
+    [Display(Name = "Course Name")]
+    public string CourseTitle { get; set; } = string.Empty;
 
     [Required]
     [StringLength(30)]

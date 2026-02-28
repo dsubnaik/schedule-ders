@@ -1,0 +1,76 @@
+@model schedule_ders.ViewModels.DashboardViewModel
+
+<section class="page-shell py-2">
+    <h1 class="page-title dashboard-title-centered">@Model.Heading</h1>
+    <div class="dashboard-actions">
+        @foreach (var action in Model.Actions)
+        {
+            <a class="btn dashboard-action-btn"
+               asp-controller="@action.Controller"
+               asp-action="@action.Action">@action.Label</a>
+        }
+    </div>
+
+    @if (Model.Metrics.Count > 0)
+    {
+        <div class="dashboard-metrics-grid mt-2">
+            @foreach (var metric in Model.Metrics)
+            {
+                <article class="surface-card dashboard-metric-card">
+                    <div class="dashboard-metric-label">@metric.Label</div>
+                    <div class="dashboard-metric-value">@metric.Value</div>
+                    @if (!string.IsNullOrWhiteSpace(metric.Hint))
+                    {
+                        <div class="dashboard-metric-hint">@metric.Hint</div>
+                    }
+                </article>
+            }
+        </div>
+    }
+
+    <div class="dashboard-info-grid mt-2">
+        <article class="surface-card p-3">
+            <h2 class="h5 mb-2">Recent Activity</h2>
+            @if (Model.RecentActivity.Count == 0)
+            {
+                <p class="empty-state-note mb-0">No recent activity.</p>
+            }
+            else
+            {
+                <ul class="dashboard-list mb-0">
+                    @foreach (var item in Model.RecentActivity)
+                    {
+                        <li>
+                            <div class="dashboard-list-title">@item.Title</div>
+                            <div class="dashboard-list-meta">@item.Meta</div>
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+
+        <article class="surface-card p-3">
+            <h2 class="h5 mb-2">Needs Attention</h2>
+            @if (Model.AttentionItems.Count == 0)
+            {
+                <p class="empty-state-note mb-0">Nothing needs attention right now.</p>
+            }
+            else
+            {
+                <ul class="dashboard-list mb-0">
+                    @foreach (var item in Model.AttentionItems)
+                    {
+                        <li>
+                            <div class="dashboard-list-title">@item.Title</div>
+                            <div class="dashboard-list-meta">@item.Detail</div>
+                            <a class="request-action-link request-action-link-subtle mt-1"
+                               asp-controller="@item.Controller"
+                               asp-action="@item.Action"
+                               asp-route-status="@item.RouteStatus">Open</a>
+                        </li>
+                    }
+                </ul>
+            }
+        </article>
+    </div>
+</section>

@@ -10,37 +10,40 @@ public class DashboardController : Controller
     {
         if (User.IsInRole("Admin"))
         {
-            return RedirectToAction(nameof(Admin));
+            return RedirectToAction("Index", "Courses");
         }
 
         if (User.IsInRole("Professor"))
         {
-            return RedirectToAction(nameof(Professor));
+            return RedirectToAction("Index", "ProfessorRequests");
         }
 
         if (User.IsInRole("Student"))
         {
-            return RedirectToAction(nameof(Student));
+            return RedirectToAction("Index", "StudentSchedule");
         }
 
         return View("NoRole");
     }
 
     [Authorize(Roles = "Admin")]
-    public IActionResult Admin()
+    public async Task<IActionResult> Admin()
     {
-        return View();
+        await Task.CompletedTask;
+        return RedirectToAction("Index", "Courses");
     }
 
     [Authorize(Roles = "Professor")]
-    public IActionResult Professor()
+    public async Task<IActionResult> Professor()
     {
-        return View();
+        await Task.CompletedTask;
+        return RedirectToAction("Index", "ProfessorRequests");
     }
 
     [Authorize(Roles = "Student")]
-    public IActionResult Student()
+    public async Task<IActionResult> Student()
     {
-        return View();
+        await Task.CompletedTask;
+        return RedirectToAction("Index", "StudentSchedule");
     }
 }

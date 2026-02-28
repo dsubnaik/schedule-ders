@@ -9,8 +9,12 @@ public class SIRequest
     public int? CourseID { get; set; }
 
     [StringLength(120)]
-    [Display(Name = "Requested Course Name")]
+    [Display(Name = "Requested Course")]
     public string RequestedCourseName { get; set; } = string.Empty;
+
+    [StringLength(200)]
+    [Display(Name = "Requested Course Name")]
+    public string RequestedCourseTitle { get; set; } = string.Empty;
 
     [StringLength(30)]
     [Display(Name = "Requested Course Section")]
