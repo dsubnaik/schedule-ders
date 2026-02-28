@@ -3,12 +3,44 @@
     ViewData["Title"] = "SI Schedule";
     var dayOptions = ViewData["DayOptions"] as List<string> ?? [];
     var groupedResults = Model.Results
-        .GroupBy(r => new { r.CourseID, r.CourseName, r.CourseSection, r.Professor, r.SILeader })
-        .OrderByDescending(g => Model.FavoriteCourseIds.Contains(g.Key.CourseID))
-        .ThenBy(g => g.Key.CourseName)
-        .ThenBy(g => g.Key.CourseSection)
+        .GroupBy(r => new { r.CourseName, r.CourseTitle, r.Professor, r.SILeader })
+        .Select(g => new
+        {
+            g.Key.CourseName,
+            g.Key.CourseTitle,
+            g.Key.Professor,
+            g.Key.SILeader,
+            Sections = g
+                .GroupBy(x => new { x.CourseID, x.CourseSection })
+                .Select(x => new
+                {
+                    x.Key.CourseID,
+                    x.Key.CourseSection
+                })
+                .OrderBy(x => x.CourseSection)
+                .ToList(),
+            Sessions = g
+                .GroupBy(x => new { x.Day, x.Time, x.Location })
+                .Select(x => x.First())
+                .OrderBy(x => x.Day)
+                .ThenBy(x => x.Time)
+                .ToList()
+        })
+        .OrderByDescending(g => g.Sections.Any(s => Model.FavoriteCourseIds.Contains(s.CourseID)))
+        .ThenBy(g => g.CourseName)
         .ToList();
+    var mergedSessionCount = groupedResults.Sum(g => g.Sessions.Count);
     var currentUrl = Context.Request.Path + Context.Request.QueryString;
+    var timeSuggestions = new List<string>();
+    for (var hour = 6; hour <= 22; hour++)
+    {
+        foreach (var minute in new[] { 0, 15, 30, 45, 50 })
+        {
+            var displayHour = hour % 12 == 0 ? 12 : hour % 12;
+            var suffix = hour >= 12 ? "pm" : "am";
+            timeSuggestions.Add($"{displayHour}:{minute:00}{suffix}");
+        }
+    }
 }
 
 <section class="student-schedule-page page-shell">
@@ -26,9 +58,26 @@
                   data-api-url="@Url.Content("~/api/v1/schedule/sessions")">
                 <div class="col-lg-4">
                     <label class="form-label mb-1">Search</label>
-                    <input name="search" value="@Model.Search" class="form-control" placeholder="Course, section, location, or SI leader" />
+                    <input name="search"
+                           value="@Model.Search"
+                           class="form-control"
+                           placeholder="Course, section, location, or SI leader" />
                 </div>
-                <div class="col-lg-3">
+                <div class="col-lg-2">
+                    <label class="form-label mb-1">Time</label>
+                    <input name="time"
+                           value="@Model.Time"
+                           class="form-control"
+                           list="student-search-time-options"
+                           placeholder="e.g. 10:03 or 1003" />
+                    <datalist id="student-search-time-options">
+                        @foreach (var option in timeSuggestions)
+                        {
+                            <option value="@option"></option>
+                        }
+                    </datalist>
+                </div>
+                <div class="col-lg-2">
                     <label class="form-label mb-1">Day</label>
                     <select name="day" class="form-select">
                         <option value="">All days</option>
@@ -45,7 +94,7 @@
                         }
                     </select>
                 </div>
-                <div class="col-lg-3">
+                <div class="col-lg-2">
                     <label class="form-label mb-1">Professor</label>
                     <input name="professor" value="@Model.Professor" class="form-control" placeholder="Professor name" />
                 </div>
@@ -54,14 +103,14 @@
                 </div>
             </form>
             <div class="mt-2">
-                <a asp-action="Index" class="btn btn-link ps-0">Clear filters</a>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear Filters</a>
             </div>
         </div>
     </div>
 
     <div class="student-schedule-meta mb-3">
         <div class="student-meta-pill">Courses: <span data-student-course-count="true">@groupedResults.Count</span></div>
-        <div class="student-meta-pill">Sessions: <span data-student-session-count="true">@Model.Results.Count</span></div>
+        <div class="student-meta-pill">Sessions: <span data-student-session-count="true">@mergedSessionCount</span></div>
     </div>
 
     @if (!groupedResults.Any())
@@ -77,30 +126,46 @@
                     <article class="card h-100 shadow-sm student-course-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
-                                <h2 class="h5 mb-0">@course.Key.CourseName</h2>
+                                <h2 class="h5 mb-0">
+                                    <span class="fw-bold">@course.CourseName</span>
+                                    @if (!string.IsNullOrWhiteSpace(course.CourseTitle))
+                                    {
+                                        <span class="text-muted"> - @course.CourseTitle</span>
+                                    }
+                                </h2>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="badge text-bg-light border">Section @course.Key.CourseSection</span>
+                                    <span class="badge student-section-badge">Sections @string.Join(", ", course.Sections.Select(s => s.CourseSection))</span>
                                     @if (Model.CanManageFavorites)
                                     {
-                                        var isFavorite = Model.FavoriteCourseIds.Contains(course.Key.CourseID);
-                                        <form method="post"
-                                              asp-action="@(isFavorite ? "Unfavorite" : "Favorite")"
-                                              class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="courseId" value="@course.Key.CourseID" />
-                                            <input type="hidden" name="returnUrl" value="@currentUrl" />
-                                            <button type="submit" class="btn btn-sm @(isFavorite ? "btn-warning" : "btn-outline-secondary")">
-                                                @(isFavorite ? "Favorited" : "Add Favorite")
-                                            </button>
-                                        </form>
+                                        if (course.Sections.Count == 1)
+                                        {
+                                            var onlySection = course.Sections[0];
+                                            var isFavorite = Model.FavoriteCourseIds.Contains(onlySection.CourseID);
+                                            <form method="post"
+                                                  asp-action="@(isFavorite ? "Unfavorite" : "Favorite")"
+                                                  class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="courseId" value="@onlySection.CourseID" />
+                                                <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                                <button type="submit" class="btn btn-sm @(isFavorite ? "btn-warning" : "btn-outline-secondary")">
+                                                    @(isFavorite ? "Favorited" : "Add Favorite")
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Favorite by section</span>
+                                        }
                                     }
                                 </div>
                             </div>
-                            <p class="mb-1"><strong>Professor:</strong> @course.Key.Professor</p>
-                            <p class="mb-3"><strong>SI Leader:</strong> @course.Key.SILeader</p>
+                            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                <span class="badge session-meta-badge session-meta-badge-professor">Professor: @course.Professor</span>
+                                <span class="badge session-meta-badge session-meta-badge-leader">SI Leader: @course.SILeader</span>
+                            </div>
 
                             <div class="d-flex flex-column gap-2">
-                                @foreach (var session in course.OrderBy(s => s.Day).ThenBy(s => s.Time))
+                                @foreach (var session in course.Sessions)
                                 {
                                     <div class="student-session-item">
                                         <div class="student-session-day">@session.Day</div>

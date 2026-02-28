@@ -1,15 +1,6 @@
+@model schedule_ders.ViewModels.DashboardViewModel
 @{
     ViewData["Title"] = "Student Dashboard";
 }
 
-<section class="page-shell py-2">
-    <h1 class="page-title">Student Dashboard</h1>
-    <p class="page-subtitle">You are signed in with the <strong>Student</strong> role.</p>
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <h2 class="h5">SI Schedule</h2>
-            <p class="mb-3">Search SI sessions by course, day, location, and professor.</p>
-            <a class="btn btn-primary" asp-controller="StudentSchedule" asp-action="Index">Search Schedule</a>
-        </div>
-    </div>
-</section>
+<partial name="_DashboardShell" model="Model" />

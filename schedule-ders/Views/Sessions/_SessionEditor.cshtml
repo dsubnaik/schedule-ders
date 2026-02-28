@@ -1,0 +1,54 @@
+@model schedule_ders.Models.Session
+@{
+    var pageTitle = ViewData["PageTitle"] as string ?? "Session";
+    var pageSubtitle = ViewData["PageSubtitle"] as string ?? string.Empty;
+    var formAction = ViewData["FormAction"] as string ?? "Edit";
+    var submitLabel = ViewData["SubmitLabel"] as string ?? "Save";
+    var includeSessionId = ViewData["IncludeSessionId"] as bool? ?? false;
+    var showCourseSelect = ViewData["ShowCourseSelect"] as bool? ?? false;
+    var returnUrl = ViewData["ReturnUrl"] as string;
+    var sessionIdsCsv = ViewData["SessionIdsCsv"] as string ?? string.Empty;
+    var widthClass = ViewData["EditorWidthClass"] as string ?? "col-12 col-lg-9 col-xl-8";
+}
+
+<section class="page-shell">
+<input type="hidden" data-session-form-enhancer="true" />
+
+<div class="row justify-content-center">
+    <div class="@widthClass">
+        <div class="page-title-row mb-1">
+            <div>
+                @if (!string.IsNullOrWhiteSpace(returnUrl))
+                {
+                    <a href="@returnUrl" class="btn page-back-btn">Back</a>
+                }
+                else
+                {
+                    <a asp-controller="Sessions" asp-action="Index" class="btn page-back-btn">Back</a>
+                }
+            </div>
+            <div class="page-title-row-main">
+                <h1 class="page-title">@pageTitle</h1>
+                <p class="page-subtitle">@pageSubtitle</p>
+            </div>
+            <div></div>
+        </div>
+        <form asp-action="@formAction" method="post" class="form-card">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+            <input type="hidden" name="sessionIds" value="@sessionIdsCsv" />
+            @if (includeSessionId)
+            {
+                <input type="hidden" asp-for="SessionID" />
+            }
+            @{
+                ViewData["ShowCourseSelect"] = showCourseSelect;
+            }
+            <partial name="_SessionFormFields" model="Model" />
+            <div class="form-submit-row">
+                <button type="submit" class="btn btn-primary">@submitLabel</button>
+            </div>
+        </form>
+    </div>
+</div>
+</section>

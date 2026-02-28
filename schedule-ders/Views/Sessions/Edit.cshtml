@@ -1,88 +1,17 @@
 @model schedule_ders.Models.Session
 @{
     ViewData["Title"] = "Edit Session";
-    var minutes = new[] { 0, 15, 30, 45, 50 };
-    var timeOptions = new List<string>();
-    for (var hour = 7; hour <= 22; hour++)
-    {
-        foreach (var minute in minutes)
-        {
-            var dt = new DateTime(2000, 1, 1, hour, minute, 0);
-            timeOptions.Add(dt.ToString("h:mmtt").ToLowerInvariant());
-        }
-    }
+    ViewData["PageTitle"] = "Edit Session";
+    ViewData["PageSubtitle"] = $"Course: {ViewData["CourseName"]}";
+    ViewData["FormAction"] = "Edit";
+    ViewData["SubmitLabel"] = "Save";
+    ViewData["IncludeSessionId"] = true;
+    ViewData["ShowCourseSelect"] = true;
+    ViewData["ShowSiLeaderField"] = true;
+    ViewData["LocationPlaceholder"] = string.Empty;
+    ViewData["EditorWidthClass"] = "col-12 col-lg-9 col-xl-8";
 }
-
-<section class="page-shell">
-<h1 class="page-title">Edit Session</h1>
-<p class="page-subtitle">Course: @ViewData["CourseName"]</p>
-
-<input type="hidden" data-session-form-enhancer="true" />
-
-<div class="row">
-    <div class="col-md-6">
-        <form asp-action="Edit" method="post" class="form-card">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-            <input type="hidden" asp-for="SessionID" />
-            <input type="hidden" asp-for="CourseID" />
-            <div class="mb-3">
-                <input asp-for="Day" type="hidden" id="sessionDayInput" />
-                <label asp-for="Day" class="form-label"></label>
-                <div class="d-flex flex-wrap gap-2">
-                    <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Monday">Mon</button>
-                    <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Tuesday">Tue</button>
-                    <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Wednesday">Wed</button>
-                    <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Thursday">Thu</button>
-                    <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Friday">Fri</button>
-                </div>
-                <span asp-validation-for="Day" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <input asp-for="Time" type="hidden" id="sessionTimeInput" />
-                <label asp-for="Time" class="form-label"></label>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label class="form-label small mb-1">Start</label>
-                        <select id="sessionStartInput" class="form-select">
-                            <option value="">Start time</option>
-                            @foreach (var t in timeOptions)
-                            {
-                                <option value="@t">@t</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small mb-1">End</label>
-                        <select id="sessionEndInput" class="form-select">
-                            <option value="">End time</option>
-                            @foreach (var t in timeOptions)
-                            {
-                                <option value="@t">@t</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-                <span asp-validation-for="Time" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Location" class="form-label"></label>
-                <input asp-for="Location" class="form-control" />
-                <span asp-validation-for="Location" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-primary">Save</button>
-            @if (ViewData["ReturnUrl"] is string returnUrl && !string.IsNullOrWhiteSpace(returnUrl))
-            {
-                <a href="@returnUrl" class="btn btn-secondary">Back</a>
-            }
-            else
-            {
-                <a asp-controller="Sessions" asp-action="Index" class="btn btn-secondary">Back</a>
-            }
-        </form>
-    </div>
-</div>
-</section>
+<partial name="_SessionEditor" model="Model" />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

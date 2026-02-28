@@ -1,0 +1,136 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model schedule_ders.Models.Session
+@{
+    var minutes = new[] { 0, 15, 30, 45, 50 };
+    var timeOptions = new List<string>();
+    var showCourseSelect = ViewData["ShowCourseSelect"] as bool? ?? false;
+    var showSiLeaderField = ViewData["ShowSiLeaderField"] as bool? ?? false;
+    var showSectionTargets = ViewData["ShowSectionTargets"] as bool? ?? false;
+    var currentSiLeader = ViewData["CurrentSiLeader"] as string ?? string.Empty;
+    var locationPlaceholder = ViewData["LocationPlaceholder"] as string ?? string.Empty;
+    var leaderOptions = ViewBag.LeaderOptions as List<string> ?? [];
+    var sectionTargetOptions = ViewBag.SectionTargetOptions as List<SelectListItem> ?? [];
+    var selectedCourseIds = ViewData["SelectedCourseIds"] as List<int> ?? [];
+    for (var hour = 7; hour <= 22; hour++)
+    {
+        foreach (var minute in minutes)
+        {
+            var dt = new DateTime(2000, 1, 1, hour, minute, 0);
+            timeOptions.Add(dt.ToString("h:mmtt").ToLowerInvariant());
+        }
+    }
+}
+
+@if (showCourseSelect)
+{
+    <div class="mb-3">
+        <label asp-for="CourseID" class="form-label"></label>
+        <select asp-for="CourseID" asp-items="ViewBag.CourseOptions" class="form-select">
+            <option value="">Select a course</option>
+        </select>
+        <span asp-validation-for="CourseID" class="text-danger"></span>
+    </div>
+}
+else
+{
+    <input type="hidden" asp-for="CourseID" />
+}
+
+@if (showSectionTargets && showCourseSelect)
+{
+    <div class="mb-3"
+         id="sessionSectionTargets"
+         data-section-targets-container="true"
+         data-section-targets-url="@Url.Action("SectionTargets", "Sessions")">
+        <label class="form-label">Sections to Include</label>
+        <div class="d-flex flex-wrap gap-2" data-section-targets-list="true">
+            @if (sectionTargetOptions.Count == 0)
+            {
+                <span class="text-muted small">Select a course to choose sections.</span>
+            }
+            else
+            {
+                @foreach (var option in sectionTargetOptions)
+                {
+                    var optionId = int.TryParse(option.Value, out var parsedId) ? parsedId : 0;
+                    var isSelected = selectedCourseIds.Contains(optionId);
+                    <label class="btn @(isSelected ? "btn-primary" : "btn-outline-primary") mb-0">
+                        <input type="checkbox"
+                               class="d-none"
+                               name="sectionCourseIds"
+                               value="@option.Value"
+                               @(isSelected ? "checked" : null) />
+                        @option.Text
+                    </label>
+                }
+            }
+        </div>
+        <div class="form-text">Pick one or more sections for this same session slot.</div>
+    </div>
+}
+
+<div class="mb-3">
+    <input asp-for="Day" type="hidden" id="sessionDayInput" />
+    <label asp-for="Day" class="form-label"></label>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Monday">Mon</button>
+        <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Tuesday">Tue</button>
+        <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Wednesday">Wed</button>
+        <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Thursday">Thu</button>
+        <button type="button" class="btn btn-outline-primary session-day-toggle" data-day="Friday">Fri</button>
+    </div>
+    <span asp-validation-for="Day" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <input asp-for="Time" type="hidden" id="sessionTimeInput" />
+    <label asp-for="Time" class="form-label"></label>
+    <div class="row g-2">
+        <div class="col-6">
+            <label class="form-label small mb-1">Start</label>
+            <select id="sessionStartInput" class="form-select">
+                <option value="">Start time</option>
+                @foreach (var t in timeOptions)
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </div>
+        <div class="col-6">
+            <label class="form-label small mb-1">End</label>
+            <select id="sessionEndInput" class="form-select">
+                <option value="">End time</option>
+                @foreach (var t in timeOptions)
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </div>
+    </div>
+    <span asp-validation-for="Time" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Location" class="form-label"></label>
+    <input asp-for="Location" class="form-control" placeholder="@locationPlaceholder" />
+    <span asp-validation-for="Location" class="text-danger"></span>
+</div>
+
+@if (showSiLeaderField)
+{
+    <div class="mb-3">
+        <label for="siLeaderInput" class="form-label">SI Leader</label>
+        <input id="siLeaderInput"
+               name="siLeader"
+               class="form-control"
+               list="si-leader-options"
+               value="@currentSiLeader"
+               placeholder="Enter or select SI leader" />
+        <datalist id="si-leader-options">
+            @foreach (var leader in leaderOptions)
+            {
+                <option value="@leader"></option>
+            }
+        </datalist>
+    </div>
+}

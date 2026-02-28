@@ -17,22 +17,41 @@
         60 => "progress-w-60",
         _ => "progress-w-100"
     };
+    var statusPillClass = Model.Status switch
+    {
+        schedule_ders.Models.SIRequestStatus.Approved => "status-pill status-pill-approved",
+        schedule_ders.Models.SIRequestStatus.Denied => "status-pill status-pill-denied",
+        schedule_ders.Models.SIRequestStatus.UnderReview => "status-pill status-pill-review",
+        _ => "status-pill status-pill-pending"
+    };
 }
 
 <section class="page-shell"
          data-professor-request-track="true"
          data-request-id="@Model.SIRequestID"
          data-status-api-url="@Url.Content($"~/api/v1/professor/requests/{Model.SIRequestID}/status")">
-<div class="page-header mb-1">
-    <h1 class="page-title">Request Tracker</h1>
-    <div class="page-actions"><a asp-action="Index" class="btn btn-secondary">Back</a></div>
+<div class="page-title-row mb-1">
+    <div>
+        <a asp-action="Index" class="btn page-back-btn">Back</a>
+    </div>
+    <div class="page-title-row-main">
+        <h1 class="page-title">Request Tracker</h1>
+    </div>
+    <div class="page-actions justify-content-end">
+        <a asp-action="Edit" asp-route-id="@Model.SIRequestID" class="btn btn-primary">Edit Request</a>
+    </div>
 </div>
 
 @{
+    var manualCode = string.IsNullOrWhiteSpace(Model.RequestedCourseSection)
+        ? Model.RequestedCourseName
+        : $"{Model.RequestedCourseName} ({Model.RequestedCourseSection})";
     var courseDisplay = Model.Course is not null
-        ? $"{Model.Course.CourseName} ({Model.Course.CourseSection})"
+        ? $"{Model.Course.CourseName} ({Model.Course.CourseSection}) - {Model.Course.CourseTitle}"
         : (!string.IsNullOrWhiteSpace(Model.RequestedCourseName)
-            ? $"{Model.RequestedCourseName} ({Model.RequestedCourseSection})"
+            ? (string.IsNullOrWhiteSpace(Model.RequestedCourseTitle)
+                ? manualCode
+                : $"{manualCode} - {Model.RequestedCourseTitle}")
             : "Manual Course Entry");
 }
 
@@ -51,9 +70,9 @@
             <div class="progress-bar @trackColor @progressWidthClass" data-track-progress-bar="true"></div>
         </div>
         <div class="d-flex justify-content-between small mt-2 text-muted">
-            <span data-track-stage-submitted="true">@(Model.Status is schedule_ders.Models.SIRequestStatus.Pending or schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
-            <span data-track-stage-review="true">@(Model.Status is schedule_ders.Models.SIRequestStatus.UnderReview or schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
-            <span data-track-stage-final="true">@(Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending")</span>
+            <span class="track-stage-note track-stage-complete" data-track-stage-submitted="true">Complete</span>
+            <span class="track-stage-note @(Model.Status == schedule_ders.Models.SIRequestStatus.UnderReview ? "track-stage-current" : (Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "track-stage-complete" : ""))" data-track-stage-review="true">@(Model.Status == schedule_ders.Models.SIRequestStatus.UnderReview ? "In Progress" : (Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending"))</span>
+            <span class="track-stage-note @(Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "track-stage-complete" : "")" data-track-stage-final="true">@(Model.Status == schedule_ders.Models.SIRequestStatus.Approved ? "Approved" : (Model.Status == schedule_ders.Models.SIRequestStatus.Denied ? "Denied" : "Pending"))</span>
         </div>
     </div>
 </div>
@@ -62,19 +81,27 @@
     <div class="col-md-4">
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Current Status</div>
-            <div class="fw-semibold" data-track-current-status="true">@Model.Status</div>
+            <div class="fw-semibold">
+                <span class="@statusPillClass" data-track-current-status-pill="true" data-track-current-status="true">@Model.Status</span>
+            </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Submitted On</div>
-            <div class="fw-semibold">@Model.SubmittedAtUtc.ToLocalTime().ToString("f")</div>
+            <div class="fw-semibold" data-track-submitted-date="true">@Model.SubmittedAtUtc.ToLocalTime().ToString("f")</div>
+            <div class="mt-1">
+                <span class="relative-time-pill" data-track-submitted-relative="true">@schedule_ders.Utilities.RelativeTimeFormatter.Format(Model.SubmittedAtUtc)</span>
+            </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Last Updated</div>
             <div class="fw-semibold" data-track-last-updated="true">@((Model.LastUpdatedAtUtc?.ToLocalTime().ToString("f")) ?? "No updates yet")</div>
+            <div class="mt-1">
+                <span class="relative-time-pill" data-track-last-updated-relative="true">@schedule_ders.Utilities.RelativeTimeFormatter.Format(Model.LastUpdatedAtUtc)</span>
+            </div>
         </div>
     </div>
 </div>

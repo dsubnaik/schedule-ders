@@ -29,6 +29,11 @@ public class ProfessorRequestsApiController : ControllerBase
 
         try
         {
+            var (professorName, professorEmail) = ResolveProfessorIdentity();
+            input.ProfessorName = professorName;
+            input.ProfessorEmail = professorEmail;
+            input.RequestedCourseProfessor = professorName;
+
             var result = await _professorRequestService.CreateRequestAsync(input, userId);
             return CreatedAtAction(nameof(GetStatus), new { id = result.RequestId }, result);
         }
@@ -64,5 +69,29 @@ public class ProfessorRequestsApiController : ControllerBase
         }
 
         return Ok(result.Status);
+    }
+
+    private (string Name, string Email) ResolveProfessorIdentity()
+    {
+        var email = (User.Identity?.Name ?? string.Empty).Trim();
+        var localPart = email.Contains('@') ? email.Split('@')[0] : email;
+        var safeLocalPart = string.IsNullOrWhiteSpace(localPart) ? "Professor" : localPart;
+        var displayName = safeLocalPart
+            .Replace('.', ' ')
+            .Replace('_', ' ')
+            .Replace('-', ' ')
+            .Trim();
+
+        if (string.IsNullOrWhiteSpace(displayName))
+        {
+            displayName = "Professor";
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            email = "professor@schedule-ders.local";
+        }
+
+        return (displayName, email);
     }
 }

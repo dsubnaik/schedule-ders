@@ -1,6 +1,12 @@
 @model IEnumerable<schedule_ders.Models.SIRequest>
 @{
     ViewData["Title"] = "My SI Requests";
+    var currentStatus = (ViewData["CurrentStatus"] as string ?? string.Empty).Trim();
+    var nowUtc = DateTime.UtcNow;
+
+    bool IsStatusActive(string chipValue) =>
+        string.Equals(currentStatus, chipValue, StringComparison.OrdinalIgnoreCase)
+        || (string.IsNullOrWhiteSpace(currentStatus) && string.IsNullOrWhiteSpace(chipValue));
 }
 
 <section class="page-shell">
@@ -11,14 +17,29 @@
     </div>
 </div>
 
-<div class="table-responsive data-table">
-    <table class="table table-striped align-middle data-table-compact">
+@if (ViewData["ProfessorNotification"] is string professorNotice && !string.IsNullOrWhiteSpace(professorNotice))
+{
+    <div class="alert alert-info mb-2" role="status">
+        @professorNotice
+    </div>
+}
+
+<div class="quick-status-chips mb-2">
+    <a asp-action="Index" class="quick-status-chip @(IsStatusActive("") ? "is-active" : "")">All</a>
+    <a asp-action="Index" asp-route-status="Pending" class="quick-status-chip @(IsStatusActive("Pending") ? "is-active" : "")">Pending</a>
+    <a asp-action="Index" asp-route-status="UnderReview" class="quick-status-chip @(IsStatusActive("UnderReview") ? "is-active" : "")">Under Review</a>
+    <a asp-action="Index" asp-route-status="Approved" class="quick-status-chip @(IsStatusActive("Approved") ? "is-active" : "")">Approved</a>
+    <a asp-action="Index" asp-route-status="Denied" class="quick-status-chip @(IsStatusActive("Denied") ? "is-active" : "")">Denied</a>
+</div>
+
+<div class="table-responsive data-table professor-requests-table-scroll">
+    <table class="table table-striped align-middle data-table-compact professor-requests-table">
         <thead>
             <tr>
                 <th>Course</th>
                 <th>Submitted</th>
                 <th>Status</th>
-                <th></th>
+                <th class="request-actions-col"></th>
             </tr>
         </thead>
         <tbody>
@@ -32,14 +53,22 @@
         {
             @foreach (var item in Model)
             {
+                var manualCode = string.IsNullOrWhiteSpace(item.RequestedCourseSection)
+                    ? item.RequestedCourseName
+                    : $"{item.RequestedCourseName} ({item.RequestedCourseSection})";
                 var courseDisplay = item.Course is not null
-                    ? $"{item.Course.CourseName} ({item.Course.CourseSection})"
+                    ? $"{item.Course.CourseName} ({item.Course.CourseSection}) - {item.Course.CourseTitle}"
                     : (!string.IsNullOrWhiteSpace(item.RequestedCourseName)
-                        ? $"{item.RequestedCourseName} ({item.RequestedCourseSection})"
+                        ? (string.IsNullOrWhiteSpace(item.RequestedCourseTitle)
+                            ? manualCode
+                            : $"{manualCode} - {item.RequestedCourseTitle}")
                         : "Manual Course Entry");
                 <tr>
                     <td>@courseDisplay</td>
-                    <td>@item.SubmittedAtUtc.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <div>@item.SubmittedAtUtc.ToLocalTime().ToString("g")</div>
+                        <span class="relative-time-pill">@schedule_ders.Utilities.RelativeTimeFormatter.Format(item.SubmittedAtUtc, nowUtc)</span>
+                    </td>
                     <td>
                         <span class="status-pill @(item.Status switch
                               {
@@ -51,9 +80,25 @@
                             @item.Status
                         </span>
                     </td>
-                    <td class="text-nowrap">
-                        <a asp-action="Track" asp-route-id="@item.SIRequestID">Track</a> |
-                        <a asp-action="Details" asp-route-id="@item.SIRequestID">Details</a>
+                    <td class="text-nowrap text-end">
+                        <span class="professor-request-actions">
+                            @if (item.Status == schedule_ders.Models.SIRequestStatus.Pending || item.Status == schedule_ders.Models.SIRequestStatus.UnderReview)
+                            {
+                                <a asp-action="Track" asp-route-id="@item.SIRequestID" class="request-action-link request-action-link-priority">Status</a>
+                            }
+                            else
+                            {
+                                <a asp-action="Details" asp-route-id="@item.SIRequestID" class="request-action-link request-action-link-subtle">Details</a>
+                            }
+                            <a asp-action="Edit" asp-route-id="@item.SIRequestID" class="request-action-link">Edit</a>
+                            <button type="button"
+                                    class="request-action-link request-action-delete"
+                                    data-request-delete-trigger="true"
+                                    data-request-id="@item.SIRequestID"
+                                    data-course-display="@courseDisplay"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteRequestModal">Delete</button>
+                        </span>
                     </td>
                 </tr>
             }
@@ -62,3 +107,26 @@
     </table>
 </div>
 </section>
+
+<div class="modal fade" id="deleteRequestModal" tabindex="-1" aria-labelledby="deleteRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content request-delete-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteRequestModalLabel">Delete Request</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to delete this request?</p>
+                <p class="mb-0 text-muted"><strong>Course:</strong> <span id="deleteRequestCourseName">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteRequestIdInput" />
+                    <button type="submit" class="btn btn-danger">Delete Request</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>

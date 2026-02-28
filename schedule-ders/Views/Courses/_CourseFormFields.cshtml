@@ -3,9 +3,6 @@
     var professorOptions = ViewBag.ProfessorOptions as List<string> ?? [];
     var minutes = new[] { 0, 15, 30, 45, 50 };
     var timeOptions = new List<string>();
-    var officeHoursDayValue = (Model.OfficeHoursDay ?? string.Empty).Trim();
-    bool IsOfficeDaySelected(params string[] values) =>
-        values.Any(v => string.Equals(officeHoursDayValue, v, StringComparison.OrdinalIgnoreCase));
     for (var hour = 7; hour <= 22; hour++)
     {
         foreach (var minute in minutes)
@@ -33,16 +30,22 @@
     <span asp-validation-for="CourseCrn" class="text-danger"></span>
 </div>
 
-<div class="mb-3">
-    <label asp-for="CourseName" class="form-label"></label>
-    <input asp-for="CourseName" class="form-control" id="courseNameInput" />
-    <span asp-validation-for="CourseName" class="text-danger"></span>
-</div>
-
-<div class="mb-3">
-    <label asp-for="CourseSection" class="form-label"></label>
-    <input asp-for="CourseSection" class="form-control" id="courseSectionInput" />
-    <span asp-validation-for="CourseSection" class="text-danger"></span>
+<div class="row g-3">
+    <div class="col-12 col-md-4">
+        <label asp-for="CourseName" class="form-label"></label>
+        <input asp-for="CourseName" class="form-control" id="courseNameInput" />
+        <span asp-validation-for="CourseName" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-5">
+        <label asp-for="CourseTitle" class="form-label"></label>
+        <input asp-for="CourseTitle" class="form-control" id="courseTitleInput" />
+        <span asp-validation-for="CourseTitle" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-3">
+        <label asp-for="CourseSection" class="form-label"></label>
+        <input asp-for="CourseSection" class="form-control" id="courseSectionInput" />
+        <span asp-validation-for="CourseSection" class="text-danger"></span>
+    </div>
 </div>
 
 <input asp-for="CourseMeetingDays" type="hidden" id="courseMeetingDaysInput" />
@@ -65,83 +68,99 @@
     <div class="row g-2">
         <div class="col-6">
             <label class="form-label small mb-1">Start</label>
-            <select id="meetingStartInput" class="form-select">
-                <option value="">Start time</option>
-                @foreach (var t in timeOptions)
-                {
-                    <option value="@t">@t</option>
-                }
-            </select>
+            <div class="time-picker">
+                <input type="text"
+                       id="meetingStartInput"
+                       class="form-control time-picker-input"
+                       data-time-options="courseTimeOptions"
+                       autocomplete="off"
+                       placeholder="Start time (e.g. 9:00am)" />
+                <div class="time-picker-menu" data-time-picker-menu="true"></div>
+            </div>
         </div>
         <div class="col-6">
             <label class="form-label small mb-1">End</label>
-            <select id="meetingEndInput" class="form-select">
-                <option value="">End time</option>
-                @foreach (var t in timeOptions)
-                {
-                    <option value="@t">@t</option>
-                }
-            </select>
+            <div class="time-picker">
+                <input type="text"
+                       id="meetingEndInput"
+                       class="form-control time-picker-input"
+                       data-time-options="courseTimeOptions"
+                       autocomplete="off"
+                       placeholder="End time (e.g. 9:50am)" />
+                <div class="time-picker-menu" data-time-picker-menu="true"></div>
+            </div>
         </div>
     </div>
     <span asp-validation-for="CourseMeetingTime" class="text-danger"></span>
 </div>
 
-<div class="mb-3">
-    <label asp-for="CourseProfessor" class="form-label"></label>
-    <input asp-for="CourseProfessor" class="form-control" list="professorOptions" id="courseProfessorInput" />
-    <datalist id="professorOptions">
-        @foreach (var professor in professorOptions)
-        {
-            <option value="@professor"></option>
-        }
-    </datalist>
-    <div class="form-text">Search existing professors or type a new one.</div>
-    <span asp-validation-for="CourseProfessor" class="text-danger"></span>
-</div>
+<datalist id="courseTimeOptions">
+    @foreach (var t in timeOptions)
+    {
+        <option value="@t"></option>
+    }
+</datalist>
 
-<div class="mb-3">
-    <label asp-for="CourseLeader" class="form-label"></label>
-    <input asp-for="CourseLeader" class="form-control" id="courseLeaderInput" />
-    <span asp-validation-for="CourseLeader" class="text-danger"></span>
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-6">
+        <label asp-for="CourseProfessor" class="form-label"></label>
+        <input asp-for="CourseProfessor" class="form-control" list="professorOptions" id="courseProfessorInput" />
+        <span asp-validation-for="CourseProfessor" class="text-danger"></span>
+    </div>
+    <div class="col-12 col-md-6">
+        <label asp-for="CourseLeader" class="form-label"></label>
+        <input asp-for="CourseLeader" class="form-control" id="courseLeaderInput" />
+        <span asp-validation-for="CourseLeader" class="text-danger"></span>
+    </div>
 </div>
+<datalist id="professorOptions">
+    @foreach (var professor in professorOptions)
+    {
+        <option value="@professor"></option>
+    }
+</datalist>
+<div class="form-text mb-3">Search existing professors or type a new one.</div>
 
+<input asp-for="OfficeHoursDay" type="hidden" id="officeHoursDayInput" />
 <input asp-for="OfficeHoursTime" type="hidden" id="officeHoursTimeInput" />
 <div class="card border-secondary-subtle mb-3">
     <div class="card-body">
         <h2 class="h6 mb-3">Office Hours</h2>
         <div class="mb-3">
-            <label asp-for="OfficeHoursDay" class="form-label"></label>
-            <select asp-for="OfficeHoursDay" class="form-select" id="officeHoursDayInput">
-                <option value="">Select day</option>
-                <option value="Monday" selected="@(IsOfficeDaySelected("Monday", "M") ? "selected" : null)">Monday</option>
-                <option value="Tuesday" selected="@(IsOfficeDaySelected("Tuesday", "T") ? "selected" : null)">Tuesday</option>
-                <option value="Wednesday" selected="@(IsOfficeDaySelected("Wednesday", "W") ? "selected" : null)">Wednesday</option>
-                <option value="Thursday" selected="@(IsOfficeDaySelected("Thursday", "R") ? "selected" : null)">Thursday</option>
-                <option value="Friday" selected="@(IsOfficeDaySelected("Friday", "F") ? "selected" : null)">Friday</option>
-            </select>
+            <label class="form-label" asp-for="OfficeHoursDay"></label>
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="M">M</button>
+                <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="T">T</button>
+                <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="W">W</button>
+                <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="R">R</button>
+                <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="F">F</button>
+            </div>
             <span asp-validation-for="OfficeHoursDay" class="text-danger"></span>
         </div>
         <div class="row g-2 mb-3">
             <div class="col-6">
                 <label class="form-label small mb-1">Start</label>
-                <select id="officeStartInput" class="form-select">
-                    <option value="">Start time</option>
-                    @foreach (var t in timeOptions)
-                    {
-                        <option value="@t">@t</option>
-                    }
-                </select>
+                <div class="time-picker">
+                    <input type="text"
+                           id="officeStartInput"
+                           class="form-control time-picker-input"
+                           data-time-options="officeTimeOptions"
+                           autocomplete="off"
+                           placeholder="Start time (e.g. 2:00pm)" />
+                    <div class="time-picker-menu" data-time-picker-menu="true"></div>
+                </div>
             </div>
             <div class="col-6">
                 <label class="form-label small mb-1">End</label>
-                <select id="officeEndInput" class="form-select">
-                    <option value="">End time</option>
-                    @foreach (var t in timeOptions)
-                    {
-                        <option value="@t">@t</option>
-                    }
-                </select>
+                <div class="time-picker">
+                    <input type="text"
+                           id="officeEndInput"
+                           class="form-control time-picker-input"
+                           data-time-options="officeTimeOptions"
+                           autocomplete="off"
+                           placeholder="End time (e.g. 3:00pm)" />
+                    <div class="time-picker-menu" data-time-picker-menu="true"></div>
+                </div>
             </div>
             <span asp-validation-for="OfficeHoursTime" class="text-danger"></span>
         </div>
@@ -152,3 +171,10 @@
         </div>
     </div>
 </div>
+
+<datalist id="officeTimeOptions">
+    @foreach (var t in timeOptions)
+    {
+        <option value="@t"></option>
+    }
+</datalist>

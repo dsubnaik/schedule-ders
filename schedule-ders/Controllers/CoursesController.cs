@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using schedule_ders.Models;
+using schedule_ders.Utilities;
 
 namespace schedule_ders.Controllers;
 
@@ -15,26 +16,114 @@ public class CoursesController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index(string? search)
+    public async Task<IActionResult> Index(string? crn, string? course, string? time, string? professor, string? day)
     {
+        var crnValue = crn?.Trim() ?? string.Empty;
+        var courseValue = course?.Trim() ?? string.Empty;
+        var timeValue = time?.Trim() ?? string.Empty;
+        var professorValue = professor?.Trim() ?? string.Empty;
+        var dayValue = day?.Trim() ?? string.Empty;
+        var compactTime = TimeSearchHelper.ToCompactToken(timeValue);
+        var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
+
         var query = _context.Courses
             .AsNoTracking()
             .Include(c => c.Sessions)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(crnValue))
         {
-            query = query.Where(c =>
-                c.CourseCrn.Contains(search) ||
-                c.CourseName.Contains(search) ||
-                c.CourseSection.Contains(search) ||
-                c.CourseProfessor.Contains(search) ||
-                c.CourseMeetingDays.Contains(search) ||
-                c.CourseMeetingTime.Contains(search));
+            query = query.Where(c => c.CourseCrn.Contains(crnValue));
         }
 
-        ViewData["CurrentSearch"] = search;
-        return View(await query.OrderBy(c => c.CourseName).ThenBy(c => c.CourseSection).ToListAsync());
+        if (!string.IsNullOrWhiteSpace(courseValue))
+        {
+            query = query.Where(c => c.CourseName.Contains(courseValue) || c.CourseTitle.Contains(courseValue));
+        }
+
+        if (!string.IsNullOrWhiteSpace(professorValue))
+        {
+            query = query.Where(c => c.CourseProfessor.Contains(professorValue));
+        }
+
+        if (!string.IsNullOrWhiteSpace(dayValue))
+        {
+            query = query.Where(c => c.CourseMeetingDays.Contains(dayValue));
+        }
+
+        if (!string.IsNullOrWhiteSpace(timeValue) && !hasSearchTime)
+        {
+            query = query.Where(c =>
+                c.CourseMeetingTime.Contains(timeValue) ||
+                c.CourseMeetingTime.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactTime));
+        }
+
+        var courses = await query
+            .OrderBy(c => c.CourseName)
+            .ThenBy(c => c.CourseSection)
+            .ToListAsync();
+
+        if (hasSearchTime)
+        {
+            courses = courses
+                .Where(c =>
+                    TimeSearchHelper.MatchesTimeRange(c.CourseMeetingTime, timeValue) ||
+                    TimeSearchHelper.MatchesTimeText(c.CourseMeetingTime, timeValue))
+                .ToList();
+        }
+
+        ViewData["CurrentCrn"] = crnValue;
+        ViewData["CurrentCourse"] = courseValue;
+        ViewData["CurrentTime"] = timeValue;
+        ViewData["CurrentProfessor"] = professorValue;
+        ViewData["CurrentDay"] = dayValue;
+
+        ViewBag.ProfessorOptions = await _context.Courses
+            .AsNoTracking()
+            .Where(c => !string.IsNullOrWhiteSpace(c.CourseProfessor))
+            .Select(c => c.CourseProfessor)
+            .Distinct()
+            .OrderBy(p => p)
+            .ToListAsync();
+
+        ViewBag.DayOptions = await _context.Courses
+            .AsNoTracking()
+            .Where(c => !string.IsNullOrWhiteSpace(c.CourseMeetingDays))
+            .Select(c => c.CourseMeetingDays)
+            .Distinct()
+            .OrderBy(d => d)
+            .ToListAsync();
+
+        var notificationCookieKey = "sd-admin-last-seen-requests";
+        var lastSeenRaw = Request.Cookies[notificationCookieKey];
+        if (long.TryParse(lastSeenRaw, out var lastSeenUnix))
+        {
+            var lastSeenUtc = DateTimeOffset.FromUnixTimeSeconds(lastSeenUnix).UtcDateTime;
+            var newRequests = await _context.SIRequests
+                .AsNoTracking()
+                .CountAsync(r => r.SubmittedAtUtc > lastSeenUtc);
+
+            if (newRequests > 0)
+            {
+                ViewData["AdminNotification"] = newRequests == 1
+                    ? "1 new SI request was submitted."
+                    : $"{newRequests} new SI requests were submitted.";
+            }
+        }
+
+        Response.Cookies.Append(
+            notificationCookieKey,
+            DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+            new CookieOptions
+            {
+                HttpOnly = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.Lax,
+                Secure = Request.IsHttps,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+
+        return View(courses);
     }
 
     public async Task<IActionResult> Details(int? id)
@@ -64,7 +153,7 @@ public class CoursesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create([Bind("CourseID,CourseCrn,CourseName,CourseSection,CourseMeetingDays,CourseMeetingTime,CourseProfessor,CourseLeader,OfficeHoursDay,OfficeHoursTime,OfficeHoursLocation")] Course course)
+    public async Task<IActionResult> Create([Bind("CourseID,CourseCrn,CourseName,CourseTitle,CourseSection,CourseMeetingDays,CourseMeetingTime,CourseProfessor,CourseLeader,OfficeHoursDay,OfficeHoursTime,OfficeHoursLocation")] Course course)
     {
         if (!ModelState.IsValid)
         {
@@ -73,7 +162,7 @@ public class CoursesController : Controller
         }
 
         _context.Add(course);
-        await UpsertCatalogEntryAsync(course.CourseCrn, course.CourseName, course.CourseSection);
+        await UpsertCatalogEntryAsync(course.CourseCrn, course.CourseName, course.CourseTitle, course.CourseSection);
         await _context.SaveChangesAsync();
         return RedirectToAction(nameof(Index));
     }
@@ -97,7 +186,7 @@ public class CoursesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, [Bind("CourseID,CourseCrn,CourseName,CourseSection,CourseMeetingDays,CourseMeetingTime,CourseProfessor,CourseLeader,OfficeHoursDay,OfficeHoursTime,OfficeHoursLocation")] Course course)
+    public async Task<IActionResult> Edit(int id, [Bind("CourseID,CourseCrn,CourseName,CourseTitle,CourseSection,CourseMeetingDays,CourseMeetingTime,CourseProfessor,CourseLeader,OfficeHoursDay,OfficeHoursTime,OfficeHoursLocation")] Course course)
     {
         if (id != course.CourseID)
         {
@@ -113,7 +202,7 @@ public class CoursesController : Controller
         try
         {
             _context.Update(course);
-            await UpsertCatalogEntryAsync(course.CourseCrn, course.CourseName, course.CourseSection);
+            await UpsertCatalogEntryAsync(course.CourseCrn, course.CourseName, course.CourseTitle, course.CourseSection);
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
@@ -145,6 +234,7 @@ public class CoursesController : Controller
             .Select(c => new
             {
                 c.CourseName,
+                c.CourseTitle,
                 c.CourseSection
             })
             .FirstOrDefaultAsync();
@@ -197,21 +287,7 @@ public class CoursesController : Controller
 
     public async Task<IActionResult> Delete(int? id)
     {
-        if (id is null)
-        {
-            return NotFound();
-        }
-
-        var course = await _context.Courses
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.CourseID == id);
-
-        if (course is null)
-        {
-            return NotFound();
-        }
-
-        return View(course);
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost, ActionName("Delete")]
@@ -232,6 +308,11 @@ public class CoursesController : Controller
                 if (string.IsNullOrWhiteSpace(request.RequestedCourseName))
                 {
                     request.RequestedCourseName = course.CourseName;
+                }
+
+                if (string.IsNullOrWhiteSpace(request.RequestedCourseTitle))
+                {
+                    request.RequestedCourseTitle = course.CourseTitle;
                 }
 
                 if (string.IsNullOrWhiteSpace(request.RequestedCourseSection))
@@ -268,7 +349,7 @@ public class CoursesController : Controller
             .ToList();
     }
 
-    private async Task UpsertCatalogEntryAsync(string crn, string courseName, string courseSection)
+    private async Task UpsertCatalogEntryAsync(string crn, string courseName, string courseTitle, string courseSection)
     {
         var normalizedCrn = crn.Trim();
         if (string.IsNullOrWhiteSpace(normalizedCrn))
@@ -283,12 +364,14 @@ public class CoursesController : Controller
             {
                 CourseCrn = normalizedCrn,
                 CourseName = courseName.Trim(),
+                CourseTitle = courseTitle.Trim(),
                 CourseSection = courseSection.Trim()
             });
             return;
         }
 
         entry.CourseName = courseName.Trim();
+        entry.CourseTitle = courseTitle.Trim();
         entry.CourseSection = courseSection.Trim();
     }
 }

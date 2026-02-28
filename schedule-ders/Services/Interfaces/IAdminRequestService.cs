@@ -14,4 +14,13 @@ public interface IAdminRequestService
         int pageSize);
 
     Task<SiRequestSummaryDto?> UpdateStatusAsync(int requestId, UpdateRequestStatusDto input);
+
+    Task<RemoveAdminRequestResult> RemoveRequestAsync(int requestId);
+}
+
+public enum RemoveAdminRequestResult
+{
+    NotFound = 0,
+    NotAllowed = 1,
+    Removed = 2
 }

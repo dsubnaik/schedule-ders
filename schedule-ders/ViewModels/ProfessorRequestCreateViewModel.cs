@@ -4,31 +4,23 @@ namespace schedule_ders.ViewModels;
 
 public class ProfessorRequestCreateViewModel
 {
-    [Display(Name = "Select Existing Course (Optional)")]
     public int? CourseID { get; set; }
 
     [StringLength(120)]
-    [Display(Name = "Course Name (If Not Listed)")]
+    [Display(Name = "Course")]
     public string RequestedCourseName { get; set; } = string.Empty;
 
+    [StringLength(200)]
+    [Display(Name = "Course Name")]
+    public string RequestedCourseTitle { get; set; } = string.Empty;
+
     [StringLength(30)]
-    [Display(Name = "Course Section (If Not Listed)")]
+    [Display(Name = "Course Section")]
     public string RequestedCourseSection { get; set; } = string.Empty;
 
     [StringLength(120)]
-    [Display(Name = "Course Professor (If Not Listed)")]
+    [Display(Name = "Course Professor")]
     public string RequestedCourseProfessor { get; set; } = string.Empty;
-
-    [Required]
-    [StringLength(120)]
-    [Display(Name = "Professor Name")]
-    public string ProfessorName { get; set; } = string.Empty;
-
-    [Required]
-    [EmailAddress]
-    [StringLength(256)]
-    [Display(Name = "Professor Email")]
-    public string ProfessorEmail { get; set; } = string.Empty;
 
     [Required]
     [StringLength(1000)]

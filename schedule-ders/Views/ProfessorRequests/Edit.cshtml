@@ -1,6 +1,7 @@
 @model schedule_ders.ViewModels.ProfessorRequestCreateViewModel
 @{
-    ViewData["Title"] = "New SI Request";
+    ViewData["Title"] = "Edit SI Request";
+    var requestId = ViewContext.RouteData.Values["id"]?.ToString();
 }
 
 <section class="page-shell new-request-page">
@@ -9,27 +10,24 @@
         <a asp-action="Index" class="btn page-back-btn">Back</a>
     </div>
     <div class="page-title-row-main">
-        <h1 class="page-title">New SI Request</h1>
-        <p class="page-subtitle">Submit a request for SI support for one of your courses.</p>
+        <h1 class="page-title">Edit SI Request</h1>
+        <p class="page-subtitle">Update your request details.</p>
     </div>
     <div></div>
 </div>
 
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-7">
-        <form asp-action="Create"
+        <form asp-action="Edit"
+              asp-route-id="@requestId"
               method="post"
               class="form-card"
-              data-professor-request-form="true"
-              data-professor-request-create-form="true"
-              data-api-url="@Url.Content("~/api/v1/professor/requests")"
-              data-track-url-template="@Url.Action("Track", "ProfessorRequests", new { id = "__id__" })">
+              data-professor-request-form="true">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <partial name="_ProfessorRequestFormFields" model="Model" />
 
-            <div class="form-submit-row">
-                <button type="submit" class="btn btn-primary">Submit Request</button>
-            </div>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a asp-action="Details" asp-route-id="@requestId" class="btn btn-secondary">Cancel</a>
         </form>
     </div>
 </div>

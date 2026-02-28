@@ -20,11 +20,16 @@ namespace schedule_ders.Areas.Identity.Pages.Account
     public class LoginModel : PageModel
     {
         private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<LoginModel> _logger;
 
-        public LoginModel(SignInManager<IdentityUser> signInManager, ILogger<LoginModel> logger)
+        public LoginModel(
+            SignInManager<IdentityUser> signInManager,
+            UserManager<IdentityUser> userManager,
+            ILogger<LoginModel> logger)
         {
             _signInManager = signInManager;
+            _userManager = userManager;
             _logger = logger;
         }
 
@@ -91,7 +96,7 @@ namespace schedule_ders.Areas.Identity.Pages.Account
                 ModelState.AddModelError(string.Empty, ErrorMessage);
             }
 
-            returnUrl ??= Url.Content("~/Dashboard");
+            returnUrl ??= Url.Content("~/");
 
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
@@ -103,7 +108,7 @@ namespace schedule_ders.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/Dashboard");
+            returnUrl ??= Url.Content("~/");
 
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
 
@@ -115,6 +120,20 @@ namespace schedule_ders.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+
+                    var user = await _userManager.FindByEmailAsync(Input.Email);
+                    var roleLandingUrl = await ResolveRoleLandingUrlAsync(user);
+                    if (IsDefaultReturnUrl(returnUrl))
+                    {
+                        return LocalRedirect(roleLandingUrl);
+                    }
+
+                    if (string.Equals(returnUrl, Url.Content("~/Dashboard"), StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(returnUrl, "/Dashboard", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return LocalRedirect(roleLandingUrl);
+                    }
+
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
@@ -136,5 +155,40 @@ namespace schedule_ders.Areas.Identity.Pages.Account
             // If we got this far, something failed, redisplay form
             return Page();
         }
+
+        private static bool IsDefaultReturnUrl(string returnUrl)
+        {
+            return string.IsNullOrWhiteSpace(returnUrl)
+                || string.Equals(returnUrl, "/", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(returnUrl, "~/", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(returnUrl, UrlContentRoot, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private async Task<string> ResolveRoleLandingUrlAsync(IdentityUser user)
+        {
+            if (user is null)
+            {
+                return Url.Content("~/");
+            }
+
+            if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return Url.Content("~/Courses");
+            }
+
+            if (await _userManager.IsInRoleAsync(user, "Professor"))
+            {
+                return Url.Content("~/ProfessorRequests");
+            }
+
+            if (await _userManager.IsInRoleAsync(user, "Student"))
+            {
+                return Url.Content("~/StudentSchedule");
+            }
+
+            return Url.Content("~/");
+        }
+
+        private const string UrlContentRoot = "~/" ;
     }
 }

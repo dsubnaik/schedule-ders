@@ -1,0 +1,41 @@
+@model schedule_ders.Models.Course
+@{
+    var pageTitle = ViewData["PageTitle"] as string ?? "Course";
+    var pageSubtitle = ViewData["PageSubtitle"] as string ?? string.Empty;
+    var submitLabel = ViewData["SubmitLabel"] as string ?? "Save";
+    var formId = ViewData["FormId"] as string ?? "courseForm";
+    var formAction = ViewData["FormAction"] as string ?? "Edit";
+    var includeCourseId = ViewData["IncludeCourseId"] as bool? ?? false;
+    var widthClass = ViewData["EditorWidthClass"] as string ?? "col-12 col-lg-9 col-xl-8";
+}
+
+<section class="page-shell">
+<div class="row justify-content-center">
+    <div class="@widthClass">
+        <div class="page-title-row mb-1">
+            <div>
+                <a asp-action="Index" class="btn page-back-btn">Back</a>
+            </div>
+            <div class="page-title-row-main">
+                <h1 class="page-title">@pageTitle</h1>
+                @if (!string.IsNullOrWhiteSpace(pageSubtitle))
+                {
+                    <p class="page-subtitle">@pageSubtitle</p>
+                }
+            </div>
+            <div></div>
+        </div>
+        <form asp-action="@formAction" method="post" class="form-card" id="@formId">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @if (includeCourseId)
+            {
+                <input type="hidden" asp-for="CourseID" />
+            }
+            <partial name="_CourseFormFields" model="Model" />
+            <div class="form-submit-row">
+                <button type="submit" class="btn btn-primary">@submitLabel</button>
+            </div>
+        </form>
+    </div>
+</div>
+</section>

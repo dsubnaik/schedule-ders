@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using schedule_ders.Contracts.Api.V1.Responses;
 using schedule_ders.Services.Interfaces;
+using schedule_ders.Utilities;
 
 namespace schedule_ders.Services;
 
@@ -15,6 +16,7 @@ public class ScheduleQueryService : IScheduleQueryService
 
     public async Task<PagedResultDto<SessionCardDto>> SearchSessionsAsync(
         string? search,
+        string? time,
         string? day,
         string? professor,
         int? courseId,
@@ -23,21 +25,33 @@ public class ScheduleQueryService : IScheduleQueryService
     {
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
+        var searchValue = search?.Trim() ?? string.Empty;
+        var timeValue = time?.Trim() ?? string.Empty;
+        var compactTime = TimeSearchHelper.ToCompactToken(timeValue);
+        var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
+        var compactSearch = TimeSearchHelper.ToCompactToken(searchValue);
 
         var query = _context.Sessions
             .AsNoTracking()
             .Include(s => s.Course)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(search))
+        if (!string.IsNullOrWhiteSpace(searchValue))
         {
             query = query.Where(s =>
-                (s.Course != null && s.Course.CourseName.Contains(search)) ||
-                (s.Course != null && s.Course.CourseSection.Contains(search)) ||
-                (s.Course != null && s.Course.CourseLeader.Contains(search)) ||
-                s.Day.Contains(search) ||
-                s.Time.Contains(search) ||
-                s.Location.Contains(search));
+                (s.Course != null && (s.Course.CourseName.Contains(searchValue) || s.Course.CourseTitle.Contains(searchValue))) ||
+                (s.Course != null && s.Course.CourseSection.Contains(searchValue)) ||
+                (s.Course != null && s.Course.CourseLeader.Contains(searchValue)) ||
+                s.Day.Contains(searchValue) ||
+                s.Location.Contains(searchValue) ||
+                s.Time.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactSearch));
+        }
+
+        if (!string.IsNullOrWhiteSpace(timeValue) && !hasSearchTime)
+        {
+            query = query.Where(s =>
+                s.Time.Contains(timeValue) ||
+                s.Time.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactTime));
         }
 
         if (!string.IsNullOrWhiteSpace(day))
@@ -55,26 +69,66 @@ public class ScheduleQueryService : IScheduleQueryService
             query = query.Where(s => s.CourseID == courseId.Value);
         }
 
-        var totalCount = await query.CountAsync();
-        var items = await query
-            .OrderBy(s => s.Day)
-            .ThenBy(s => s.Time)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(s => new SessionCardDto
-            {
-                SessionId = s.SessionID,
-                CourseId = s.CourseID,
-                CourseName = s.Course != null ? s.Course.CourseName : string.Empty,
-                CourseSection = s.Course != null ? s.Course.CourseSection : string.Empty,
-                ProfessorName = s.Course != null ? s.Course.CourseProfessor : string.Empty,
-                SiLeaderName = s.Course != null ? s.Course.CourseLeader : string.Empty,
-                Day = s.Day,
-                StartTime = GetStartTime(s.Time),
-                EndTime = GetEndTime(s.Time),
-                Location = s.Location
-            })
-            .ToListAsync();
+        List<SessionCardDto> items;
+        int totalCount;
+
+        if (hasSearchTime)
+        {
+            var allFiltered = await query
+                .OrderBy(s => s.Day)
+                .ThenBy(s => s.Time)
+                .Select(s => new SessionCardDto
+                {
+                    SessionId = s.SessionID,
+                    CourseId = s.CourseID,
+                    CourseName = s.Course != null ? s.Course.CourseName : string.Empty,
+                    CourseTitle = s.Course != null ? s.Course.CourseTitle : string.Empty,
+                    CourseSection = s.Course != null ? s.Course.CourseSection : string.Empty,
+                    ProfessorName = s.Course != null ? s.Course.CourseProfessor : string.Empty,
+                    SiLeaderName = s.Course != null ? s.Course.CourseLeader : string.Empty,
+                    Day = s.Day,
+                    StartTime = GetStartTime(s.Time),
+                    EndTime = GetEndTime(s.Time),
+                    Location = s.Location
+                })
+                .ToListAsync();
+
+            var narrowed = allFiltered
+                .Where(s =>
+                    TimeSearchHelper.MatchesTimeRange($"{s.StartTime}-{s.EndTime}", timeValue) ||
+                    TimeSearchHelper.MatchesTimeText($"{s.StartTime}-{s.EndTime}", timeValue))
+                .ToList();
+
+            totalCount = narrowed.Count;
+            items = narrowed
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+        }
+        else
+        {
+            totalCount = await query.CountAsync();
+            items = await query
+                .OrderBy(s => s.Day)
+                .ThenBy(s => s.Time)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => new SessionCardDto
+                {
+                    SessionId = s.SessionID,
+                    CourseId = s.CourseID,
+                    CourseName = s.Course != null ? s.Course.CourseName : string.Empty,
+                    CourseTitle = s.Course != null ? s.Course.CourseTitle : string.Empty,
+                    CourseSection = s.Course != null ? s.Course.CourseSection : string.Empty,
+                    ProfessorName = s.Course != null ? s.Course.CourseProfessor : string.Empty,
+                    SiLeaderName = s.Course != null ? s.Course.CourseLeader : string.Empty,
+                    Day = s.Day,
+                    StartTime = GetStartTime(s.Time),
+                    EndTime = GetEndTime(s.Time),
+                    Location = s.Location
+                })
+                .ToListAsync();
+        }
 
         return new PagedResultDto<SessionCardDto>
         {
@@ -106,6 +160,7 @@ public class ScheduleQueryService : IScheduleQueryService
                 SessionId = s.SessionID,
                 CourseId = s.CourseID,
                 CourseName = course.CourseName,
+                CourseTitle = course.CourseTitle,
                 CourseSection = course.CourseSection,
                 ProfessorName = course.CourseProfessor,
                 SiLeaderName = course.CourseLeader,
@@ -120,6 +175,7 @@ public class ScheduleQueryService : IScheduleQueryService
         {
             CourseId = course.CourseID,
             CourseName = course.CourseName,
+            CourseTitle = course.CourseTitle,
             CourseSection = course.CourseSection,
             Sessions = sessions
         };

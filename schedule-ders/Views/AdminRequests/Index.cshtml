@@ -1,6 +1,19 @@
 @model IEnumerable<schedule_ders.Models.SIRequest>
 @{
     ViewData["Title"] = "SI Requests";
+    var nowUtc = DateTime.UtcNow;
+
+    string RelativeTime(DateTime utc, DateTime now)
+    {
+        var delta = now - utc;
+        if (delta.TotalMinutes < 1) return "just now";
+        if (delta.TotalHours < 1) return $"{Math.Max(1, (int)delta.TotalMinutes)} min ago";
+        if (delta.TotalDays < 1) return $"{Math.Max(1, (int)delta.TotalHours)}h ago";
+        if (delta.TotalDays < 7) return $"{Math.Max(1, (int)delta.TotalDays)}d ago";
+        if (delta.TotalDays < 31) return $"{Math.Max(1, (int)(delta.TotalDays / 7))}w ago";
+        if (delta.TotalDays < 365) return $"{Math.Max(1, (int)(delta.TotalDays / 30))}mo ago";
+        return $"{Math.Max(1, (int)(delta.TotalDays / 365))}y ago";
+    }
 }
 
 <section class="page-shell">
@@ -10,25 +23,25 @@
 
 <form asp-action="Index"
       method="get"
-      class="row g-2 mb-3 surface-card surface-toolbar"
+      class="row g-2 mb-3 admin-requests-toolbar"
       data-admin-requests-filter="true"
       data-api-url="@Url.Content("~/api/v1/admin/requests")"
-      data-review-url-template="@Url.Action("Update", "AdminRequests", new { id = "__id__" })">
-    <div class="col-md-4">
-        <select name="status" class="form-select" asp-items="ViewBag.Statuses">
-            <option value="">All statuses</option>
-        </select>
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-secondary">Filter</button>
-    </div>
-    <div class="col-auto">
-        <a asp-action="Index" class="btn btn-link">Clear</a>
+      data-review-url-template="@Url.Action("Update", "AdminRequests", new { id = "__id__" })"
+      data-remove-api-url-template="@Url.Content("~/api/v1/admin/requests/__id__")">
+    <input type="hidden" name="status" value="@(Context.Request.Query["status"])" />
+    <div class="col-12">
+        <div class="quick-status-chips" data-admin-status-chips="true">
+            <button type="button" class="quick-status-chip" data-status-value="">All</button>
+            <button type="button" class="quick-status-chip" data-status-value="Pending">Pending</button>
+            <button type="button" class="quick-status-chip" data-status-value="UnderReview">Under Review</button>
+            <button type="button" class="quick-status-chip" data-status-value="Approved">Approved</button>
+            <button type="button" class="quick-status-chip" data-status-value="Denied">Denied</button>
+        </div>
     </div>
 </form>
 
-<div class="table-responsive data-table">
-    <table class="table table-striped align-middle data-table-compact">
+<div class="table-responsive data-table admin-requests-table-scroll">
+    <table class="table table-striped align-middle data-table-compact admin-requests-table-compact">
         <thead>
             <tr>
                 <th>Course</th>
@@ -49,15 +62,23 @@
         {
             @foreach (var item in Model)
             {
+                var manualCode = string.IsNullOrWhiteSpace(item.RequestedCourseSection)
+                    ? item.RequestedCourseName
+                    : $"{item.RequestedCourseName} ({item.RequestedCourseSection})";
                 var courseDisplay = item.Course is not null
-                    ? $"{item.Course.CourseName} ({item.Course.CourseSection})"
+                    ? $"{item.Course.CourseName} ({item.Course.CourseSection}) - {item.Course.CourseTitle}"
                     : (!string.IsNullOrWhiteSpace(item.RequestedCourseName)
-                        ? $"{item.RequestedCourseName} ({item.RequestedCourseSection})"
+                        ? (string.IsNullOrWhiteSpace(item.RequestedCourseTitle)
+                            ? manualCode
+                            : $"{manualCode} - {item.RequestedCourseTitle}")
                         : "Manual Course Entry");
                 <tr>
                     <td>@courseDisplay</td>
                     <td>@item.ProfessorName</td>
-                    <td>@item.SubmittedAtUtc.ToLocalTime().ToString("g")</td>
+                    <td>
+                        <div>@item.SubmittedAtUtc.ToLocalTime().ToString("g")</div>
+                        <span class="relative-time-pill">@RelativeTime(item.SubmittedAtUtc, nowUtc)</span>
+                    </td>
                     <td>
                         <span class="status-pill @(item.Status switch
                             {
@@ -67,7 +88,18 @@
                                 _ => "status-pill-denied"
                             })">@item.Status</span>
                     </td>
-                    <td><a asp-action="Update" asp-route-id="@item.SIRequestID">Review</a></td>
+                    <td class="text-nowrap text-center">
+                        <a asp-action="Update"
+                           asp-route-id="@item.SIRequestID"
+                           class="request-action-link @((item.Status == schedule_ders.Models.SIRequestStatus.Pending || item.Status == schedule_ders.Models.SIRequestStatus.UnderReview) ? "request-action-link-priority" : "request-action-link-subtle")">Review</a>
+                        @if (item.Status == schedule_ders.Models.SIRequestStatus.Approved || item.Status == schedule_ders.Models.SIRequestStatus.Denied)
+                        {
+                            <button type="button"
+                                    class="request-action-link request-action-delete request-action-link-inline"
+                                    data-admin-request-remove-btn="true"
+                                    data-request-id="@item.SIRequestID">Remove</button>
+                        }
+                    </td>
                 </tr>
             }
         }

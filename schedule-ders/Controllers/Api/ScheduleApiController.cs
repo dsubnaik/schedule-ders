@@ -19,13 +19,14 @@ public class ScheduleApiController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> GetSessions(
         [FromQuery] string? search,
+        [FromQuery] string? time,
         [FromQuery] string? day,
         [FromQuery] string? professor,
         [FromQuery] int? courseId,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await _scheduleQueryService.SearchSessionsAsync(search, day, professor, courseId, page, pageSize);
+        var result = await _scheduleQueryService.SearchSessionsAsync(search, time, day, professor, courseId, page, pageSize);
         return Ok(result);
     }
 }

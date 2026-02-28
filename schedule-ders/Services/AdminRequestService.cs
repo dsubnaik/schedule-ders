@@ -39,8 +39,9 @@ public class AdminRequestService : IAdminRequestService
         if (!string.IsNullOrWhiteSpace(course))
         {
             query = query.Where(r =>
-                (r.Course != null && r.Course.CourseName.Contains(course)) ||
+                (r.Course != null && (r.Course.CourseName.Contains(course) || r.Course.CourseTitle.Contains(course))) ||
                 r.RequestedCourseName.Contains(course) ||
+                r.RequestedCourseTitle.Contains(course) ||
                 r.RequestedCourseSection.Contains(course));
         }
 
@@ -111,24 +112,43 @@ public class AdminRequestService : IAdminRequestService
         };
     }
 
+    public async Task<RemoveAdminRequestResult> RemoveRequestAsync(int requestId)
+    {
+        var request = await _context.SIRequests
+            .FirstOrDefaultAsync(r => r.SIRequestID == requestId);
+
+        if (request is null)
+        {
+            return RemoveAdminRequestResult.NotFound;
+        }
+
+        if (request.Status != SIRequestStatus.Approved && request.Status != SIRequestStatus.Denied)
+        {
+            return RemoveAdminRequestResult.NotAllowed;
+        }
+
+        _context.SIRequests.Remove(request);
+        await _context.SaveChangesAsync();
+        return RemoveAdminRequestResult.Removed;
+    }
+
     private static string BuildCourseDisplay(SIRequest request)
     {
         if (request.Course is not null)
         {
-            return $"{request.Course.CourseName} ({request.Course.CourseSection})";
+            return $"{request.Course.CourseName} ({request.Course.CourseSection}) - {request.Course.CourseTitle}";
         }
 
         var name = request.RequestedCourseName.Trim();
+        var title = request.RequestedCourseTitle.Trim();
         var section = request.RequestedCourseSection.Trim();
-        var professor = request.RequestedCourseProfessor.Trim();
-
         if (string.IsNullOrWhiteSpace(name))
         {
             return "Manual Course Entry";
         }
 
-        var title = string.IsNullOrWhiteSpace(section) ? name : $"{name} ({section})";
-        return string.IsNullOrWhiteSpace(professor) ? title : $"{title} - {professor}";
+        var code = string.IsNullOrWhiteSpace(section) ? name : $"{name} ({section})";
+        return string.IsNullOrWhiteSpace(title) ? code : $"{code} - {title}";
     }
 
     private async Task EnsureCourseLinkedForApprovedRequestAsync(SIRequest request)
@@ -143,16 +163,19 @@ public class AdminRequestService : IAdminRequestService
         }
 
         var requestedName = request.RequestedCourseName.Trim();
+        var requestedTitle = request.RequestedCourseTitle.Trim();
         var requestedSection = request.RequestedCourseSection.Trim();
         var requestedProfessor = request.RequestedCourseProfessor.Trim();
 
-        if (string.IsNullOrWhiteSpace(requestedName) || string.IsNullOrWhiteSpace(requestedSection))
+        if (string.IsNullOrWhiteSpace(requestedName) || string.IsNullOrWhiteSpace(requestedTitle) || string.IsNullOrWhiteSpace(requestedSection))
         {
             return;
         }
 
         var existingCourse = await _context.Courses
-            .FirstOrDefaultAsync(c => c.CourseName == requestedName && c.CourseSection == requestedSection);
+            .FirstOrDefaultAsync(c => c.CourseName == requestedName
+                                      && c.CourseSection == requestedSection
+                                      && c.CourseTitle == requestedTitle);
 
         if (existingCourse is not null)
         {
@@ -164,6 +187,7 @@ public class AdminRequestService : IAdminRequestService
         {
             CourseCrn = $"REQ-{request.SIRequestID}",
             CourseName = requestedName,
+            CourseTitle = requestedTitle,
             CourseSection = requestedSection,
             CourseMeetingDays = "T",
             CourseMeetingTime = "12:00pm-1:00pm",

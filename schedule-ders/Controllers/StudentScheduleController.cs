@@ -25,10 +25,11 @@ public class StudentScheduleController : Controller
     }
 
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string? search, string? day, string? professor)
+    public async Task<IActionResult> Index(string? search, string? time, string? day, string? professor)
     {
         var sessionSearch = await _scheduleQueryService.SearchSessionsAsync(
             search,
+            time,
             day,
             professor,
             courseId: null,
@@ -40,6 +41,7 @@ public class StudentScheduleController : Controller
             {
                 CourseID = s.CourseId,
                 CourseName = s.CourseName,
+                CourseTitle = s.CourseTitle,
                 CourseSection = s.CourseSection,
                 Professor = s.ProfessorName,
                 Day = s.Day,
@@ -59,6 +61,7 @@ public class StudentScheduleController : Controller
         var vm = new StudentScheduleSearchViewModel
         {
             Search = search ?? string.Empty,
+            Time = time ?? string.Empty,
             Day = day ?? string.Empty,
             Professor = professor ?? string.Empty,
             Results = results

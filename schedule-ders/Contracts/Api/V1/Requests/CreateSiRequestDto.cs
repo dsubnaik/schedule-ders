@@ -9,20 +9,20 @@ public class CreateSiRequestDto : IValidatableObject
     [StringLength(120)]
     public string? RequestedCourseName { get; set; }
 
+    [StringLength(200)]
+    public string? RequestedCourseTitle { get; set; }
+
     [StringLength(30)]
     public string? RequestedCourseSection { get; set; }
 
     [StringLength(120)]
     public string? RequestedCourseProfessor { get; set; }
 
-    [Required]
     [StringLength(120)]
-    public string ProfessorName { get; set; } = string.Empty;
+    public string? ProfessorName { get; set; }
 
-    [Required]
-    [EmailAddress]
     [StringLength(256)]
-    public string ProfessorEmail { get; set; } = string.Empty;
+    public string? ProfessorEmail { get; set; }
 
     [Required]
     [StringLength(1000)]
@@ -45,9 +45,10 @@ public class CreateSiRequestDto : IValidatableObject
             yield return new ValidationResult("RequestedCourseSection is required when CourseId is not provided.", [nameof(RequestedCourseSection)]);
         }
 
-        if (string.IsNullOrWhiteSpace(RequestedCourseProfessor))
+        if (string.IsNullOrWhiteSpace(RequestedCourseTitle))
         {
-            yield return new ValidationResult("RequestedCourseProfessor is required when CourseId is not provided.", [nameof(RequestedCourseProfessor)]);
+            yield return new ValidationResult("RequestedCourseTitle is required when CourseId is not provided.", [nameof(RequestedCourseTitle)]);
         }
+
     }
 }
