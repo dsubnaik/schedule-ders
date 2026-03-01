@@ -59,6 +59,9 @@ namespace schedule_ders.Areas.Identity.Pages.Account
         [TempData]
         public string ErrorMessage { get; set; }
 
+        [TempData]
+        public string StatusMessage { get; set; }
+
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
@@ -89,11 +92,18 @@ namespace schedule_ders.Areas.Identity.Pages.Account
             public bool RememberMe { get; set; }
         }
 
-        public async Task OnGetAsync(string returnUrl = null)
+        public async Task OnGetAsync(string returnUrl = null, bool? confirmed = null)
         {
             if (!string.IsNullOrEmpty(ErrorMessage))
             {
                 ModelState.AddModelError(string.Empty, ErrorMessage);
+            }
+
+            if (confirmed.HasValue)
+            {
+                StatusMessage = confirmed.Value
+                    ? "Your email has been confirmed. You can now log in."
+                    : "Error confirming your email. Please request another confirmation email.";
             }
 
             returnUrl ??= Url.Content("~/");
