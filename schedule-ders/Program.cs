@@ -1,8 +1,10 @@
 using schedule_ders.Data;
 using schedule_ders.Models;
+using schedule_ders.Options;
 using schedule_ders.Services;
 using schedule_ders.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,9 +30,21 @@ builder.Services.AddDbContext<ScheduleContext>(options =>
     options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
-    options.SignIn.RequireConfirmedAccount = false)
+{
+    options.SignIn.RequireConfirmedAccount = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+    options.Password.RequiredUniqueChars = 1;
+})
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ScheduleContext>();
+
+builder.Services.Configure<SendGridOptions>(
+    builder.Configuration.GetSection(SendGridOptions.SectionName));
+builder.Services.AddHttpClient<IEmailSender, SendGridEmailSender>();
 builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
 builder.Services.AddScoped<IProfessorRequestService, ProfessorRequestService>();
 builder.Services.AddScoped<IAdminRequestService, AdminRequestService>();

@@ -1189,6 +1189,12 @@ body.home-landing .landing-logo {
 .manage-shell .form-select {
   max-width: 100%;
 }
+.manage-form {
+  max-width: 640px;
+}
+.manage-form .btn {
+  min-width: 220px;
+}
 .manage-nav .nav-link {
   color: var(--sd-ink);
   border-radius: 10px;
@@ -1202,6 +1208,27 @@ body.home-landing .landing-logo {
 .manage-nav .nav-link.active {
   background: var(--sd-accent-blue);
   color: #ffffff;
+}
+.nav-account-link {
+  border: 1px solid var(--sd-border);
+  border-radius: 999px;
+  font-weight: 700;
+  margin-right: 0.35rem;
+  padding: 0.3rem 0.85rem !important;
+}
+.nav-hello-text {
+  font-weight: 600;
+  opacity: 0.9;
+  pointer-events: none;
+}
+.manage-shell .form-floating > .form-control::placeholder,
+.manage-shell .form-floating > .form-control-plaintext::placeholder {
+  color: transparent !important;
+  opacity: 0 !important;
+  text-align: start !important;
+}
+.manage-shell .form-floating > label {
+  color: #4a627b;
 }
 main[role="main"] > h1:not(.page-title):not(.auth-title) {
   color: #123d63;

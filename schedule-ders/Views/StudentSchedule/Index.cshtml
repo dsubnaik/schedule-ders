@@ -137,25 +137,21 @@
                                     <span class="badge student-section-badge">Sections @string.Join(", ", course.Sections.Select(s => s.CourseSection))</span>
                                     @if (Model.CanManageFavorites)
                                     {
-                                        if (course.Sections.Count == 1)
-                                        {
-                                            var onlySection = course.Sections[0];
-                                            var isFavorite = Model.FavoriteCourseIds.Contains(onlySection.CourseID);
-                                            <form method="post"
-                                                  asp-action="@(isFavorite ? "Unfavorite" : "Favorite")"
-                                                  class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="courseId" value="@onlySection.CourseID" />
-                                                <input type="hidden" name="returnUrl" value="@currentUrl" />
-                                                <button type="submit" class="btn btn-sm @(isFavorite ? "btn-warning" : "btn-outline-secondary")">
-                                                    @(isFavorite ? "Favorited" : "Add Favorite")
-                                                </button>
-                                            </form>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted small">Favorite by section</span>
-                                        }
+                                        var sectionIds = course.Sections.Select(s => s.CourseID).Distinct().ToList();
+                                        var isFavorite = sectionIds.Count > 0 && sectionIds.All(id => Model.FavoriteCourseIds.Contains(id));
+                                        <form method="post"
+                                              asp-action="@(isFavorite ? "UnfavoriteGroup" : "FavoriteGroup")"
+                                              class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            @foreach (var sectionId in sectionIds)
+                                            {
+                                                <input type="hidden" name="courseIds" value="@sectionId" />
+                                            }
+                                            <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                            <button type="submit" class="btn btn-sm @(isFavorite ? "btn-warning" : "btn-outline-secondary")">
+                                                @(isFavorite ? "Favorited" : "Add Favorite")
+                                            </button>
+                                        </form>
                                     }
                                 </div>
                             </div>

@@ -125,6 +125,62 @@ public class StudentScheduleController : Controller
     [Authorize(Roles = "Student")]
     [HttpPost]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> FavoriteGroup(List<int>? courseIds, string? returnUrl = null)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Challenge();
+        }
+
+        var normalizedIds = (courseIds ?? [])
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (normalizedIds.Count == 0)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        var validIds = await _context.Courses
+            .AsNoTracking()
+            .Where(c => normalizedIds.Contains(c.CourseID))
+            .Select(c => c.CourseID)
+            .ToListAsync();
+
+        if (validIds.Count != normalizedIds.Count)
+        {
+            return NotFound();
+        }
+
+        var existingIds = await _context.StudentFavoriteCourses
+            .Where(f => f.UserId == userId && normalizedIds.Contains(f.CourseID))
+            .Select(f => f.CourseID)
+            .ToListAsync();
+
+        var toAdd = normalizedIds.Except(existingIds).ToList();
+        if (toAdd.Count > 0)
+        {
+            _context.StudentFavoriteCourses.AddRange(toAdd.Select(id => new StudentFavoriteCourse
+            {
+                UserId = userId,
+                CourseID = id
+            }));
+            await _context.SaveChangesAsync();
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [Authorize(Roles = "Student")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Unfavorite(int courseId, string? returnUrl = null)
     {
         var userId = _userManager.GetUserId(User);
@@ -139,6 +195,45 @@ public class StudentScheduleController : Controller
         if (favorite is not null)
         {
             _context.StudentFavoriteCourses.Remove(favorite);
+            await _context.SaveChangesAsync();
+        }
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Index));
+    }
+
+    [Authorize(Roles = "Student")]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UnfavoriteGroup(List<int>? courseIds, string? returnUrl = null)
+    {
+        var userId = _userManager.GetUserId(User);
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            return Challenge();
+        }
+
+        var normalizedIds = (courseIds ?? [])
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (normalizedIds.Count == 0)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        var favorites = await _context.StudentFavoriteCourses
+            .Where(f => f.UserId == userId && normalizedIds.Contains(f.CourseID))
+            .ToListAsync();
+
+        if (favorites.Count > 0)
+        {
+            _context.StudentFavoriteCourses.RemoveRange(favorites);
             await _context.SaveChangesAsync();
         }
 

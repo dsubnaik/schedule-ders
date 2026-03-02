@@ -395,6 +395,21 @@ html[data-theme="dark"] .manage-nav .nav-link:focus {
   background: #243852;
   color: #d7e7f9;
 }
+html[data-theme="dark"] .nav-account-link {
+  border-color: #4b6f94;
+  color: #d7e7f9 !important;
+}
+html[data-theme="dark"] .nav-account-link:hover,
+html[data-theme="dark"] .nav-account-link:focus {
+  background: rgba(121, 191, 255, 0.14);
+  color: #eef6ff !important;
+}
+html[data-theme="dark"] .nav-hello-text {
+  color: #d7e7f9 !important;
+}
+html[data-theme="dark"] .manage-shell .form-floating > label {
+  color: #9fb5cc;
+}
 html[data-theme="dark"] .time-picker-input {
   background: #101b29 !important;
   color: #d7e3f0 !important;

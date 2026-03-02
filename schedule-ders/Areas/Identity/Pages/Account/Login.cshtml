@@ -9,6 +9,7 @@
     <div class="auth-card">
         <h1 class="auth-title">Welcome Back</h1>
         <p class="auth-subtitle">Log in to manage SI schedules, requests, and sessions.</p>
+        <partial name="_StatusMessage" model="Model.StatusMessage" />
         <form id="account" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
             <div class="form-floating mb-3">
