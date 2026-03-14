@@ -266,6 +266,9 @@ namespace schedule_ders.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<int?>("SemesterId")
+                        .HasColumnType("int");
+
                     b.Property<string>("CourseTitle")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -287,6 +290,8 @@ namespace schedule_ders.Migrations
                         .HasColumnType("nvarchar(60)");
 
                     b.HasKey("CourseID");
+
+                    b.HasIndex("SemesterId");
 
                     b.ToTable("Courses");
                 });
@@ -351,6 +356,14 @@ namespace schedule_ders.Migrations
                     b.Property<DateTime?>("LastUpdatedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("PotentialSiLeaderName")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("PotentialSiLeaderStatus")
+                        .HasColumnType("int");
+
                     b.Property<string>("ProfessorEmail")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -397,6 +410,86 @@ namespace schedule_ders.Migrations
                     b.HasIndex("CourseID");
 
                     b.ToTable("SIRequests");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.SIRequestLeaderCandidate", b =>
+                {
+                    b.Property<int>("SIRequestLeaderCandidateID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SIRequestLeaderCandidateID"));
+
+                    b.Property<string>("CandidateName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<DateTime?>("LastUpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SIRequestID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("SIRequestLeaderCandidateID");
+
+                    b.HasIndex("SIRequestID");
+
+                    b.ToTable("SIRequestLeaderCandidates");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.Semester", b =>
+                {
+                    b.Property<int>("SemesterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SemesterId"));
+
+                    b.Property<string>("SemesterCode")
+                        .IsRequired()
+                        .HasMaxLength(6)
+                        .HasColumnType("nvarchar(6)");
+
+                    b.HasKey("SemesterId");
+
+                    b.HasIndex("SemesterCode")
+                        .IsUnique();
+
+                    b.ToTable("Semesters");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.SILeader", b =>
+                {
+                    b.Property<int>("SILeaderID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SILeaderID"));
+
+                    b.Property<string>("ANumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("LeaderName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("StoredCourseAssignments")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SILeaderID");
+
+                    b.HasIndex("ANumber")
+                        .IsUnique();
+
+                    b.ToTable("SILeaders");
                 });
 
             modelBuilder.Entity("schedule_ders.Models.Session", b =>
@@ -518,6 +611,17 @@ namespace schedule_ders.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("schedule_ders.Models.SIRequestLeaderCandidate", b =>
+                {
+                    b.HasOne("schedule_ders.Models.SIRequest", "SIRequest")
+                        .WithMany("LeaderCandidates")
+                        .HasForeignKey("SIRequestID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SIRequest");
+                });
+
             modelBuilder.Entity("schedule_ders.Models.Session", b =>
                 {
                     b.HasOne("schedule_ders.Models.Course", "Course")
@@ -527,6 +631,15 @@ namespace schedule_ders.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.Course", b =>
+                {
+                    b.HasOne("schedule_ders.Models.Semester", "Semester")
+                        .WithMany("Courses")
+                        .HasForeignKey("SemesterId");
+
+                    b.Navigation("Semester");
                 });
 
             modelBuilder.Entity("schedule_ders.Models.StudentFavoriteCourse", b =>
@@ -542,7 +655,18 @@ namespace schedule_ders.Migrations
 
             modelBuilder.Entity("schedule_ders.Models.Course", b =>
                 {
+                    b.Navigation("Semester");
                     b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.Semester", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.SIRequest", b =>
+                {
+                    b.Navigation("LeaderCandidates");
                 });
 #pragma warning restore 612, 618
         }

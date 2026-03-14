@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using schedule_ders.Models;
 using schedule_ders.Services.Interfaces;
+using schedule_ders.Utilities;
 using schedule_ders.ViewModels;
 
 namespace schedule_ders.Controllers;
@@ -25,13 +27,14 @@ public class StudentScheduleController : Controller
     }
 
     [AllowAnonymous]
-    public async Task<IActionResult> Index(string? search, string? time, string? day, string? professor)
+    public async Task<IActionResult> Index(string? search, string? time, string? day, string? professor, int? semesterId)
     {
         var sessionSearch = await _scheduleQueryService.SearchSessionsAsync(
             search,
             time,
             day,
             professor,
+            semesterId,
             courseId: null,
             page: 1,
             pageSize: 500);
@@ -51,12 +54,16 @@ public class StudentScheduleController : Controller
             })
             .ToList();
 
-        ViewData["DayOptions"] = await _context.Sessions
+        var dayOptions = await _context.Sessions
             .AsNoTracking()
             .Select(s => s.Day)
             .Distinct()
-            .OrderBy(d => d)
             .ToListAsync();
+        ViewData["DayOptions"] = dayOptions
+            .OrderBy(GetDaySortOrder)
+            .ThenBy(d => d)
+            .ToList();
+        await PopulateSemesterOptionsAsync(semesterId);
 
         var vm = new StudentScheduleSearchViewModel
         {
@@ -64,6 +71,7 @@ public class StudentScheduleController : Controller
             Time = time ?? string.Empty,
             Day = day ?? string.Empty,
             Professor = professor ?? string.Empty,
+            SemesterId = semesterId,
             Results = results
         };
 
@@ -243,5 +251,32 @@ public class StudentScheduleController : Controller
         }
 
         return RedirectToAction(nameof(Index));
+    }
+
+    private static int GetDaySortOrder(string? day) => day?.Trim().ToLowerInvariant() switch
+    {
+        "monday" => 1,
+        "tuesday" => 2,
+        "wednesday" => 3,
+        "thursday" => 4,
+        "friday" => 5,
+        "saturday" => 6,
+        "sunday" => 7,
+        _ => 99
+    };
+
+    private async Task PopulateSemesterOptionsAsync(int? selectedSemesterId)
+    {
+        var semesters = await _context.Semesters
+            .AsNoTracking()
+            .OrderByDescending(s => s.SemesterCode)
+            .Select(s => new
+            {
+                s.SemesterId,
+                Label = $"{SemesterCodeFormatter.ToDisplayName(s.SemesterCode)} ({s.SemesterCode})"
+            })
+            .ToListAsync();
+
+        ViewData["SemesterOptions"] = new SelectList(semesters, "SemesterId", "Label", selectedSemesterId);
     }
 }

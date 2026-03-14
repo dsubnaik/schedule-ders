@@ -26,4 +26,8 @@ public class ProfessorRequestCreateViewModel
     [StringLength(1000)]
     [Display(Name = "Request Notes")]
     public string RequestNotes { get; set; } = string.Empty;
+
+    [StringLength(1000)]
+    [Display(Name = "Potential SI Leaders")]
+    public string PotentialSiLeaderName { get; set; } = string.Empty;
 }

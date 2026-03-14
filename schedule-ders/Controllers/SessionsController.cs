@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using schedule_ders.Models;
 using schedule_ders.Utilities;
+using schedule_ders.ViewModels;
 
 namespace schedule_ders.Controllers;
 
@@ -17,59 +18,34 @@ public class SessionsController : Controller
         _context = context;
     }
 
-    public async Task<IActionResult> Index(string? search, string? day, int? courseId, string? time, string? leader, string? location)
+    public async Task<IActionResult> Index(string? search, string? day, int? courseId, string? time, string? leader, string? location, int? semesterId)
     {
+        if (!semesterId.HasValue && SemesterContextHelper.ReadSelectedSemesterId(Request) is int cookieSemesterId)
+        {
+            semesterId = cookieSemesterId;
+        }
+
         var searchValue = search?.Trim() ?? string.Empty;
         var timeValue = time?.Trim() ?? string.Empty;
         var leaderValue = leader?.Trim() ?? string.Empty;
         var locationValue = location?.Trim() ?? string.Empty;
-        var compactTime = TimeSearchHelper.ToCompactToken(timeValue);
         var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
-
-        var query = _context.Sessions
-            .AsNoTracking()
-            .Include(s => s.Course)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(searchValue))
-        {
-            query = query.Where(s =>
-                (s.Course != null && (s.Course.CourseName.Contains(searchValue) || s.Course.CourseTitle.Contains(searchValue))) ||
-                (s.Course != null && s.Course.CourseSection.Contains(searchValue)));
-        }
-
-        if (!string.IsNullOrWhiteSpace(timeValue) && !hasSearchTime)
-        {
-            query = query.Where(s =>
-                s.Time.Contains(timeValue) ||
-                s.Time.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactTime));
-        }
-
-        if (!string.IsNullOrWhiteSpace(leaderValue))
-        {
-            query = query.Where(s => s.Course != null && s.Course.CourseLeader.Contains(leaderValue));
-        }
-
-        if (!string.IsNullOrWhiteSpace(locationValue))
-        {
-            query = query.Where(s => s.Location.Contains(locationValue));
-        }
-
-        if (!string.IsNullOrWhiteSpace(day))
-        {
-            query = query.Where(s => s.Day == day);
-        }
-
-        if (courseId.HasValue)
-        {
-            query = query.Where(s => s.CourseID == courseId.Value);
-        }
+        var query = BuildFilteredSessionsQuery(searchValue, day, courseId, timeValue, leaderValue, locationValue, semesterId);
 
         var sessions = await query
             .OrderBy(s => s.Day)
             .ThenBy(s => s.Time)
             .ThenBy(s => s.Course!.CourseName)
+            .ThenBy(s => s.Course!.CourseSection)
             .ToListAsync();
+
+        sessions = sessions
+            .OrderBy(s => DaySortOrder(s.Day))
+            .ThenBy(s => s.Day)
+            .ThenBy(s => s.Time)
+            .ThenBy(s => s.Course?.CourseName)
+            .ThenBy(s => s.Course?.CourseSection)
+            .ToList();
 
         if (hasSearchTime)
         {
@@ -86,6 +62,7 @@ public class SessionsController : Controller
         ViewData["CurrentLocation"] = locationValue;
         ViewData["CurrentDay"] = day ?? string.Empty;
         ViewData["CurrentCourseId"] = courseId;
+        ViewData["CurrentSemesterId"] = semesterId;
 
         ViewBag.DayOptions = await _context.Sessions
             .AsNoTracking()
@@ -94,13 +71,23 @@ public class SessionsController : Controller
             .OrderBy(d => d)
             .ToListAsync();
 
-        ViewBag.LeaderOptions = await _context.Courses
+        var leaderOptionsFromCourses = await _context.Courses
             .AsNoTracking()
             .Where(c => !string.IsNullOrWhiteSpace(c.CourseLeader))
             .Select(c => c.CourseLeader)
-            .Distinct()
-            .OrderBy(l => l)
             .ToListAsync();
+        var leaderOptionsFromDirectory = await _context.SILeaders
+            .AsNoTracking()
+            .Where(l => !string.IsNullOrWhiteSpace(l.LeaderName))
+            .Select(l => l.LeaderName)
+            .ToListAsync();
+        ViewBag.LeaderOptions = leaderOptionsFromCourses
+            .Concat(leaderOptionsFromDirectory)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(l => l)
+            .ToList();
 
         ViewBag.LocationOptions = await _context.Sessions
             .AsNoTracking()
@@ -112,18 +99,129 @@ public class SessionsController : Controller
 
         var courses = await _context.Courses
             .AsNoTracking()
+            .Where(c => !semesterId.HasValue || c.SemesterId == semesterId.Value)
             .OrderBy(c => c.CourseName)
             .ThenBy(c => c.CourseSection)
             .Select(c => new { c.CourseID, Label = $"{c.CourseName} ({c.CourseSection})" })
             .ToListAsync();
 
         ViewBag.CourseFilterOptions = new SelectList(courses, "CourseID", "Label", courseId);
+        ViewBag.SemesterOptions = await BuildSemesterSelectListAsync(semesterId);
 
         return View(sessions);
     }
 
-    public async Task<IActionResult> Create(int? courseId, string? returnUrl = null)
+    [HttpGet]
+    public async Task<IActionResult> ExportPdf(string? search, string? day, int? courseId, string? time, string? leader, string? location, int? semesterId)
     {
+        if (!semesterId.HasValue && SemesterContextHelper.ReadSelectedSemesterId(Request) is int cookieSemesterId)
+        {
+            semesterId = cookieSemesterId;
+        }
+
+        var searchValue = search?.Trim() ?? string.Empty;
+        var dayValue = day?.Trim() ?? string.Empty;
+        var timeValue = time?.Trim() ?? string.Empty;
+        var leaderValue = leader?.Trim() ?? string.Empty;
+        var locationValue = location?.Trim() ?? string.Empty;
+        var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
+
+        var query = BuildFilteredSessionsQuery(searchValue, dayValue, courseId, timeValue, leaderValue, locationValue, semesterId);
+
+        var sessions = await query
+            .OrderBy(s => s.Course!.CourseName)
+            .ThenBy(s => s.Course!.CourseSection)
+            .ThenBy(s => s.Day)
+            .ThenBy(s => s.Time)
+            .ThenBy(s => s.Location)
+            .ToListAsync();
+
+        sessions = sessions
+            .OrderBy(s => s.Course?.CourseName)
+            .ThenBy(s => s.Course?.CourseSection)
+            .ThenBy(s => DaySortOrder(s.Day))
+            .ThenBy(s => s.Day)
+            .ThenBy(s => s.Time)
+            .ThenBy(s => s.Location)
+            .ToList();
+
+        if (hasSearchTime)
+        {
+            sessions = sessions
+                .Where(s =>
+                    TimeSearchHelper.MatchesTimeRange(s.Time, timeValue) ||
+                    TimeSearchHelper.MatchesTimeText(s.Time, timeValue))
+                .ToList();
+        }
+
+        var courseLabel = string.Empty;
+        if (courseId.HasValue)
+        {
+            courseLabel = await _context.Courses
+                .AsNoTracking()
+                .Where(c => c.CourseID == courseId.Value)
+                .Select(c => $"{c.CourseName} ({c.CourseSection})")
+                .FirstOrDefaultAsync() ?? string.Empty;
+        }
+
+        var groupedCourses = sessions
+            .Where(s => s.Course is not null)
+            .GroupBy(s => new
+            {
+                s.CourseID,
+                s.Course!.CourseName,
+                s.Course.CourseTitle,
+                s.Course.CourseSection,
+                s.Course.CourseProfessor,
+                s.Course.CourseLeader,
+                s.Course.OfficeHoursDay,
+                s.Course.OfficeHoursTime,
+                s.Course.OfficeHoursLocation
+            })
+            .OrderBy(g => g.Key.CourseName)
+            .ThenBy(g => g.Key.CourseSection)
+            .Select((group, index) => new SessionExportPdfCourseRowViewModel
+            {
+                RowNumber = index + 1,
+                CourseAndSection = $"{group.Key.CourseName}.{group.Key.CourseSection}",
+                CourseName = BuildCourseNameDisplay(group.Key.CourseTitle, group.Key.CourseName),
+                Professor = group.Key.CourseProfessor,
+                Leader = string.IsNullOrWhiteSpace(group.Key.CourseLeader) ? "-" : group.Key.CourseLeader,
+                OfficeHours = BuildOfficeHoursDisplay(group.Key.OfficeHoursDay, group.Key.OfficeHoursTime, group.Key.OfficeHoursLocation),
+                Sessions = group
+                    .OrderBy(s => DaySortOrder(s.Day))
+                    .ThenBy(s => s.Day)
+                    .ThenBy(s => s.Time)
+                    .ThenBy(s => s.Location)
+                    .Select(s => new SessionExportPdfSlotViewModel
+                    {
+                        Day = s.Day,
+                        Time = s.Time,
+                        Location = s.Location
+                    })
+                    .DistinctBy(s => new { s.Day, s.Time, s.Location })
+                    .ToList()
+            })
+            .ToList();
+
+        var vm = new SessionExportPdfViewModel
+        {
+            Search = searchValue,
+            Day = dayValue,
+            Time = timeValue,
+            Leader = leaderValue,
+            Location = locationValue,
+            CourseLabel = courseLabel,
+            GeneratedAtLocal = DateTime.Now,
+            Courses = groupedCourses
+        };
+
+        return View(vm);
+    }
+
+    public async Task<IActionResult> Create(int? courseId, int? semesterId = null, string? returnUrl = null)
+    {
+        semesterId ??= SemesterContextHelper.ReadSelectedSemesterId(Request);
         string currentSiLeader = string.Empty;
         List<int> selectedCourseIds = [];
         if (courseId.HasValue)
@@ -144,7 +242,7 @@ public class SessionsController : Controller
         ViewData["CurrentSiLeader"] = currentSiLeader;
         ViewData["SelectedCourseIds"] = selectedCourseIds;
         await PopulateLeaderOptionsAsync();
-        await PopulateCourseOptionsAsync(courseId);
+        await PopulateCourseOptionsAsync(courseId, semesterId);
         await PopulateSectionTargetOptionsAsync(courseId);
         ViewData["ReturnUrl"] = returnUrl;
         return View(new Session { CourseID = courseId ?? 0 });
@@ -197,7 +295,7 @@ public class SessionsController : Controller
             ViewData["CurrentSiLeader"] = siLeader ?? string.Empty;
             ViewData["SelectedCourseIds"] = selectedCourseIds;
             await PopulateLeaderOptionsAsync();
-            await PopulateCourseOptionsAsync(session.CourseID);
+            await PopulateCourseOptionsAsync(session.CourseID, baseCourse?.SemesterId);
             await PopulateSectionTargetOptionsAsync(session.CourseID);
             ViewData["ReturnUrl"] = returnUrl;
             return View(session);
@@ -227,14 +325,15 @@ public class SessionsController : Controller
 
         _context.Sessions.AddRange(sessionsToCreate);
 
-        if (!string.IsNullOrWhiteSpace(siLeader))
+        var normalizedLeader = await NormalizeLeaderFromDirectoryAsync(siLeader);
+        if (!string.IsNullOrWhiteSpace(normalizedLeader))
         {
             var coursesToUpdate = await _context.Courses
                 .Where(c => selectedCourseIds.Contains(c.CourseID))
                 .ToListAsync();
             foreach (var course in coursesToUpdate)
             {
-                course.CourseLeader = siLeader.Trim();
+                course.CourseLeader = normalizedLeader;
             }
         }
 
@@ -293,7 +392,7 @@ public class SessionsController : Controller
         ViewData["SelectedCourseIds"] = selectedCourseIds;
         ViewData["CurrentSiLeader"] = session.Course?.CourseLeader ?? string.Empty;
         await PopulateLeaderOptionsAsync();
-        await PopulateCourseOptionsAsync(baseCourseId);
+        await PopulateCourseOptionsAsync(baseCourseId, session.Course?.SemesterId);
         await PopulateSectionTargetOptionsAsync(baseCourseId);
         ViewData["ReturnUrl"] = returnUrl;
         return View(session);
@@ -378,7 +477,7 @@ public class SessionsController : Controller
             ViewData["SelectedCourseIds"] = selectedCourseIds;
             ViewData["CurrentSiLeader"] = siLeader ?? string.Empty;
             await PopulateLeaderOptionsAsync();
-            await PopulateCourseOptionsAsync(fallbackCourseId);
+            await PopulateCourseOptionsAsync(fallbackCourseId, selectedCourses.FirstOrDefault()?.SemesterId);
             await PopulateSectionTargetOptionsAsync(fallbackCourseId);
             ViewData["ReturnUrl"] = returnUrl;
             return View(session);
@@ -425,11 +524,12 @@ public class SessionsController : Controller
                 _context.Sessions.RemoveRange(toRemove);
             }
 
-            if (!string.IsNullOrWhiteSpace(siLeader))
+            var normalizedLeader = await NormalizeLeaderFromDirectoryAsync(siLeader);
+            if (!string.IsNullOrWhiteSpace(normalizedLeader))
             {
                 foreach (var course in selectedCourses)
                 {
-                    course.CourseLeader = siLeader.Trim();
+                    course.CourseLeader = normalizedLeader;
                 }
             }
 
@@ -497,10 +597,18 @@ public class SessionsController : Controller
         return _context.Sessions.Any(e => e.SessionID == id);
     }
 
-    private async Task PopulateCourseOptionsAsync(int? selectedCourseId = null)
+    private async Task PopulateCourseOptionsAsync(int? selectedCourseId = null, int? semesterId = null)
     {
-        var courses = await _context.Courses
+        var query = _context.Courses
             .AsNoTracking()
+            .AsQueryable();
+
+        if (semesterId.HasValue)
+        {
+            query = query.Where(c => c.SemesterId == semesterId.Value);
+        }
+
+        var courses = await query
             .OrderBy(c => c.CourseName)
             .ThenBy(c => c.CourseSection)
             .Select(c => new { c.CourseID, Label = $"{c.CourseName} - {c.CourseTitle} ({c.CourseSection}) - {c.CourseProfessor}" })
@@ -511,13 +619,25 @@ public class SessionsController : Controller
 
     private async Task PopulateLeaderOptionsAsync()
     {
-        ViewBag.LeaderOptions = await _context.Courses
+        var fromCourses = await _context.Courses
             .AsNoTracking()
             .Where(c => !string.IsNullOrWhiteSpace(c.CourseLeader))
             .Select(c => c.CourseLeader)
-            .Distinct()
-            .OrderBy(l => l)
             .ToListAsync();
+
+        var fromDirectory = await _context.SILeaders
+            .AsNoTracking()
+            .Where(l => !string.IsNullOrWhiteSpace(l.LeaderName))
+            .Select(l => l.LeaderName)
+            .ToListAsync();
+
+        ViewBag.LeaderOptions = fromCourses
+            .Concat(fromDirectory)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(l => l)
+            .ToList();
     }
 
     [HttpGet]
@@ -596,5 +716,127 @@ public class SessionsController : Controller
             .Where(id => id > 0)
             .Distinct()
             .ToList();
+    }
+
+    private async Task<string> NormalizeLeaderFromDirectoryAsync(string? rawLeader)
+    {
+        var normalized = (rawLeader ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return string.Empty;
+        }
+
+        var existing = await _context.SILeaders
+            .AsNoTracking()
+            .FirstOrDefaultAsync(l => l.LeaderName.ToLower() == normalized.ToLower());
+
+        return existing?.LeaderName ?? normalized;
+    }
+
+    private IQueryable<Session> BuildFilteredSessionsQuery(string search, string? day, int? courseId, string time, string leader, string location, int? semesterId)
+    {
+        var compactTime = TimeSearchHelper.ToCompactToken(time);
+        var hasSearchTime = TimeSearchHelper.TryParseSearchTime(time, out _);
+
+        var query = _context.Sessions
+            .AsNoTracking()
+            .Include(s => s.Course)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query = query.Where(s =>
+                (s.Course != null && (s.Course.CourseName.Contains(search) || s.Course.CourseTitle.Contains(search))) ||
+                (s.Course != null && s.Course.CourseSection.Contains(search)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(time) && !hasSearchTime)
+        {
+            query = query.Where(s =>
+                s.Time.Contains(time) ||
+                s.Time.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactTime));
+        }
+
+        if (!string.IsNullOrWhiteSpace(leader))
+        {
+            query = query.Where(s => s.Course != null && s.Course.CourseLeader.Contains(leader));
+        }
+
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            query = query.Where(s => s.Location.Contains(location));
+        }
+
+        if (!string.IsNullOrWhiteSpace(day))
+        {
+            query = query.Where(s => s.Day == day);
+        }
+
+        if (courseId.HasValue)
+        {
+            query = query.Where(s => s.CourseID == courseId.Value);
+        }
+
+        if (semesterId.HasValue)
+        {
+            query = query.Where(s => s.Course != null && s.Course.SemesterId == semesterId.Value);
+        }
+
+        return query;
+    }
+
+    private async Task<SelectList> BuildSemesterSelectListAsync(int? selectedSemesterId)
+    {
+        var semesters = await _context.Semesters
+            .AsNoTracking()
+            .OrderByDescending(s => s.SemesterCode)
+            .Select(s => new
+            {
+                s.SemesterId,
+                Label = $"{SemesterCodeFormatter.ToDisplayName(s.SemesterCode)} ({s.SemesterCode})"
+            })
+            .ToListAsync();
+
+        return new SelectList(semesters, "SemesterId", "Label", selectedSemesterId);
+    }
+
+    private static int DaySortOrder(string? day) => day?.Trim().ToLowerInvariant() switch
+    {
+        "monday" => 1,
+        "mon" => 1,
+        "tuesday" => 2,
+        "tue" => 2,
+        "wednesday" => 3,
+        "wed" => 3,
+        "thursday" => 4,
+        "thu" => 4,
+        "friday" => 5,
+        "fri" => 5,
+        "saturday" => 6,
+        "sat" => 6,
+        "sunday" => 7,
+        "sun" => 7,
+        _ => 99
+    };
+
+    private static string BuildCourseNameDisplay(string? courseTitle, string? courseName)
+    {
+        var title = (courseTitle ?? string.Empty).Trim();
+        if (!string.IsNullOrWhiteSpace(title))
+        {
+            return title;
+        }
+
+        return string.IsNullOrWhiteSpace(courseName) ? "-" : courseName.Trim();
+    }
+
+    private static string BuildOfficeHoursDisplay(string? day, string? time, string? location)
+    {
+        var parts = new[] { day, time, location }
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!.Trim())
+            .ToList();
+
+        return parts.Count == 0 ? "-" : string.Join(Environment.NewLine, parts);
     }
 }

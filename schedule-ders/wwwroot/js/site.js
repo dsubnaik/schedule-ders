@@ -194,25 +194,23 @@
         applyHiddenTimeToSelects();
         applyHiddenOfficeHoursToSelects();
 
-        const lookupBtn = document.getElementById("lookupCrnBtn");
-        const crnInput = document.getElementById("courseCrnInput");
         const courseNameInput = document.getElementById("courseNameInput");
         const courseTitleInput = document.getElementById("courseTitleInput");
         const sectionInput = document.getElementById("courseSectionInput");
         const leaderInput = document.getElementById("courseLeaderInput");
-        const lookupBaseUrl = config.getAttribute("data-lookup-url") || "";
         const leaderLookupBaseUrl = config.getAttribute("data-leader-lookup-url") || "";
         const excludeId = config.getAttribute("data-exclude-id") || "";
         let leaderManuallyEdited = false;
 
         const fetchLeaderForCourseName = async () => {
             const courseName = (courseNameInput?.value || "").trim();
+            const section = (sectionInput?.value || "").trim();
             if (!leaderLookupBaseUrl || !courseName || leaderManuallyEdited) {
                 return;
             }
 
             try {
-                const response = await fetch(`${leaderLookupBaseUrl}?courseName=${encodeURIComponent(courseName)}&excludeId=${encodeURIComponent(excludeId)}`);
+                const response = await fetch(`${leaderLookupBaseUrl}?courseName=${encodeURIComponent(courseName)}&courseSection=${encodeURIComponent(section)}&excludeId=${encodeURIComponent(excludeId)}`);
                 if (!response.ok) {
                     return;
                 }
@@ -226,37 +224,10 @@
             }
         };
 
-        lookupBtn?.addEventListener("click", async () => {
-            const crn = (crnInput?.value || "").trim();
-            if (!crn || !lookupBaseUrl) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`${lookupBaseUrl}?crn=${encodeURIComponent(crn)}`);
-                if (!response.ok) {
-                    return;
-                }
-
-                const data = await response.json();
-                if (courseNameInput) {
-                    courseNameInput.value = data.courseName || "";
-                }
-                if (courseTitleInput) {
-                    courseTitleInput.value = data.courseTitle || "";
-                }
-                if (sectionInput) {
-                    sectionInput.value = data.courseSection || "";
-                }
-
-                await fetchLeaderForCourseName();
-            } catch {
-                // Leave manual entry untouched if lookup fails.
-            }
-        });
-
         courseNameInput?.addEventListener("blur", fetchLeaderForCourseName);
         courseNameInput?.addEventListener("change", fetchLeaderForCourseName);
+        sectionInput?.addEventListener("blur", fetchLeaderForCourseName);
+        sectionInput?.addEventListener("change", fetchLeaderForCourseName);
         leaderInput?.addEventListener("input", () => {
             leaderManuallyEdited = true;
         });
@@ -573,6 +544,190 @@
         wireSectionTargetButtons();
     };
 
+    const initSiLeaderAssignmentBuilders = () => {
+        const builders = Array.from(document.querySelectorAll("[data-si-leader-assignment-builder='true']"));
+        if (builders.length === 0) {
+            return;
+        }
+
+        builders.forEach((builder) => {
+            const storage = builder.querySelector("[data-assignment-storage='true']");
+            const courseInput = builder.querySelector("[data-assignment-course-input='true']");
+            const sectionInput = builder.querySelector("[data-assignment-section-input='true']");
+            const addCourseButton = builder.querySelector("[data-assignment-add-course='true']");
+            const addSectionButton = builder.querySelector("[data-assignment-add-section='true']");
+            const courseList = builder.querySelector("[data-assignment-course-list='true']");
+            const sectionList = builder.querySelector("[data-assignment-section-list='true']");
+
+            if (!storage || !courseInput || !sectionInput || !courseList || !sectionList) {
+                return;
+            }
+
+            const parseAssignments = () => String(storage.value || "")
+                .replace(/\r/g, "\n")
+                .split("\n")
+                .map((line) => line.trim())
+                .filter((line) => line.length > 0)
+                .map((line) => {
+                    const separatorIndex = line.indexOf("|");
+                    if (separatorIndex < 0) {
+                        return null;
+                    }
+
+                    const course = line.slice(0, separatorIndex).trim();
+                    const section = line.slice(separatorIndex + 1).trim();
+                    if (!course || !section) {
+                        return null;
+                    }
+
+                    return { course, section };
+                })
+                .filter(Boolean);
+
+            const existingAssignments = parseAssignments();
+            let courses = Array.from(new Set(existingAssignments.map((entry) => entry.course)));
+            let sections = Array.from(new Set(existingAssignments.map((entry) => entry.section)));
+
+            const syncStorage = () => {
+                const combinations = [];
+                courses.forEach((course) => {
+                    sections.forEach((section) => {
+                        combinations.push(`${course}|${section}`);
+                    });
+                });
+
+                storage.value = combinations
+                    .join("\n");
+            };
+
+            const sortValues = (values) => values.sort((left, right) =>
+                left.localeCompare(right, undefined, { sensitivity: "base" }));
+
+            const renderList = (target, values, type) => {
+                if (values.length === 0) {
+                    target.innerHTML = "";
+                    return;
+                }
+
+                target.innerHTML = values.map((value, index) => `
+                    <div class="d-flex align-items-center justify-content-between gap-2 border rounded px-2 py-1 mb-1">
+                        <span class="small">${htmlEncode(value)}</span>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-assignment-remove="${type}" data-assignment-index="${index}">Remove</button>
+                    </div>
+                `).join("");
+            };
+
+            const render = () => {
+                syncStorage();
+                renderList(courseList, courses, "course");
+                renderList(sectionList, sections, "section");
+
+                builder.querySelectorAll("[data-assignment-remove]").forEach((button) => {
+                    button.addEventListener("click", () => {
+                        const type = button.getAttribute("data-assignment-remove");
+                        const index = Number(button.getAttribute("data-assignment-index"));
+                        if (Number.isNaN(index) || index < 0) {
+                            return;
+                        }
+
+                        if (type === "course" && index < courses.length) {
+                            courses.splice(index, 1);
+                        } else if (type === "section" && index < sections.length) {
+                            sections.splice(index, 1);
+                        }
+
+                        render();
+                    });
+                });
+            };
+
+            const addCourse = () => {
+                const course = String(courseInput.value || "").trim();
+                if (!course) {
+                    return;
+                }
+
+                const exists = courses.some((value) => value.toLowerCase() === course.toLowerCase());
+                if (!exists) {
+                    courses.push(course);
+                    sortValues(courses);
+                }
+
+                courseInput.value = "";
+                render();
+                courseInput.focus();
+            };
+
+            const addSection = () => {
+                const section = String(sectionInput.value || "").trim();
+                if (!section) {
+                    return;
+                }
+
+                const exists = sections.some((value) => value.toLowerCase() === section.toLowerCase());
+                if (!exists) {
+                    sections.push(section);
+                    sortValues(sections);
+                }
+
+                sectionInput.value = "";
+                render();
+                sectionInput.focus();
+            };
+
+            const collectPendingInputs = () => {
+                const pendingCourse = String(courseInput.value || "").trim();
+                const pendingSection = String(sectionInput.value || "").trim();
+
+                if (pendingCourse) {
+                    const courseExists = courses.some((value) => value.toLowerCase() === pendingCourse.toLowerCase());
+                    if (!courseExists) {
+                        courses.push(pendingCourse);
+                        sortValues(courses);
+                    }
+                }
+
+                if (pendingSection) {
+                    const sectionExists = sections.some((value) => value.toLowerCase() === pendingSection.toLowerCase());
+                    if (!sectionExists) {
+                        sections.push(pendingSection);
+                        sortValues(sections);
+                    }
+                }
+
+                courseInput.value = "";
+                sectionInput.value = "";
+                render();
+            };
+
+            addCourseButton?.addEventListener("click", addCourse);
+            addSectionButton?.addEventListener("click", addSection);
+
+            courseInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    addCourse();
+                }
+            });
+
+            sectionInput.addEventListener("keydown", (event) => {
+                if (event.key === "Enter") {
+                    event.preventDefault();
+                    addSection();
+                }
+            });
+
+            if (builder.hasAttribute("data-auto-collect-on-submit")) {
+                const parentForm = builder.closest("form");
+                parentForm?.addEventListener("submit", () => {
+                    collectPendingInputs();
+                });
+            }
+
+            render();
+        });
+    };
+
     const htmlEncode = (value) => {
         const div = document.createElement("div");
         div.textContent = value ?? "";
@@ -650,7 +805,22 @@
         if (normalized === "approved") {
             return "status-pill-approved";
         }
+        if (normalized === "sileaderfound" || normalized === "si leader found") {
+            return "status-pill-approved";
+        }
+        if (normalized === "notsubmitted" || normalized === "not submitted") {
+            return "status-pill-pending";
+        }
         return "status-pill-denied";
+    };
+    const statusDisplayLabel = (status) => {
+        const normalized = String(status || "").toLowerCase().replace(/\s+/g, "");
+        if (normalized === "pending") return "Submitted";
+        if (normalized === "underreview") return "Under Review";
+        if (normalized === "sileaderfound") return "SI Leader Found";
+        if (normalized === "approved") return "Approved";
+        if (normalized === "denied") return "Not Moving Forward";
+        return String(status || "");
     };
 
     const requestReviewActionClass = (status) => {
@@ -670,7 +840,26 @@
             pending: 0,
             underreview: 1,
             approved: 2,
-            denied: 3
+            denied: 3,
+            sileaderfound: 4
+        };
+
+        const normalized = String(rawStatus || "").replace(/\s+/g, "").toLowerCase();
+        return Object.prototype.hasOwnProperty.call(map, normalized) ? map[normalized] : rawStatus;
+    };
+
+    const leaderStatusToApiValue = (rawStatus) => {
+        const numeric = Number(rawStatus);
+        if (!Number.isNaN(numeric)) {
+            return numeric;
+        }
+
+        const map = {
+            notsubmitted: 0,
+            pending: 1,
+            underreview: 2,
+            approved: 3,
+            denied: 4
         };
 
         const normalized = String(rawStatus || "").replace(/\s+/g, "").toLowerCase();
@@ -715,7 +904,8 @@
                 requestedCourseTitle: form.querySelector("[name='RequestedCourseTitle']")?.value || "",
                 requestedCourseSection: form.querySelector("[name='RequestedCourseSection']")?.value || "",
                 requestedCourseProfessor: form.querySelector("[name='RequestedCourseProfessor']")?.value || "",
-                requestNotes: form.querySelector("[name='RequestNotes']")?.value || ""
+                requestNotes: form.querySelector("[name='RequestNotes']")?.value || "",
+                potentialSiLeaderName: form.querySelector("[name='PotentialSiLeaderName']")?.value || ""
             };
 
             if (payload.courseId === "") {
@@ -775,28 +965,9 @@
         const courseIdInput = form.querySelector("[name='CourseID']");
         const courseNameInput = form.querySelector("[name='RequestedCourseName']");
         const courseTitleInput = form.querySelector("[name='RequestedCourseTitle']");
-        const sectionButtons = Array.from(form.querySelectorAll("[data-section-value]"));
-
-        const setActiveSectionButton = (value) => {
-            sectionButtons.forEach((button) => {
-                const isActive = button.getAttribute("data-section-value") === value;
-                button.classList.toggle("btn-primary", isActive);
-                button.classList.toggle("btn-outline-primary", !isActive);
-            });
-        };
-
-        sectionButtons.forEach((button) => {
-            button.addEventListener("click", () => {
-                const selectedValue = button.getAttribute("data-section-value") || "";
-                if (sectionInput) {
-                    sectionInput.value = selectedValue;
-                }
-                if (courseIdInput) {
-                    courseIdInput.value = "";
-                }
-                setActiveSectionButton(selectedValue);
-            });
-        });
+        const potentialLeadersHiddenInput = form.querySelector("[name='PotentialSiLeaderName']");
+        const potentialLeaderList = form.querySelector("[data-potential-leader-list='true']");
+        const addPotentialLeaderButton = form.querySelector("[data-add-potential-leader='true']");
 
         courseNameInput?.addEventListener("input", () => {
             if (courseIdInput) {
@@ -808,8 +979,87 @@
                 courseIdInput.value = "";
             }
         });
+        sectionInput?.addEventListener("input", () => {
+            if (courseIdInput) {
+                courseIdInput.value = "";
+            }
+        });
 
-        setActiveSectionButton(sectionInput?.value || "");
+        const syncPotentialLeaderHiddenInput = () => {
+            if (!potentialLeadersHiddenInput || !potentialLeaderList) {
+                return;
+            }
+
+            const values = Array.from(potentialLeaderList.querySelectorAll("[data-potential-leader-input='true']"))
+                .map((input) => (input.value || "").trim())
+                .filter((value, index, arr) => value && arr.findIndex((x) => x.toLowerCase() === value.toLowerCase()) === index);
+
+            potentialLeadersHiddenInput.value = values.join("\n");
+        };
+
+        const buildPotentialLeaderRow = (value = "") => {
+            const row = document.createElement("div");
+            row.className = "input-group";
+            row.setAttribute("data-potential-leader-row", "true");
+            row.innerHTML = `<input type="text"
+                                     class="form-control"
+                                     data-potential-leader-input="true"
+                                     list="siLeaderOptions"
+                                     placeholder="Optional: suggest a student for SI leader"
+                                     autocomplete="off"
+                                     value="${htmlEncode(value)}" />
+                             <button type="button"
+                                     class="btn btn-outline-secondary"
+                                     data-remove-potential-leader="true">Remove</button>`;
+            return row;
+        };
+
+        if (potentialLeaderList) {
+            potentialLeaderList.addEventListener("input", (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement) || !target.matches("[data-potential-leader-input='true']")) {
+                    return;
+                }
+                syncPotentialLeaderHiddenInput();
+            });
+
+            potentialLeaderList.addEventListener("click", (event) => {
+                const target = event.target;
+                if (!(target instanceof HTMLElement)) {
+                    return;
+                }
+
+                const removeButton = target.closest("[data-remove-potential-leader='true']");
+                if (!(removeButton instanceof HTMLElement)) {
+                    return;
+                }
+
+                const rows = Array.from(potentialLeaderList.querySelectorAll("[data-potential-leader-row='true']"));
+                if (rows.length <= 1) {
+                    const input = rows[0]?.querySelector("[data-potential-leader-input='true']");
+                    if (input instanceof HTMLInputElement) {
+                        input.value = "";
+                    }
+                    syncPotentialLeaderHiddenInput();
+                    return;
+                }
+
+                const row = removeButton.closest("[data-potential-leader-row='true']");
+                if (row) {
+                    row.remove();
+                    syncPotentialLeaderHiddenInput();
+                }
+            });
+        }
+
+        addPotentialLeaderButton?.addEventListener("click", () => {
+            if (!potentialLeaderList) {
+                return;
+            }
+            potentialLeaderList.appendChild(buildPotentialLeaderRow(""));
+        });
+
+        syncPotentialLeaderHiddenInput();
     };
 
     const initProfessorTrackApiRefresh = () => {
@@ -830,11 +1080,39 @@
         const lastUpdatedRelative = container.querySelector("[data-track-last-updated-relative='true']");
         const submittedRelative = container.querySelector("[data-track-submitted-relative='true']");
         const adminNotesText = container.querySelector("[data-track-admin-notes='true']");
-        const submittedStage = container.querySelector("[data-track-stage-submitted='true']");
-        const reviewStage = container.querySelector("[data-track-stage-review='true']");
-        const finalStage = container.querySelector("[data-track-stage-final='true']");
+        const courseCheckpointList = container.querySelector("[data-track-course-checkpoints='true']");
+        const leaderNameText = container.querySelector("[data-track-leader-name='true']");
+        const leaderStatusPill = container.querySelector("[data-track-leader-status-pill='true']");
+        const leaderCandidatesContainer = container.querySelector("[data-track-leader-candidates='true']");
 
-        const progressClassMap = ["progress-w-25", "progress-w-60", "progress-w-100"];
+        const getCourseStatusMeta = (status) => {
+            const normalized = String(status || "").toLowerCase().replace(/\s+/g, "");
+            if (normalized === "denied") return { step: 4, percent: 100, denied: true };
+            if (normalized === "approved") return { step: 3, percent: 100, denied: false };
+            if (normalized === "sileaderfound") return { step: 2, percent: 50, denied: false };
+            if (normalized === "underreview") return { step: 1, percent: 25, denied: false };
+            return { step: 0, percent: 0, denied: false };
+        };
+
+        const applyCourseCheckpointState = (status) => {
+            if (!(courseCheckpointList instanceof HTMLElement)) {
+                return;
+            }
+
+            const meta = getCourseStatusMeta(status);
+            const checkpoints = Array.from(courseCheckpointList.querySelectorAll(".candidate-checkpoint"));
+            checkpoints.forEach((checkpoint) => {
+                const idx = Number(checkpoint.getAttribute("data-step") || "0");
+                checkpoint.classList.remove("is-complete", "is-current", "is-pending", "is-denied");
+                if (meta.step > idx) {
+                    checkpoint.classList.add("is-complete");
+                } else if (meta.step === idx) {
+                    checkpoint.classList.add(meta.denied && idx === 4 ? "is-denied" : "is-current");
+                } else {
+                    checkpoint.classList.add("is-pending");
+                }
+            });
+        };
 
         fetch(apiUrl)
             .then((response) => (response.ok ? response.json() : null))
@@ -845,18 +1123,19 @@
 
                 const progress = Number(data.progressPercent || 0);
                 const status = data.status || "Pending";
-                const isDenied = String(status).toLowerCase() === "denied";
+                const normalizedStatus = String(status).toLowerCase().replace(/\s+/g, "");
+                const isDenied = normalizedStatus === "denied";
+                const courseMeta = getCourseStatusMeta(status);
 
                 if (progressBar) {
-                    progressClassMap.forEach((cssClass) => progressBar.classList.remove(cssClass));
-                    const widthClass = progress >= 100 ? "progress-w-100" : progress >= 60 ? "progress-w-60" : "progress-w-25";
-                    progressBar.classList.add(widthClass);
+                    progressBar.style.width = `${courseMeta.percent}%`;
                     progressBar.classList.toggle("bg-danger", isDenied);
                     progressBar.classList.toggle("request-progress-warning", !isDenied);
                 }
+                applyCourseCheckpointState(status);
 
                 if (statusText) {
-                    statusText.textContent = status;
+                    statusText.textContent = statusDisplayLabel(status);
                 }
                 if (statusPill) {
                     statusPill.classList.remove("status-pill-pending", "status-pill-review", "status-pill-approved", "status-pill-denied");
@@ -877,29 +1156,80 @@
                     adminNotesText.textContent = (data.adminNotes || "").trim() || "No updates yet.";
                 }
 
-                if (submittedStage) {
-                    submittedStage.textContent = "Complete";
-                    submittedStage.classList.add("track-stage-complete");
+                const leaderStatus = data.potentialSiLeaderStatus || "NotSubmitted";
+
+                if (leaderNameText) {
+                    const leaderNames = String(data.potentialSiLeaderName || "")
+                        .replace(/\r/g, "\n")
+                        .split(/[\n;,]+/)
+                        .map((value) => value.trim())
+                        .filter((value, index, arr) => value && arr.findIndex((x) => x.toLowerCase() === value.toLowerCase()) === index);
+                    leaderNameText.innerHTML = leaderNames.length > 0
+                        ? leaderNames.map((name) => `<span class="candidate-chip">${htmlEncode(name)}</span>`).join("")
+                        : "<span class=\"candidate-chip candidate-chip-empty\">Not provided</span>";
                 }
-                if (reviewStage) {
-                    const isUnderReview = String(status).toLowerCase().replace(/\s+/g, "") === "underreview";
-                    reviewStage.textContent = progress >= 100 ? "Complete" : (isUnderReview ? "In Progress" : "Pending");
-                    reviewStage.classList.remove("track-stage-current", "track-stage-complete");
-                    if (isUnderReview) {
-                        reviewStage.classList.add("track-stage-current");
-                    } else if (progress >= 100) {
-                        reviewStage.classList.add("track-stage-complete");
+                if (leaderStatusPill) {
+                    leaderStatusPill.textContent = leaderStatus;
+                    leaderStatusPill.classList.remove("status-pill-pending", "status-pill-review", "status-pill-approved", "status-pill-denied");
+                    leaderStatusPill.classList.add(statusClass(leaderStatus));
+                }
+                if (leaderCandidatesContainer) {
+                    const items = Array.isArray(data.leaderCandidates) ? data.leaderCandidates : [];
+                    if (items.length === 0) {
+                        leaderCandidatesContainer.innerHTML = "<div class=\"surface-card p-3\"><div class=\"text-muted\">No candidate names submitted yet.</div></div>";
+                    } else {
+                        leaderCandidatesContainer.innerHTML = items.map((candidate) => {
+                            const candidateStatus = String(candidate.status || "Requested");
+                            const normalized = candidateStatus.toLowerCase().replace(/\s+/g, "");
+                            const statusPillClass = normalized === "hired"
+                                ? "status-pill-approved"
+                                : (normalized === "interviewed" ? "status-pill-review" : "status-pill-pending");
+                            const currentStep = normalized === "hired"
+                                ? 3
+                                : (normalized === "interviewed"
+                                    ? 2
+                                    : (normalized === "yettointerview" ? 1 : 0));
+                            const checkpointClass = (index) => currentStep > index
+                                ? "is-complete"
+                                : (currentStep === index ? "is-current" : "is-pending");
+                            return `<article class="card leader-candidate-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">${htmlEncode(candidate.candidateName || "")}</span>
+                                        <span class="status-pill ${statusPillClass}">${htmlEncode(candidateStatus)}</span>
+                                    </div>
+                                    <div class="candidate-checkpoint-list">
+                                        <div class="candidate-checkpoint ${checkpointClass(0)}">
+                                            <span class="candidate-checkpoint-dot"></span>
+                                            <span class="candidate-checkpoint-label">Nominated by Professor</span>
+                                        </div>
+                                        <div class="candidate-checkpoint ${checkpointClass(1)}">
+                                            <span class="candidate-checkpoint-dot"></span>
+                                            <span class="candidate-checkpoint-label">Interview Pending</span>
+                                        </div>
+                                        <div class="candidate-checkpoint ${checkpointClass(2)}">
+                                            <span class="candidate-checkpoint-dot"></span>
+                                            <span class="candidate-checkpoint-label">Interview Complete</span>
+                                        </div>
+                                        <div class="candidate-checkpoint ${currentStep === 3 ? "is-complete" : "is-pending"}">
+                                            <span class="candidate-checkpoint-dot"></span>
+                                            <span class="candidate-checkpoint-label">Selected as SI Leader</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>`;
+                        }).join("");
                     }
-                }
-                if (finalStage) {
-                    const normalized = String(status).toLowerCase().replace(/\s+/g, "");
-                    finalStage.textContent = normalized === "approved" ? "Approved" : (normalized === "denied" ? "Denied" : "Pending");
-                    finalStage.classList.toggle("track-stage-complete", normalized === "approved" || normalized === "denied");
                 }
             })
             .catch(() => {
                 // Keep server-rendered values on API failure.
             });
+
+        const initialCourseStatus = courseCheckpointList?.getAttribute("data-track-course-status") || "";
+        if (initialCourseStatus) {
+            applyCourseCheckpointState(initialCourseStatus);
+        }
     };
 
     const initDeleteModalBinding = (options) => {
@@ -969,7 +1299,7 @@
                 const reviewUrl = reviewTemplate.replace("__id__", String(item.requestId));
                 const removeUrl = removeTemplate.replace("__id__", String(item.requestId));
                 const normalizedStatus = String(item.status || "").toLowerCase().replace(/\s+/g, "");
-                const canRemove = normalizedStatus === "approved" || normalizedStatus === "denied";
+                const canRemove = normalizedStatus === "approved" || normalizedStatus === "sileaderfound" || normalizedStatus === "denied";
                 return `<tr>
                     <td>${htmlEncode(item.courseDisplay || "Manual Course Entry")}</td>
                     <td>${htmlEncode(item.professorName || "")}</td>
@@ -977,7 +1307,12 @@
                         <div>${htmlEncode(formatLocalDate(item.submittedAtUtc))}</div>
                         <span class="relative-time-pill">${htmlEncode(formatRelativeTime(item.submittedAtUtc))}</span>
                     </td>
-                    <td><span class="status-pill ${statusClass(item.status)}">${htmlEncode(item.status || "")}</span></td>
+                    <td>
+                        <span class="status-pill ${statusClass(item.status)}">${htmlEncode(statusDisplayLabel(item.status))}</span>
+                        <div class="mt-1">
+                            <span class="status-pill ${statusClass(item.potentialSiLeaderStatus)}">Leader: ${htmlEncode(item.potentialSiLeaderStatus || "")}</span>
+                        </div>
+                    </td>
                     <td class="text-nowrap text-center">
                         <a class="request-action-link ${requestReviewActionClass(item.status)}" href="${reviewUrl}">Review</a>
                         ${canRemove ? `<button type="button" class="request-action-link request-action-delete request-action-link-inline" data-admin-request-remove-btn="true" data-remove-url="${removeUrl}" data-request-id="${item.requestId}">Remove</button>` : ""}
@@ -1089,8 +1424,13 @@
             }
 
             const rawStatus = form.querySelector("[name='Status']")?.value;
+            const rawLeaderStatus = form.querySelector("[name='PotentialSiLeaderStatus']")?.value;
             const adminNotes = form.querySelector("[name='AdminNotes']")?.value || "";
-            const payload = { status: statusToApiValue(rawStatus), adminNotes };
+            const payload = {
+                status: statusToApiValue(rawStatus),
+                potentialSiLeaderStatus: leaderStatusToApiValue(rawLeaderStatus),
+                adminNotes
+            };
 
             try {
                 const response = await fetch(apiUrl, {
@@ -1234,12 +1574,14 @@
         const time = form.querySelector("[name='time']")?.value || "";
         const day = form.querySelector("[name='day']")?.value || "";
         const professor = form.querySelector("[name='professor']")?.value || "";
+        const semesterId = form.querySelector("[name='semesterId']")?.value || "";
 
         const query = new URLSearchParams();
         if (search) query.set("search", search);
         if (time) query.set("time", time);
         if (day) query.set("day", day);
         if (professor) query.set("professor", professor);
+        if (semesterId) query.set("semesterId", semesterId);
         query.set("page", "1");
         query.set("pageSize", "500");
 
@@ -1266,6 +1608,7 @@
         initTimePickerDropdowns();
         initCourseFormEnhancer();
         initSessionFormEnhancer();
+        initSiLeaderAssignmentBuilders();
         initProfessorRequestFormEnhancer();
         initProfessorCreateApiSubmit();
         initDeleteModalBinding({

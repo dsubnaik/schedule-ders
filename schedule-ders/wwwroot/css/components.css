@@ -674,6 +674,254 @@ body.home-landing .landing-logo {
 .request-progress-warning {
   background-color: #f2c94c !important;
 }
+.request-progress-info {
+  background-color: #2f80ed !important;
+}
+.track-section-label {
+  color: #1f3f5f;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  margin-left: 0.2rem;
+}
+.request-tracker-header {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr auto 1fr;
+}
+.request-tracker-header .page-title-row-main {
+  justify-self: center;
+  text-align: center;
+}
+.request-tracker-header .page-actions {
+  justify-self: end;
+}
+@media (max-width: 767.98px) {
+  .request-tracker-header {
+    grid-template-columns: 1fr;
+  }
+  .request-tracker-header .page-title-row-main,
+  .request-tracker-header .page-actions {
+    justify-self: start;
+    text-align: left;
+  }
+}
+.candidate-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+.candidate-chip {
+  background: #edf4ff;
+  border: 1px solid #8cb4de;
+  border-radius: 999px;
+  color: #103e67;
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.1;
+  padding: 0.26rem 0.6rem;
+}
+.candidate-chip-empty {
+  background: #f6f8fb;
+  border-color: #cfd8e3;
+  color: #5b6774;
+}
+.candidate-checkpoint-list {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.2rem;
+  position: relative;
+}
+.candidate-checkpoint {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.6rem;
+  position: relative;
+}
+.candidate-checkpoint:not(:last-child)::after {
+  border-left: 2px solid #cfd8e3;
+  content: "";
+  height: 0.85rem;
+  left: 0.35rem;
+  position: absolute;
+  top: 1.05rem;
+}
+.candidate-checkpoint-dot,
+.checkpoint-dot-btn {
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+  height: 0.95rem;
+  width: 0.95rem;
+}
+.checkpoint-dot-btn {
+  align-items: center;
+  border: 2px solid #2f80ed;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+.checkpoint-dot-btn::after {
+  color: #ffffff;
+  content: "\2713";
+  font-size: 0.66rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.candidate-checkpoint.is-pending .checkpoint-dot-btn::after {
+  color: #5f738a;
+}
+.candidate-checkpoint.is-pending .checkpoint-dot-btn {
+  background: #d9e2ec;
+  border-color: #7f98b3;
+}
+.checkpoint-dot-btn:hover,
+.checkpoint-dot-btn:focus {
+  box-shadow: 0 0 0 2px rgba(47, 128, 237, 0.22);
+  transform: scale(1.06);
+}
+.candidate-checkpoint-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.candidate-checkpoint.is-complete .candidate-checkpoint-dot,
+.candidate-checkpoint.is-complete .checkpoint-dot-btn {
+  background: #1b7a52;
+}
+.candidate-checkpoint.is-complete .candidate-checkpoint-label {
+  color: #1b7a52;
+}
+.candidate-checkpoint.is-current .candidate-checkpoint-dot,
+.candidate-checkpoint.is-current .checkpoint-dot-btn {
+  background: #2f80ed;
+}
+.candidate-checkpoint.is-current .candidate-checkpoint-label {
+  color: #1f3f5f;
+}
+.candidate-checkpoint.is-pending .candidate-checkpoint-dot,
+.candidate-checkpoint.is-pending .checkpoint-dot-btn {
+  background: #cfd8e3;
+}
+.candidate-checkpoint.is-pending .candidate-checkpoint-label {
+  color: #5b6774;
+}
+.candidate-checkpoint.is-denied .candidate-checkpoint-dot,
+.candidate-checkpoint.is-denied .checkpoint-dot-btn {
+  background: #e43a4f;
+}
+.candidate-checkpoint.is-denied .candidate-checkpoint-label {
+  color: #a0202f;
+}
+.admin-course-checkpoint-list {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.admin-course-checkpoint-list .candidate-checkpoint:not(:last-child)::after {
+  display: none;
+}
+.leader-candidate-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 520px));
+  justify-content: center;
+}
+.leader-candidate-card {
+  background: #ffffff;
+  margin: 0;
+}
+.leader-candidate-card .card-body {
+  background: #ffffff;
+  padding: 0.95rem 1rem;
+}
+.leader-candidate-card .fw-semibold {
+  font-size: 1.06rem;
+  line-height: 1.1;
+}
+.admin-track-form {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.admin-track-panel {
+  background: #ffffff !important;
+  margin-inline: auto;
+  max-width: 1200px;
+}
+.course-track-panel {
+  background: #ffffff !important;
+  margin-inline: 0;
+  max-width: none;
+  width: 100%;
+}
+.admin-track-panel .request-progress,
+.course-track-panel .request-progress {
+  background: #ffffff !important;
+  border: 1px solid var(--sd-border);
+}
+.admin-track-form .candidate-checkpoint.is-complete .candidate-checkpoint-dot,
+.admin-track-form .candidate-checkpoint.is-complete .checkpoint-dot-btn,
+.admin-track-form .candidate-checkpoint.is-current .candidate-checkpoint-dot,
+.admin-track-form .candidate-checkpoint.is-current .checkpoint-dot-btn {
+  background: #2f80ed;
+}
+.admin-track-form .candidate-checkpoint.is-complete .candidate-checkpoint-label,
+.admin-track-form .candidate-checkpoint.is-current .candidate-checkpoint-label {
+  color: #1f3f5f;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint.is-complete .candidate-checkpoint-dot,
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint.is-complete .checkpoint-dot-btn,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint.is-complete .candidate-checkpoint-dot {
+  background: #1b7a52;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint.is-complete .candidate-checkpoint-label,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint.is-complete .candidate-checkpoint-label {
+  color: #1b7a52;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint[data-step="2"].is-complete .candidate-checkpoint-dot,
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint[data-step="2"].is-complete .checkpoint-dot-btn,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint[data-step="2"].is-complete .candidate-checkpoint-dot {
+  background: #1f78d1;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint[data-step="2"].is-complete .candidate-checkpoint-label,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint[data-step="2"].is-complete .candidate-checkpoint-label {
+  color: #1f78d1;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint[data-step="3"].is-complete .candidate-checkpoint-dot,
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint[data-step="3"].is-complete .checkpoint-dot-btn,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint[data-step="3"].is-complete .candidate-checkpoint-dot {
+  background: #1b7a52;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint[data-step="3"].is-complete .candidate-checkpoint-label,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint[data-step="3"].is-complete .candidate-checkpoint-label {
+  color: #1b7a52;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint.is-current .candidate-checkpoint-dot,
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint.is-current .checkpoint-dot-btn,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint.is-current .candidate-checkpoint-dot {
+  background: #2f80ed;
+}
+.admin-track-form .admin-course-checkpoint-list .candidate-checkpoint.is-current .candidate-checkpoint-label,
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint.is-current .candidate-checkpoint-label {
+  color: #1f3f5f;
+}
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint.is-denied .candidate-checkpoint-dot {
+  background: #e43a4f;
+}
+.course-track-panel .admin-course-checkpoint-list .candidate-checkpoint.is-denied .candidate-checkpoint-label {
+  color: #a0202f;
+}
+@media (max-width: 575.98px) {
+  .leader-candidate-grid {
+    grid-template-columns: 1fr;
+  }
+  .leader-candidate-card .card-body {
+    padding: 0.8rem 0.85rem;
+  }
+}
 .notes-section-break {
   border-top: 1px solid var(--sd-border);
   margin-top: 0.2rem;
@@ -684,6 +932,9 @@ body.home-landing .landing-logo {
 }
 .progress-w-60 {
   width: 60%;
+}
+.progress-w-80 {
+  width: 80%;
 }
 .progress-w-100 {
   width: 100%;

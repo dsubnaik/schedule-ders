@@ -11,8 +11,11 @@ public class ScheduleContext : IdentityDbContext
 
     public DbSet<Course> Courses { get; set; }
     public DbSet<CourseCatalogEntry> CourseCatalogEntries { get; set; }
+    public DbSet<Semester> Semesters { get; set; }
     public DbSet<Session> Sessions { get; set; }
     public DbSet<SIRequest> SIRequests { get; set; }
+    public DbSet<SIRequestLeaderCandidate> SIRequestLeaderCandidates { get; set; }
+    public DbSet<SILeader> SILeaders { get; set; }
     public DbSet<StudentFavoriteCourse> StudentFavoriteCourses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -26,5 +29,19 @@ public class ScheduleContext : IdentityDbContext
         builder.Entity<CourseCatalogEntry>()
             .HasIndex(c => c.CourseCrn)
             .IsUnique();
+
+        builder.Entity<Semester>()
+            .HasIndex(s => s.SemesterCode)
+            .IsUnique();
+
+        builder.Entity<SILeader>()
+            .HasIndex(l => l.ANumber)
+            .IsUnique();
+
+        builder.Entity<SIRequestLeaderCandidate>()
+            .HasOne(c => c.SIRequest)
+            .WithMany(r => r.LeaderCandidates)
+            .HasForeignKey(c => c.SIRequestID)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

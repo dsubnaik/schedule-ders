@@ -1,6 +1,13 @@
 @model schedule_ders.Models.SIRequest
 @{
     ViewData["Title"] = "Request Details";
+    var leaderCandidates = (Model.PotentialSiLeaderName ?? string.Empty)
+        .Replace("\r", "\n")
+        .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    var leaderDisplay = leaderCandidates.Count == 0 ? "Not provided" : string.Join(", ", leaderCandidates);
 }
 
 <section class="page-shell">
@@ -44,6 +51,12 @@
 
     <dt class="col-sm-3">@Html.DisplayNameFor(m => m.Status)</dt>
     <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.PotentialSiLeaderName)</dt>
+    <dd class="col-sm-9">@leaderDisplay</dd>
+
+    <dt class="col-sm-3">@Html.DisplayNameFor(m => m.PotentialSiLeaderStatus)</dt>
+    <dd class="col-sm-9">@Model.PotentialSiLeaderStatus</dd>
 
     <dt class="col-sm-3">@Html.DisplayNameFor(m => m.RequestNotes)</dt>
     <dd class="col-sm-9">@Model.RequestNotes</dd>

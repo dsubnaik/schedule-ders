@@ -1,6 +1,23 @@
 @model schedule_ders.ViewModels.AdminRequestStatusUpdateViewModel
 @{
     ViewData["Title"] = "Review SI Request";
+    var leaderCandidates = (Model.PotentialSiLeaderName ?? string.Empty)
+        .Replace("\r", "\n")
+        .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    var leaderDisplay = leaderCandidates.Count == 0 ? "Not provided" : string.Join(", ", leaderCandidates);
+    var courseProgress = Model.Status switch
+    {
+        schedule_ders.Models.SIRequestStatus.Pending => 0,
+        schedule_ders.Models.SIRequestStatus.UnderReview => 25,
+        schedule_ders.Models.SIRequestStatus.SiLeaderFound => 50,
+        schedule_ders.Models.SIRequestStatus.Approved => 100,
+        schedule_ders.Models.SIRequestStatus.Denied => 100,
+        _ => 0
+    };
+    var courseIsDenied = Model.Status == schedule_ders.Models.SIRequestStatus.Denied;
 }
 
 <section class="page-shell">
@@ -26,30 +43,117 @@
 
             <dt class="col-sm-3">Request Notes</dt>
             <dd class="col-sm-9">@Model.RequestNotes</dd>
+
+            <dt class="col-sm-3">Potential SI Leader</dt>
+            <dd class="col-sm-9">@leaderDisplay</dd>
         </dl>
     </div>
 </div>
 
 <form asp-action="Update"
       method="post"
-      class="form-card"
-      data-admin-request-update-form="true"
-      data-api-url="@Url.Content($"~/api/v1/admin/requests/{Model.SIRequestID}/status")"
-      data-success-url="@Url.Action("Index", "AdminRequests")">
+      class="admin-track-form">
     <input type="hidden" asp-for="SIRequestID" />
     <input type="hidden" asp-for="CourseID" />
     <input type="hidden" asp-for="CourseDisplay" />
     <input type="hidden" asp-for="ProfessorName" />
     <input type="hidden" asp-for="ProfessorEmail" />
     <input type="hidden" asp-for="RequestNotes" />
+    <input type="hidden" asp-for="PotentialSiLeaderName" />
     <input type="hidden" asp-for="SubmittedAtUtc" />
+    <input type="hidden" asp-for="Status" id="adminCourseStatusInput" />
 
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <label asp-for="Status" class="form-label"></label>
-            <select asp-for="Status" asp-items="ViewBag.Statuses" class="form-select"></select>
-            <span asp-validation-for="Status" class="text-danger"></span>
+    <div class="mb-3">
+        <label class="form-label">Course Request Pipeline</label>
+        <div class="surface-card p-3 admin-track-panel">
+            <div class="progress request-progress mb-2" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@courseProgress">
+                <div class="progress-bar @(courseIsDenied ? "bg-danger" : "request-progress-warning")" id="adminCourseProgressBar" style="width:@courseProgress%"></div>
+            </div>
+            <div class="candidate-checkpoint-list admin-course-checkpoint-list"
+                 data-course-checkpoints="true"
+                 data-target-input-id="adminCourseStatusInput">
+                <div class="candidate-checkpoint" data-status-value="0" data-step="0">
+                    <button type="button" class="checkpoint-dot-btn" aria-label="Set course status to Pending"></button>
+                    <span class="candidate-checkpoint-label">Submitted</span>
+                </div>
+                <div class="candidate-checkpoint" data-status-value="1" data-step="1">
+                    <button type="button" class="checkpoint-dot-btn" aria-label="Set course status to Under Review"></button>
+                    <span class="candidate-checkpoint-label">Under Review</span>
+                </div>
+                <div class="candidate-checkpoint" data-status-value="4" data-step="2">
+                    <button type="button" class="checkpoint-dot-btn" aria-label="Set course status to SI Leader Found"></button>
+                    <span class="candidate-checkpoint-label">SI Leader Found</span>
+                </div>
+                <div class="candidate-checkpoint" data-status-value="2" data-step="3">
+                    <button type="button" class="checkpoint-dot-btn" aria-label="Set course status to Approved"></button>
+                    <span class="candidate-checkpoint-label">Approved</span>
+                </div>
+                <div class="candidate-checkpoint" data-status-value="3" data-step="4">
+                    <button type="button" class="checkpoint-dot-btn checkpoint-dot-btn-danger" aria-label="Set course status to Not Moving Forward"></button>
+                    <span class="candidate-checkpoint-label">Not Moving Forward</span>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Leader Candidate Pipeline</label>
+        @if (Model.LeaderCandidates.Count == 0)
+        {
+            <div class="text-muted">No candidate names were submitted.</div>
+        }
+        else
+        {
+            <div class="leader-candidate-grid">
+                @for (var i = 0; i < Model.LeaderCandidates.Count; i++)
+                {
+                    var candidate = Model.LeaderCandidates[i];
+                    var candidateStepIndex = candidate.Status switch
+                    {
+                        schedule_ders.Models.SILeaderCandidateStatus.Requested => 0,
+                        schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => 1,
+                        schedule_ders.Models.SILeaderCandidateStatus.Interviewed => 2,
+                        schedule_ders.Models.SILeaderCandidateStatus.Hired => 3,
+                        _ => 0
+                    };
+                    <div class="row g-2 align-items-center">
+                        <input type="hidden" name="LeaderCandidates[@i].CandidateId" value="@candidate.CandidateId" />
+                        <input type="hidden" name="LeaderCandidates[@i].CandidateName" value="@candidate.CandidateName" />
+                        <input type="hidden" id="leaderCandidateStatus_@i" name="LeaderCandidates[@i].Status" value="@((int)candidate.Status)" />
+                        <div class="col-12">
+                            <article class="card leader-candidate-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-semibold">@candidate.CandidateName</span>
+                                        <span class="status-pill @(candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Hired ? "status-pill-approved" : candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Interviewed ? "status-pill-review" : "status-pill-pending")" data-candidate-status-pill="true">@candidate.Status</span>
+                                    </div>
+                                    <div class="candidate-checkpoint-list"
+                                         data-candidate-checkpoints="true"
+                                         data-target-input-id="leaderCandidateStatus_@i">
+                                        <div class="candidate-checkpoint @(candidateStepIndex > 0 ? "is-complete" : candidateStepIndex == 0 ? "is-current" : "is-pending")" data-step="0" data-status-value="0">
+                                            <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Requested"></button>
+                                            <span class="candidate-checkpoint-label">Nominated by Professor</span>
+                                        </div>
+                                        <div class="candidate-checkpoint @(candidateStepIndex > 1 ? "is-complete" : candidateStepIndex == 1 ? "is-current" : "is-pending")" data-step="1" data-status-value="1">
+                                            <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Yet To Interview"></button>
+                                            <span class="candidate-checkpoint-label">Interview Pending</span>
+                                        </div>
+                                        <div class="candidate-checkpoint @(candidateStepIndex > 2 ? "is-complete" : candidateStepIndex == 2 ? "is-current" : "is-pending")" data-step="2" data-status-value="2">
+                                            <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Interviewed"></button>
+                                            <span class="candidate-checkpoint-label">Interview Complete</span>
+                                        </div>
+                                        <div class="candidate-checkpoint @(candidateStepIndex == 3 ? "is-complete" : "is-pending")" data-step="3" data-status-value="3">
+                                            <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Hired"></button>
+                                            <span class="candidate-checkpoint-label">Selected as SI Leader</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     <div class="mb-3">
@@ -66,4 +170,121 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const courseWidthPercent = (value) => {
+                const numeric = Number(value);
+                if (numeric === 3) return 100;
+                if (numeric === 2) return 100;
+                if (numeric === 4) return 50;
+                if (numeric === 1) return 25;
+                return 0;
+            };
+
+            const checkpointStepFromStatus = (value) => {
+                const numeric = Number(value);
+                if (numeric === 3) return 3;
+                if (numeric === 2) return 2;
+                if (numeric === 1) return 1;
+                return 0;
+            };
+
+            const applyCheckpointClasses = (container, step, isCourse) => {
+                const checkpoints = Array.from(container.querySelectorAll(".candidate-checkpoint"));
+                checkpoints.forEach((checkpoint) => {
+                    const idx = Number(checkpoint.getAttribute("data-step") || "0");
+                    checkpoint.classList.remove("is-complete", "is-current", "is-pending", "is-denied");
+                    if (step > idx) checkpoint.classList.add("is-complete");
+                    else if (step === idx) checkpoint.classList.add("is-current");
+                    else checkpoint.classList.add("is-pending");
+                    if (isCourse && String(container.getAttribute("data-current-value")) === "3" && idx === 4) {
+                        checkpoint.classList.remove("is-current");
+                        checkpoint.classList.add("is-denied");
+                    }
+                });
+            };
+
+            const updateCourseVisual = () => {
+                const list = document.querySelector("[data-course-checkpoints='true']");
+                if (!(list instanceof HTMLElement)) return;
+                const targetId = list.getAttribute("data-target-input-id");
+                const input = targetId ? document.getElementById(targetId) : null;
+                if (!(input instanceof HTMLInputElement)) return;
+                list.setAttribute("data-current-value", String(input.value || ""));
+
+                const progressBar = document.getElementById("adminCourseProgressBar");
+                if (progressBar instanceof HTMLElement) {
+                    progressBar.style.width = `${courseWidthPercent(input.value)}%`;
+                    const isDenied = String(input.value) === "3";
+                    progressBar.classList.toggle("bg-danger", isDenied);
+                    progressBar.classList.toggle("request-progress-warning", !isDenied);
+                }
+
+                const courseStep = String(input.value) === "3" ? 4 : String(input.value) === "2" ? 3 : String(input.value) === "4" ? 2 : String(input.value) === "1" ? 1 : 0;
+                applyCheckpointClasses(list, courseStep, true);
+            };
+
+            const candidateLists = Array.from(document.querySelectorAll("[data-candidate-checkpoints='true']"));
+            candidateLists.forEach((list) => {
+                const targetId = list.getAttribute("data-target-input-id");
+                const input = targetId ? document.getElementById(targetId) : null;
+                if (!(input instanceof HTMLInputElement)) return;
+
+                const setCandidateState = () => {
+                    const step = checkpointStepFromStatus(input.value);
+                    applyCheckpointClasses(list, step, false);
+                    const card = list.closest(".leader-candidate-card");
+                    const statusPill = card?.querySelector("[data-candidate-status-pill='true']");
+                    if (statusPill instanceof HTMLElement) {
+                        const map = { "0": "Requested", "1": "Yet To Interview", "2": "Interviewed", "3": "Hired" };
+                        statusPill.textContent = map[String(input.value)] || "Requested";
+                        statusPill.classList.remove("status-pill-pending", "status-pill-review", "status-pill-approved");
+                        if (String(input.value) === "3") statusPill.classList.add("status-pill-approved");
+                        else if (String(input.value) === "2") statusPill.classList.add("status-pill-review");
+                        else statusPill.classList.add("status-pill-pending");
+                    }
+                };
+
+                list.addEventListener("click", (event) => {
+                    const target = event.target;
+                    if (!(target instanceof HTMLElement)) return;
+                    const checkpoint = target.closest(".candidate-checkpoint");
+                    if (!(checkpoint instanceof HTMLElement)) return;
+                    const value = checkpoint.getAttribute("data-status-value");
+                    if (!value) return;
+                    input.value = value;
+                    setCandidateState();
+                    if (String(value) === "3") {
+                        const courseInput = document.getElementById("adminCourseStatusInput");
+                        if (courseInput instanceof HTMLInputElement && courseInput.value !== "3") {
+                            courseInput.value = "4";
+                            updateCourseVisual();
+                        }
+                    }
+                });
+
+                setCandidateState();
+            });
+
+            const courseList = document.querySelector("[data-course-checkpoints='true']");
+            if (courseList instanceof HTMLElement) {
+                const targetId = courseList.getAttribute("data-target-input-id");
+                const input = targetId ? document.getElementById(targetId) : null;
+                if (input instanceof HTMLInputElement) {
+                    courseList.addEventListener("click", (event) => {
+                        const target = event.target;
+                        if (!(target instanceof HTMLElement)) return;
+                        const checkpoint = target.closest(".candidate-checkpoint");
+                        if (!(checkpoint instanceof HTMLElement)) return;
+                        const value = checkpoint.getAttribute("data-status-value");
+                        if (!value) return;
+                        input.value = value;
+                        updateCourseVisual();
+                    });
+                }
+            }
+
+            updateCourseVisual();
+        })();
+    </script>
 }

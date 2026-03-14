@@ -61,6 +61,11 @@
                                        asp-controller="AdminRequests"
                                        asp-action="Index">SI Requests</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark @(currentController == "SILeaders" ? "active" : string.Empty)"
+                                       asp-controller="SILeaders"
+                                       asp-action="Index">SI Leaders</a>
+                                </li>
                             }
                             @if (User.IsInRole("Professor"))
                             {

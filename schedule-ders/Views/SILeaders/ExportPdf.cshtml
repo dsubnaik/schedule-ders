@@ -1,0 +1,106 @@
+@model schedule_ders.ViewModels.SILeaderAdminIndexViewModel
+@{
+    Layout = null;
+    var generated = DateTime.Now;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SI Leaders Export</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 1rem;
+            color: #1b2d42;
+        }
+        h1 {
+            margin: 0 0 0.35rem 0;
+            font-size: 1.6rem;
+        }
+        .meta {
+            margin-bottom: 1rem;
+            color: #46627e;
+            font-size: 0.92rem;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #9db4cc;
+            padding: 0.45rem 0.5rem;
+            text-align: left;
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+        th {
+            background: #eaf2fb;
+        }
+        .toolbar {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .btn {
+            border: 1px solid #5f89b4;
+            border-radius: 8px;
+            background: #f4f8fd;
+            color: #1e4d79;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        @@media print {
+            .toolbar { display: none; }
+            body { margin: 0.35in; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" class="btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    <h1>SI Leaders</h1>
+    <div class="meta">
+        Generated: @generated.ToString("f")
+        @if (!string.IsNullOrWhiteSpace(Model.Search))
+        {
+            <text> | Filter: @Model.Search</text>
+        }
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>A-Number</th>
+                <th>SI Leader Name</th>
+                <th>Courses Teaching</th>
+                <th>Section Numbers</th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (!Model.Leaders.Any())
+        {
+            <tr>
+                <td colspan="4">No SI leaders found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model.Leaders)
+            {
+                <tr>
+                    <td>@item.ANumber</td>
+                    <td>@item.LeaderName</td>
+                    <td>@item.CoursesTeaching</td>
+                    <td>@item.SectionNumbers</td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</body>
+</html>
+

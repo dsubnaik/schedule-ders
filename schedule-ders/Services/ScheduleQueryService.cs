@@ -19,6 +19,7 @@ public class ScheduleQueryService : IScheduleQueryService
         string? time,
         string? day,
         string? professor,
+        int? semesterId,
         int? courseId,
         int page,
         int pageSize)
@@ -67,6 +68,11 @@ public class ScheduleQueryService : IScheduleQueryService
         if (courseId.HasValue)
         {
             query = query.Where(s => s.CourseID == courseId.Value);
+        }
+
+        if (semesterId.HasValue)
+        {
+            query = query.Where(s => s.Course != null && s.Course.SemesterId == semesterId.Value);
         }
 
         List<SessionCardDto> items;

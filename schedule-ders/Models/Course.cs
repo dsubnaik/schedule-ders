@@ -58,5 +58,10 @@ public class Course
     [Display(Name = "Office Hours Location")]
     public string OfficeHoursLocation { get; set; } = string.Empty;
 
+    [Display(Name = "Semester")]
+    public int? SemesterId { get; set; }
+
+    public Semester? Semester { get; set; }
+
     public List<Session> Sessions { get; set; } = [];
 }

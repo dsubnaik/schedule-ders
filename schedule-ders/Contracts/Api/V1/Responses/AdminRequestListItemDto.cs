@@ -8,6 +8,7 @@ public class AdminRequestListItemDto
     public string ProfessorName { get; set; } = string.Empty;
     public string ProfessorEmail { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string PotentialSiLeaderStatus { get; set; } = string.Empty;
     public DateTime SubmittedAtUtc { get; set; }
     public DateTime? LastUpdatedAtUtc { get; set; }
 }

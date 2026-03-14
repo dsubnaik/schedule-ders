@@ -15,16 +15,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var candidateConnectionStrings = new[]
-{
-    builder.Configuration["AZURE_SQL_CONNECTIONSTRING"],
-    builder.Configuration.GetConnectionString("AzureSqlConnection"),
-    builder.Configuration.GetConnectionString("DefaultConnection")
-};
-
-var connectionString = candidateConnectionStrings
-    .FirstOrDefault(cs => !string.IsNullOrWhiteSpace(cs))
-    ?? throw new InvalidOperationException("No SQL connection string configured.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("DefaultConnection is not configured.");
 
 builder.Services.AddDbContext<ScheduleContext>(options =>
     options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
@@ -50,6 +42,18 @@ builder.Services.AddScoped<IProfessorRequestService, ProfessorRequestService>();
 builder.Services.AddScoped<IAdminRequestService, AdminRequestService>();
 
 var app = builder.Build();
+
+using (var migrationScope = app.Services.CreateScope())
+{
+    var db = migrationScope.ServiceProvider.GetRequiredService<ScheduleContext>();
+    await db.Database.MigrateAsync();
+
+    var connection = db.Database.GetDbConnection();
+    app.Logger.LogInformation(
+        "ScheduleContext connected to DataSource='{DataSource}', Database='{Database}'",
+        connection.DataSource,
+        connection.Database);
+}
 
 await IdentitySeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());
 var removedDuplicateSessions = await SessionDeduper.DeduplicateAsync(app.Services);

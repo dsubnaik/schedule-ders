@@ -127,7 +127,8 @@ public class ProfessorRequestsController : Controller
                 RequestedCourseProfessor = professorName,
                 ProfessorName = professorName,
                 ProfessorEmail = professorEmail,
-                RequestNotes = input.RequestNotes
+                RequestNotes = input.RequestNotes,
+                PotentialSiLeaderName = input.PotentialSiLeaderName
             }, userId);
 
             return RedirectToAction(nameof(Track), new { id = created.RequestId });
@@ -188,7 +189,8 @@ public class ProfessorRequestsController : Controller
             RequestedCourseTitle = request.RequestedCourseTitle,
             RequestedCourseSection = request.RequestedCourseSection,
             RequestedCourseProfessor = request.RequestedCourseProfessor,
-            RequestNotes = request.RequestNotes
+            RequestNotes = request.RequestNotes,
+            PotentialSiLeaderName = request.PotentialSiLeaderName
         });
     }
 
@@ -240,6 +242,8 @@ public class ProfessorRequestsController : Controller
         request.ProfessorName = professorName;
         request.ProfessorEmail = professorEmail;
         request.RequestNotes = input.RequestNotes;
+        ApplyPotentialLeaderUpdate(request, input.PotentialSiLeaderName);
+        await SyncLeaderCandidatesAsync(request.SIRequestID, input.PotentialSiLeaderName);
         request.LastUpdatedAtUtc = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -281,6 +285,7 @@ public class ProfessorRequestsController : Controller
         return await _context.SIRequests
             .AsNoTracking()
             .Include(r => r.Course)
+            .Include(r => r.LeaderCandidates)
             .FirstOrDefaultAsync(r => r.SIRequestID == requestId && r.CreatedByUserId == userId);
     }
 
@@ -310,6 +315,13 @@ public class ProfessorRequestsController : Controller
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x)
             .ToList();
+        ViewBag.SiLeaderOptions = await _context.Courses
+            .AsNoTracking()
+            .Where(c => !string.IsNullOrWhiteSpace(c.CourseLeader))
+            .Select(c => c.CourseLeader)
+            .Distinct()
+            .OrderBy(x => x)
+            .ToListAsync();
     }
 
     private void NormalizeAndValidateInput(ProfessorRequestCreateViewModel input)
@@ -318,6 +330,7 @@ public class ProfessorRequestsController : Controller
         input.RequestedCourseTitle = input.RequestedCourseTitle.Trim();
         input.RequestedCourseSection = input.RequestedCourseSection.Trim();
         input.RequestedCourseProfessor = input.RequestedCourseProfessor.Trim();
+        input.PotentialSiLeaderName = NormalizePotentialLeaderCandidates(input.PotentialSiLeaderName);
 
         var hasManualCourse = !string.IsNullOrWhiteSpace(input.RequestedCourseName) ||
                               !string.IsNullOrWhiteSpace(input.RequestedCourseTitle) ||
@@ -398,5 +411,76 @@ public class ProfessorRequestsController : Controller
         }
 
         return (displayName, email);
+    }
+
+    private static void ApplyPotentialLeaderUpdate(SIRequest request, string? potentialLeaderName)
+    {
+        var normalized = NormalizePotentialLeaderCandidates(potentialLeaderName);
+        var current = request.PotentialSiLeaderName?.Trim() ?? string.Empty;
+        var changed = !string.Equals(normalized, current, StringComparison.Ordinal);
+
+        request.PotentialSiLeaderName = normalized;
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            request.PotentialSiLeaderStatus = SILeaderReviewStatus.NotSubmitted;
+            return;
+        }
+
+        if (changed || request.PotentialSiLeaderStatus == SILeaderReviewStatus.NotSubmitted)
+        {
+            request.PotentialSiLeaderStatus = SILeaderReviewStatus.Pending;
+        }
+    }
+
+    private async Task SyncLeaderCandidatesAsync(int requestId, string? potentialLeaderName)
+    {
+        var normalizedCandidates = NormalizePotentialLeaderCandidates(potentialLeaderName)
+            .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+
+        var existing = await _context.SIRequestLeaderCandidates
+            .Where(c => c.SIRequestID == requestId)
+            .ToListAsync();
+
+        var toRemove = existing
+            .Where(c => !normalizedCandidates.Any(name => string.Equals(name, c.CandidateName, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        if (toRemove.Count > 0)
+        {
+            _context.SIRequestLeaderCandidates.RemoveRange(toRemove);
+        }
+
+        foreach (var candidateName in normalizedCandidates)
+        {
+            var match = existing.FirstOrDefault(c => string.Equals(c.CandidateName, candidateName, StringComparison.OrdinalIgnoreCase));
+            if (match is null)
+            {
+                _context.SIRequestLeaderCandidates.Add(new SIRequestLeaderCandidate
+                {
+                    SIRequestID = requestId,
+                    CandidateName = candidateName,
+                    Status = SILeaderCandidateStatus.Requested
+                });
+            }
+        }
+    }
+
+    private static string NormalizePotentialLeaderCandidates(string? rawValue)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return string.Empty;
+        }
+
+        var candidates = rawValue
+            .Replace("\r", "\n")
+            .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return candidates.Count == 0 ? string.Empty : string.Join('\n', candidates);
     }
 }

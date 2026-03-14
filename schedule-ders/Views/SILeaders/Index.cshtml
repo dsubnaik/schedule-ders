@@ -1,0 +1,275 @@
+@model schedule_ders.ViewModels.SILeaderAdminIndexViewModel
+@{
+    ViewData["Title"] = "SI Leaders";
+}
+
+<style>
+    .si-leader-create-strip {
+        margin-bottom: 1.25rem;
+        padding: 1.85rem 1.9rem;
+        border: 2px solid var(--bs-primary);
+        border-radius: 1.55rem;
+        background: #fff;
+        box-shadow: 0 16px 32px rgba(16, 78, 139, 0.08);
+    }
+
+    .si-leader-create-row {
+        display: grid;
+        grid-template-columns: minmax(170px, 1fr) minmax(240px, 1.35fr) minmax(320px, 1.45fr) auto;
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .si-leader-create-assignments {
+        display: grid;
+        grid-template-columns: 1fr 0.8fr;
+        gap: 0.85rem;
+        align-items: end;
+    }
+
+    .si-leader-create-strip .form-label {
+        margin-bottom: 0.45rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        color: #0e467e;
+    }
+
+    .si-leader-create-strip .form-control {
+        min-height: 3.75rem;
+        border-width: 2px;
+        border-radius: 0.9rem;
+        font-size: 1rem;
+        box-shadow: none;
+    }
+
+    .si-leader-create-strip .btn-primary {
+        min-width: 190px;
+        min-height: 3.7rem;
+        border-radius: 999px;
+        font-size: 1rem;
+        font-weight: 700;
+        box-shadow: none;
+    }
+
+    .si-leader-create-strip [data-assignment-course-list="true"],
+    .si-leader-create-strip [data-assignment-section-list="true"] {
+        min-height: 0;
+    }
+
+    @@media (max-width: 1199.98px) {
+        .si-leader-create-row {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .si-leader-create-row,
+        .si-leader-create-assignments {
+            grid-template-columns: 1fr;
+        }
+
+        .si-leader-create-strip .btn-primary {
+            width: 100%;
+        }
+    }
+</style>
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">SI Leaders</h1>
+    <div class="page-actions">
+        <a asp-action="ExportPdf" asp-route-search="@Model.Search" class="btn btn-outline-secondary" target="_blank" rel="noopener">Export PDF</a>
+    </div>
+</div>
+
+<form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
+    <div class="col">
+        <input type="text"
+               name="search"
+               value="@Model.Search"
+               class="form-control"
+               placeholder="Search A-Number or leader name" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Apply</button>
+    </div>
+    <div class="col-auto">
+        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+
+<form asp-action="Create" method="post" class="si-leader-create-strip" data-si-leader-create-form="true">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Search" />
+    <div class="si-leader-create-row">
+        <div>
+        <label asp-for="CreateANumber" class="form-label"></label>
+        <input asp-for="CreateANumber" class="form-control" placeholder="A12345678" />
+        </div>
+        <div>
+        <label asp-for="CreateLeaderName" class="form-label"></label>
+        <input asp-for="CreateLeaderName" class="form-control" placeholder="SI Leader full name" />
+        </div>
+        <div class="si-leader-create-assignments" data-si-leader-assignment-builder="true" data-auto-collect-on-submit="true">
+            <input asp-for="CreateCourseAssignments" type="hidden" data-assignment-storage="true" />
+            <div>
+                <label class="form-label">Courses</label>
+                <input type="text"
+                       class="form-control"
+                       data-assignment-course-input="true"
+                       placeholder="Course (example: ACCT 2301)" />
+                <div class="mt-2" data-assignment-course-list="true"></div>
+            </div>
+            <div>
+                <label class="form-label">Sections</label>
+                <input type="text"
+                       class="form-control"
+                       data-assignment-section-input="true"
+                       placeholder="Section" />
+                <div class="mt-2" data-assignment-section-list="true"></div>
+            </div>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Add SI Leader</button>
+        </div>
+    </div>
+</form>
+
+<div class="table-responsive data-table">
+    <table class="table table-striped table-hover align-middle data-table-compact">
+        <thead>
+            <tr>
+                <th>A-Number</th>
+                <th>SI Leader Name</th>
+                <th>Courses Teaching</th>
+                <th>Section Numbers</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (!Model.Leaders.Any())
+        {
+            <tr>
+                <td colspan="5" class="text-muted">No SI leaders found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model.Leaders)
+            {
+                var updateFormId = $"siLeaderUpdate_{item.SILeaderID}";
+                var editModalId = $"siLeaderEditModal_{item.SILeaderID}";
+                <tr>
+                    <td>
+                        <input type="text" name="aNumber" value="@item.ANumber" class="form-control form-control-sm" form="@updateFormId" />
+                    </td>
+                    <td>
+                        <input type="text" name="leaderName" value="@item.LeaderName" class="form-control form-control-sm" form="@updateFormId" />
+                    </td>
+                    <td>
+                        @if (!string.Equals(item.CoursesTeaching, "-", StringComparison.Ordinal))
+                        {
+                            <div>@item.CoursesTeaching</div>
+                        }
+                    </td>
+                    <td>
+                        @if (!string.Equals(item.SectionNumbers, "-", StringComparison.Ordinal))
+                        {
+                            <div>@item.SectionNumbers</div>
+                        }
+                    </td>
+                    <td class="text-nowrap">
+                        <form id="@updateFormId" asp-action="Update" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.SILeaderID" />
+                            <input type="hidden" name="search" value="@Model.Search" />
+                            <input type="hidden" name="courseAssignments" value="@item.CourseAssignmentsInput" />
+                        </form>
+                        <button type="submit" class="request-action-link" form="@updateFormId">Save</button>
+                        <button type="button"
+                                class="request-action-link ms-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#@editModalId">Edit</button>
+                        <form asp-action="Delete" method="post" class="d-inline ms-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.SILeaderID" />
+                            <input type="hidden" name="search" value="@Model.Search" />
+                            <button type="submit" class="request-action-link request-action-delete">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+
+            }
+        }
+        </tbody>
+    </table>
+</div>
+
+@foreach (var item in Model.Leaders)
+{
+    var editModalId = $"siLeaderEditModal_{item.SILeaderID}";
+    <div class="modal fade" id="@editModalId" tabindex="-1" aria-labelledby="@(editModalId)_Label" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <form asp-action="Update" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@item.SILeaderID" />
+                    <input type="hidden" name="search" value="@Model.Search" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="@(editModalId)_Label">Edit SI Leader</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">A-Number</label>
+                                <input type="text" name="aNumber" value="@item.ANumber" class="form-control" />
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">SI Leader Name</label>
+                                <input type="text" name="leaderName" value="@item.LeaderName" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mt-1" data-si-leader-assignment-builder="true">
+                            <textarea name="courseAssignments"
+                                        class="d-none"
+                                        data-assignment-storage="true">@item.CourseAssignmentsInput</textarea>
+                            <div class="col-md-6">
+                                <label class="form-label">Courses</label>
+                                <input type="text"
+                                       class="form-control"
+                                       data-assignment-course-input="true"
+                                       placeholder="Course" />
+                                <div class="mt-2">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            data-assignment-add-course="true">Add Course</button>
+                                </div>
+                                <div class="mt-2" data-assignment-course-list="true"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Sections</label>
+                                <input type="text"
+                                       class="form-control"
+                                       data-assignment-section-input="true"
+                                       placeholder="Section" />
+                                <div class="mt-2">
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm"
+                                            data-assignment-add-section="true">Add Section</button>
+                                </div>
+                                <div class="mt-2" data-assignment-section-list="true"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+</section>

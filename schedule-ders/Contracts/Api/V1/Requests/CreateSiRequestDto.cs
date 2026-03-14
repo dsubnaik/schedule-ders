@@ -28,6 +28,9 @@ public class CreateSiRequestDto : IValidatableObject
     [StringLength(1000)]
     public string RequestNotes { get; set; } = string.Empty;
 
+    [StringLength(1000)]
+    public string? PotentialSiLeaderName { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (CourseId.HasValue)

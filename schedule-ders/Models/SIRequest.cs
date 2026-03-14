@@ -40,6 +40,10 @@ public class SIRequest
     [Display(Name = "Request Notes")]
     public string RequestNotes { get; set; } = string.Empty;
 
+    [StringLength(1000)]
+    [Display(Name = "Potential SI Leaders")]
+    public string PotentialSiLeaderName { get; set; } = string.Empty;
+
     [Display(Name = "Submitted On")]
     public DateTime SubmittedAtUtc { get; set; } = DateTime.UtcNow;
 
@@ -50,6 +54,9 @@ public class SIRequest
     [Display(Name = "Status")]
     public SIRequestStatus Status { get; set; } = SIRequestStatus.Pending;
 
+    [Display(Name = "Potential SI Leader Status")]
+    public SILeaderReviewStatus PotentialSiLeaderStatus { get; set; } = SILeaderReviewStatus.NotSubmitted;
+
     [StringLength(1000)]
     [Display(Name = "Admin Notes")]
     public string AdminNotes { get; set; } = string.Empty;
@@ -58,6 +65,7 @@ public class SIRequest
     public DateTime? LastUpdatedAtUtc { get; set; }
 
     public Course? Course { get; set; }
+    public ICollection<SIRequestLeaderCandidate> LeaderCandidates { get; set; } = [];
 }
 
 public enum SIRequestStatus
@@ -65,5 +73,15 @@ public enum SIRequestStatus
     Pending = 0,
     UnderReview = 1,
     Approved = 2,
-    Denied = 3
+    Denied = 3,
+    SiLeaderFound = 4
+}
+
+public enum SILeaderReviewStatus
+{
+    NotSubmitted = 0,
+    Pending = 1,
+    UnderReview = 2,
+    Approved = 3,
+    Denied = 4
 }

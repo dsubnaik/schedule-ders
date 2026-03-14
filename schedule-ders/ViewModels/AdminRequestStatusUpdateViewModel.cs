@@ -16,7 +16,19 @@ public class AdminRequestStatusUpdateViewModel
     [Required]
     public SIRequestStatus Status { get; set; }
 
+    [Display(Name = "Potential SI Leaders")]
+    public string PotentialSiLeaderName { get; set; } = string.Empty;
+
+    public List<AdminLeaderCandidateStatusItemViewModel> LeaderCandidates { get; set; } = [];
+
     [StringLength(1000)]
     [Display(Name = "Admin Notes")]
     public string AdminNotes { get; set; } = string.Empty;
+}
+
+public class AdminLeaderCandidateStatusItemViewModel
+{
+    public int CandidateId { get; set; }
+    public string CandidateName { get; set; } = string.Empty;
+    public SILeaderCandidateStatus Status { get; set; }
 }

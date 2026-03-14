@@ -3,34 +3,50 @@
     ViewData["Title"] = "Track Request";
     var progress = Model.Status switch
     {
-        schedule_ders.Models.SIRequestStatus.Pending => 25,
-        schedule_ders.Models.SIRequestStatus.UnderReview => 60,
+        schedule_ders.Models.SIRequestStatus.Pending => 0,
+        schedule_ders.Models.SIRequestStatus.UnderReview => 25,
+        schedule_ders.Models.SIRequestStatus.SiLeaderFound => 50,
         schedule_ders.Models.SIRequestStatus.Approved => 100,
         schedule_ders.Models.SIRequestStatus.Denied => 100,
         _ => 0
     };
     var isDenied = Model.Status == schedule_ders.Models.SIRequestStatus.Denied;
     var trackColor = isDenied ? "bg-danger" : "request-progress-warning";
-    var progressWidthClass = progress switch
-    {
-        25 => "progress-w-25",
-        60 => "progress-w-60",
-        _ => "progress-w-100"
-    };
     var statusPillClass = Model.Status switch
     {
         schedule_ders.Models.SIRequestStatus.Approved => "status-pill status-pill-approved",
+        schedule_ders.Models.SIRequestStatus.SiLeaderFound => "status-pill status-pill-approved",
         schedule_ders.Models.SIRequestStatus.Denied => "status-pill status-pill-denied",
         schedule_ders.Models.SIRequestStatus.UnderReview => "status-pill status-pill-review",
         _ => "status-pill status-pill-pending"
     };
+    var statusDisplayText = Model.Status switch
+    {
+        schedule_ders.Models.SIRequestStatus.Pending => "Submitted",
+        schedule_ders.Models.SIRequestStatus.UnderReview => "Under Review",
+        schedule_ders.Models.SIRequestStatus.SiLeaderFound => "SI Leader Found",
+        schedule_ders.Models.SIRequestStatus.Approved => "Approved",
+        schedule_ders.Models.SIRequestStatus.Denied => "Not Moving Forward",
+        _ => Model.Status.ToString()
+    };
+    var leaderStatusPillClass = Model.PotentialSiLeaderStatus switch
+    {
+        schedule_ders.Models.SILeaderReviewStatus.NotSubmitted => "status-pill status-pill-pending",
+        schedule_ders.Models.SILeaderReviewStatus.Approved => "status-pill status-pill-approved",
+        schedule_ders.Models.SILeaderReviewStatus.Denied => "status-pill status-pill-denied",
+        schedule_ders.Models.SILeaderReviewStatus.UnderReview => "status-pill status-pill-review",
+        _ => "status-pill status-pill-pending"
+    };
+    var leaderCandidates = Model.LeaderCandidates
+        .OrderBy(x => x.CandidateName)
+        .ToList();
 }
 
 <section class="page-shell"
          data-professor-request-track="true"
          data-request-id="@Model.SIRequestID"
          data-status-api-url="@Url.Content($"~/api/v1/professor/requests/{Model.SIRequestID}/status")">
-<div class="page-title-row mb-1">
+<div class="page-title-row mb-1 request-tracker-header">
     <div>
         <a asp-action="Index" class="btn page-back-btn">Back</a>
     </div>
@@ -59,22 +75,85 @@
     Course: @courseDisplay
 </p>
 
-<div class="card mb-2">
+<h2 class="h6 track-section-label mb-2">Course SI Support Request Status</h2>
+<div class="card mb-2 course-track-panel">
     <div class="card-body">
-        <div class="d-flex justify-content-between small mb-2">
-            <span>Submitted</span>
-            <span>Under Review</span>
-            <span>@(isDenied ? "Denied" : "Approved")</span>
-        </div>
         <div class="progress request-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@progress">
-            <div class="progress-bar @trackColor @progressWidthClass" data-track-progress-bar="true"></div>
+            <div class="progress-bar @trackColor" data-track-progress-bar="true" style="width:@progress%"></div>
         </div>
-        <div class="d-flex justify-content-between small mt-2 text-muted">
-            <span class="track-stage-note track-stage-complete" data-track-stage-submitted="true">Complete</span>
-            <span class="track-stage-note @(Model.Status == schedule_ders.Models.SIRequestStatus.UnderReview ? "track-stage-current" : (Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "track-stage-complete" : ""))" data-track-stage-review="true">@(Model.Status == schedule_ders.Models.SIRequestStatus.UnderReview ? "In Progress" : (Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "Complete" : "Pending"))</span>
-            <span class="track-stage-note @(Model.Status is schedule_ders.Models.SIRequestStatus.Approved or schedule_ders.Models.SIRequestStatus.Denied ? "track-stage-complete" : "")" data-track-stage-final="true">@(Model.Status == schedule_ders.Models.SIRequestStatus.Approved ? "Approved" : (Model.Status == schedule_ders.Models.SIRequestStatus.Denied ? "Denied" : "Pending"))</span>
+        <div class="candidate-checkpoint-list admin-course-checkpoint-list mt-2" data-track-course-checkpoints="true" data-track-course-status="@Model.Status">
+            <div class="candidate-checkpoint" data-step="0">
+                <span class="candidate-checkpoint-dot"></span>
+                <span class="candidate-checkpoint-label">Submitted</span>
+            </div>
+            <div class="candidate-checkpoint" data-step="1">
+                <span class="candidate-checkpoint-dot"></span>
+                <span class="candidate-checkpoint-label">Under Review</span>
+            </div>
+            <div class="candidate-checkpoint" data-step="2">
+                <span class="candidate-checkpoint-dot"></span>
+                <span class="candidate-checkpoint-label">SI Leader Found</span>
+            </div>
+            <div class="candidate-checkpoint" data-step="3">
+                <span class="candidate-checkpoint-dot"></span>
+                <span class="candidate-checkpoint-label">Approved</span>
+            </div>
+            <div class="candidate-checkpoint" data-step="4">
+                <span class="candidate-checkpoint-dot"></span>
+                <span class="candidate-checkpoint-label">Not Moving Forward</span>
+            </div>
         </div>
     </div>
+</div>
+
+<h2 class="h6 track-section-label mb-2">SI Leader Candidate Review Status</h2>
+<div class="leader-candidate-grid mb-2" data-track-leader-candidates="true">
+    @if (leaderCandidates.Count == 0)
+    {
+        <div class="surface-card p-3">
+            <div class="text-muted">No candidate names submitted yet.</div>
+        </div>
+    }
+    else
+    {
+        @foreach (var candidate in leaderCandidates)
+        {
+            var candidateStepIndex = candidate.Status switch
+            {
+                schedule_ders.Models.SILeaderCandidateStatus.Requested => 0,
+                schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => 1,
+                schedule_ders.Models.SILeaderCandidateStatus.Interviewed => 2,
+                schedule_ders.Models.SILeaderCandidateStatus.Hired => 3,
+                _ => 0
+            };
+            <article class="card leader-candidate-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-semibold">@candidate.CandidateName</span>
+                        <span class="status-pill @(candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Hired ? "status-pill-approved" : candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Interviewed ? "status-pill-review" : "status-pill-pending")">@candidate.Status</span>
+                    </div>
+                    <div class="candidate-checkpoint-list">
+                        <div class="candidate-checkpoint @(candidateStepIndex > 0 ? "is-complete" : candidateStepIndex == 0 ? "is-current" : "is-pending")">
+                            <span class="candidate-checkpoint-dot"></span>
+                            <span class="candidate-checkpoint-label">Nominated by Professor</span>
+                        </div>
+                        <div class="candidate-checkpoint @(candidateStepIndex > 1 ? "is-complete" : candidateStepIndex == 1 ? "is-current" : "is-pending")">
+                            <span class="candidate-checkpoint-dot"></span>
+                            <span class="candidate-checkpoint-label">Interview Pending</span>
+                        </div>
+                        <div class="candidate-checkpoint @(candidateStepIndex > 2 ? "is-complete" : candidateStepIndex == 2 ? "is-current" : "is-pending")">
+                            <span class="candidate-checkpoint-dot"></span>
+                            <span class="candidate-checkpoint-label">Interview Complete</span>
+                        </div>
+                        <div class="candidate-checkpoint @(candidateStepIndex == 3 ? "is-complete" : "is-pending")">
+                            <span class="candidate-checkpoint-dot"></span>
+                            <span class="candidate-checkpoint-label">Selected as SI Leader</span>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        }
+    }
 </div>
 
 <div class="row g-3 mb-2">
@@ -82,20 +161,41 @@
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Current Status</div>
             <div class="fw-semibold">
-                <span class="@statusPillClass" data-track-current-status-pill="true" data-track-current-status="true">@Model.Status</span>
+                <span class="@statusPillClass" data-track-current-status-pill="true" data-track-current-status="true">@statusDisplayText</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="surface-card p-3 h-100">
+            <div class="small text-muted">Potential SI Leaders</div>
+            <div data-track-leader-name="true" class="candidate-chip-list">
+                @if (leaderCandidates.Count == 0)
+                {
+                    <span class="candidate-chip candidate-chip-empty">Not provided</span>
+                }
+                else
+                {
+                    @foreach (var candidate in leaderCandidates)
+                    {
+                        <span class="candidate-chip">@candidate.CandidateName</span>
+                    }
+                }
+            </div>
+            <div class="mt-1">
+                <span class="@leaderStatusPillClass" data-track-leader-status-pill="true">@Model.PotentialSiLeaderStatus</span>
             </div>
         </div>
     </div>
     <div class="col-md-4">
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Submitted On</div>
-            <div class="fw-semibold" data-track-submitted-date="true">@Model.SubmittedAtUtc.ToLocalTime().ToString("f")</div>
+            <div class="fw-semibold">@Model.SubmittedAtUtc.ToLocalTime().ToString("f")</div>
             <div class="mt-1">
                 <span class="relative-time-pill" data-track-submitted-relative="true">@schedule_ders.Utilities.RelativeTimeFormatter.Format(Model.SubmittedAtUtc)</span>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-12">
         <div class="surface-card p-3 h-100">
             <div class="small text-muted">Last Updated</div>
             <div class="fw-semibold" data-track-last-updated="true">@((Model.LastUpdatedAtUtc?.ToLocalTime().ToString("f")) ?? "No updates yet")</div>
