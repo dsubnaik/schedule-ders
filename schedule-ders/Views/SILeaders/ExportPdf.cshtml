@@ -8,7 +8,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SI Leaders Export</title>
+    <title>@Model.ExportTitle</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -63,7 +63,7 @@
     <div class="toolbar">
         <button type="button" class="btn" onclick="window.print()">Print / Save as PDF</button>
     </div>
-    <h1>SI Leaders</h1>
+    <h1>@Model.ExportTitle</h1>
     <div class="meta">
         Generated: @generated.ToString("f")
         @if (!string.IsNullOrWhiteSpace(Model.Search))
@@ -74,17 +74,33 @@
     <table>
         <thead>
             <tr>
-                <th>A-Number</th>
-                <th>SI Leader Name</th>
-                <th>Courses Teaching</th>
-                <th>Section Numbers</th>
+                @if (Model.ShowANumber)
+                {
+                    <th>@Model.ExportANumberLabel</th>
+                }
+                @if (Model.ShowLeaderName)
+                {
+                    <th>@Model.ExportLeaderNameLabel</th>
+                }
+                @if (Model.ShowCoursesTeaching)
+                {
+                    <th>@Model.ExportCoursesTeachingLabel</th>
+                }
+                @if (Model.ShowSectionNumbers)
+                {
+                    <th>@Model.ExportSectionNumbersLabel</th>
+                }
+                @foreach (var field in Model.CustomFields)
+                {
+                    <th>@field.Name</th>
+                }
             </tr>
         </thead>
         <tbody>
         @if (!Model.Leaders.Any())
         {
             <tr>
-                <td colspan="4">No SI leaders found.</td>
+                <td colspan="@((Model.ShowANumber ? 1 : 0) + (Model.ShowLeaderName ? 1 : 0) + (Model.ShowCoursesTeaching ? 1 : 0) + (Model.ShowSectionNumbers ? 1 : 0) + Model.CustomFields.Count)">No SI leaders found.</td>
             </tr>
         }
         else
@@ -92,10 +108,30 @@
             @foreach (var item in Model.Leaders)
             {
                 <tr>
-                    <td>@item.ANumber</td>
-                    <td>@item.LeaderName</td>
-                    <td>@item.CoursesTeaching</td>
-                    <td>@item.SectionNumbers</td>
+                    @if (Model.ShowANumber)
+                    {
+                        <td>@item.ANumber</td>
+                    }
+                    @if (Model.ShowLeaderName)
+                    {
+                        <td>@item.LeaderName</td>
+                    }
+                    @if (Model.ShowCoursesTeaching)
+                    {
+                        <td>@item.CoursesTeaching</td>
+                    }
+                    @if (Model.ShowSectionNumbers)
+                    {
+                        <td>@item.SectionNumbers</td>
+                    }
+                    @foreach (var field in Model.CustomFields)
+                    {
+                        <td>
+                            @(item.CustomFieldValues.TryGetValue(field.SILeaderCustomFieldId, out var value) && !string.IsNullOrWhiteSpace(value)
+                                ? value
+                                : "-")
+                        </td>
+                    }
                 </tr>
             }
         }
@@ -103,4 +139,3 @@
     </table>
 </body>
 </html>
-

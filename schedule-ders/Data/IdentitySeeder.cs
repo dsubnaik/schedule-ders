@@ -6,6 +6,12 @@ namespace schedule_ders.Data;
 public static class IdentitySeeder
 {
     private static readonly string[] Roles = ["Admin", "Professor", "Student"];
+    private static readonly (string NewEmail, string[] LegacyEmails, string Role)[] DemoUsers =
+    [
+        ("admin@email.com", ["admin@scheduleders.app", "admin@scheduleders.local"], "Admin"),
+        ("professor@email.com", ["professor@scheduleders.app", "professor@scheduleders.local"], "Professor"),
+        ("student@email.com", ["student@scheduleders.app", "student@scheduleders.local"], "Student")
+    ];
 
     public static async Task SeedAsync(IServiceProvider services, bool seedDemoUsers)
     {
@@ -38,14 +44,31 @@ public static class IdentitySeeder
             return;
         }
 
-        await EnsureUserInRoleAsync(userManager, "admin@scheduleders.app", "Admin", demoPassword);
-        await EnsureUserInRoleAsync(userManager, "professor@scheduleders.app", "Professor", demoPassword);
-        await EnsureUserInRoleAsync(userManager, "student@scheduleders.app", "Student", demoPassword);
+        foreach (var demoUser in DemoUsers)
+        {
+            await EnsureUserInRoleAsync(userManager, demoUser.NewEmail, demoUser.LegacyEmails, demoUser.Role, demoPassword);
+        }
     }
 
-    private static async Task EnsureUserInRoleAsync(UserManager<IdentityUser> userManager, string email, string role, string password)
+    private static async Task EnsureUserInRoleAsync(
+        UserManager<IdentityUser> userManager,
+        string email,
+        string[] legacyEmails,
+        string role,
+        string password)
     {
         var user = await userManager.FindByEmailAsync(email);
+        if (user is null)
+        {
+            foreach (var legacyEmail in legacyEmails)
+            {
+                user = await userManager.FindByEmailAsync(legacyEmail);
+                if (user is not null)
+                {
+                    break;
+                }
+            }
+        }
 
         if (user is null)
         {
@@ -60,6 +83,20 @@ public static class IdentitySeeder
             if (!createResult.Succeeded)
             {
                 throw new InvalidOperationException($"Failed to create user '{email}': {string.Join(", ", createResult.Errors.Select(e => e.Description))}");
+            }
+        }
+        else if (!string.Equals(user.Email, email, StringComparison.OrdinalIgnoreCase)
+                 || !string.Equals(user.UserName, email, StringComparison.OrdinalIgnoreCase))
+        {
+            user.Email = email;
+            user.UserName = email;
+            user.NormalizedEmail = userManager.NormalizeEmail(email);
+            user.NormalizedUserName = userManager.NormalizeName(email);
+
+            var updateResult = await userManager.UpdateAsync(user);
+            if (!updateResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to update user '{email}': {string.Join(", ", updateResult.Errors.Select(e => e.Description))}");
             }
         }
 

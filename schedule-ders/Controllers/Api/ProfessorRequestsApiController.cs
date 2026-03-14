@@ -89,7 +89,7 @@ public class ProfessorRequestsApiController : ControllerBase
 
         if (string.IsNullOrWhiteSpace(email))
         {
-            email = "professor@schedule-ders.local";
+            email = "professor@email.com";
         }
 
         return (displayName, email);
