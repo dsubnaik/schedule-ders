@@ -1,4 +1,5 @@
 @model IEnumerable<schedule_ders.Models.Course>
+@using schedule_ders.Utilities
 @{
     ViewData["Title"] = "Courses";
     var currentCrn = ViewData["CurrentCrn"] as string ?? string.Empty;
@@ -6,6 +7,7 @@
     var currentTime = ViewData["CurrentTime"] as string ?? string.Empty;
     var currentProfessor = ViewData["CurrentProfessor"] as string ?? string.Empty;
     var currentDay = ViewData["CurrentDay"] as string ?? string.Empty;
+    var currentSemesterId = ViewData["CurrentSemesterId"] as int?;
     var professorOptions = ViewBag.ProfessorOptions as List<string> ?? [];
     var dayOptions = ViewBag.DayOptions as List<string> ?? [];
     var timeSuggestions = new List<string>();
@@ -24,7 +26,8 @@
 <div class="page-header mb-1">
     <h1 class="page-title">Courses</h1>
     <div class="page-actions">
-        <a asp-action="Create" class="btn btn-primary">Add Course</a>
+        <a asp-controller="Semesters" asp-action="Index" class="btn btn-outline-secondary">Add Semester</a>
+        <a asp-action="Create" asp-route-semesterId="@currentSemesterId" class="btn btn-primary">Add Course</a>
     </div>
 </div>
 
@@ -92,6 +95,11 @@
             }
         </datalist>
     </div>
+    <div class="col">
+        <select name="semesterId" class="form-select" asp-items="ViewBag.SemesterOptions" onchange="this.form.requestSubmit()">
+            <option value="">All semesters</option>
+        </select>
+    </div>
     <div class="col-auto">
         <button type="submit" class="btn btn-outline-secondary">Apply</button>
     </div>
@@ -108,6 +116,7 @@
                 <th>@Html.DisplayNameFor(model => model.CourseName)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseTitle)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseSection)</th>
+                <th>Semester</th>
                 <th>@Html.DisplayNameFor(model => model.CourseProfessor)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseMeetingDays)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseMeetingTime)</th>
@@ -123,6 +132,9 @@
                 <td>@item.CourseName</td>
                 <td>@item.CourseTitle</td>
                 <td>@item.CourseSection</td>
+                <td>
+                    @(item.Semester is null ? "-" : SemesterCodeFormatter.ToDisplayName(item.Semester.SemesterCode))
+                </td>
                 <td>@item.CourseProfessor</td>
                 <td>@item.CourseMeetingDays</td>
                 <td>@item.CourseMeetingTime</td>

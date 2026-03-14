@@ -9,6 +9,7 @@ public interface IScheduleQueryService
         string? time,
         string? day,
         string? professor,
+        int? semesterId,
         int? courseId,
         int page,
         int pageSize);

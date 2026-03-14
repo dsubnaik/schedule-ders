@@ -40,6 +40,8 @@ public class ProfessorRequestService : IProfessorRequestService
             }
         }
 
+        var normalizedPotentialLeaderCandidates = NormalizePotentialLeaderCandidates(input.PotentialSiLeaderName);
+
         var request = new SIRequest
         {
             CourseID = input.CourseId,
@@ -50,13 +52,32 @@ public class ProfessorRequestService : IProfessorRequestService
             ProfessorName = (input.ProfessorName ?? string.Empty).Trim(),
             ProfessorEmail = (input.ProfessorEmail ?? string.Empty).Trim(),
             RequestNotes = input.RequestNotes.Trim(),
+            PotentialSiLeaderName = normalizedPotentialLeaderCandidates,
             CreatedByUserId = createdByUserId,
             Status = SIRequestStatus.Pending,
+            PotentialSiLeaderStatus = string.IsNullOrWhiteSpace(normalizedPotentialLeaderCandidates)
+                ? SILeaderReviewStatus.NotSubmitted
+                : SILeaderReviewStatus.Pending,
             SubmittedAtUtc = DateTime.UtcNow
         };
 
         _context.SIRequests.Add(request);
         await _context.SaveChangesAsync();
+
+        var candidateNames = normalizedPotentialLeaderCandidates
+            .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToList();
+        if (candidateNames.Count > 0)
+        {
+            _context.SIRequestLeaderCandidates.AddRange(candidateNames.Select(name => new SIRequestLeaderCandidate
+            {
+                SIRequestID = request.SIRequestID,
+                CandidateName = name,
+                Status = SILeaderCandidateStatus.Requested
+            }));
+            await _context.SaveChangesAsync();
+        }
 
         return new SiRequestSummaryDto
         {
@@ -94,10 +115,27 @@ public class ProfessorRequestService : IProfessorRequestService
             {
                 RequestId = ownedRequest.SIRequestID,
                 Status = ownedRequest.Status.ToString(),
+                PotentialSiLeaderStatus = ownedRequest.PotentialSiLeaderStatus.ToString(),
+                PotentialSiLeaderName = string.IsNullOrWhiteSpace(ownedRequest.PotentialSiLeaderName)
+                    ? null
+                    : ownedRequest.PotentialSiLeaderName,
+                LeaderCandidates = await _context.SIRequestLeaderCandidates
+                    .AsNoTracking()
+                    .Where(c => c.SIRequestID == ownedRequest.SIRequestID)
+                    .OrderBy(c => c.CandidateName)
+                    .Select(c => new LeaderCandidateStatusDto
+                    {
+                        CandidateId = c.SIRequestLeaderCandidateID,
+                        CandidateName = c.CandidateName,
+                        Status = c.Status.ToString(),
+                        ProgressPercent = GetCandidateProgressPercent(c.Status)
+                    })
+                    .ToListAsync(),
                 SubmittedAtUtc = ownedRequest.SubmittedAtUtc,
                 LastUpdatedAtUtc = ownedRequest.LastUpdatedAtUtc,
                 AdminNotes = string.IsNullOrWhiteSpace(ownedRequest.AdminNotes) ? null : ownedRequest.AdminNotes,
-                ProgressPercent = GetProgressPercent(ownedRequest.Status)
+                ProgressPercent = GetProgressPercent(ownedRequest.Status),
+                PotentialSiLeaderProgressPercent = GetPotentialLeaderProgressPercent(ownedRequest.PotentialSiLeaderStatus)
             }
         };
     }
@@ -126,10 +164,49 @@ public class ProfessorRequestService : IProfessorRequestService
     private static int GetProgressPercent(SIRequestStatus status) =>
         status switch
         {
-            SIRequestStatus.Pending => 25,
-            SIRequestStatus.UnderReview => 60,
-            SIRequestStatus.Approved => 100,
+            SIRequestStatus.Pending => 20,
+            SIRequestStatus.UnderReview => 50,
+            SIRequestStatus.Approved => 80,
+            SIRequestStatus.SiLeaderFound => 100,
             SIRequestStatus.Denied => 100,
             _ => 0
         };
+
+    private static int GetPotentialLeaderProgressPercent(SILeaderReviewStatus status) =>
+        status switch
+        {
+            SILeaderReviewStatus.NotSubmitted => 0,
+            SILeaderReviewStatus.Pending => 25,
+            SILeaderReviewStatus.UnderReview => 60,
+            SILeaderReviewStatus.Approved => 100,
+            SILeaderReviewStatus.Denied => 100,
+            _ => 0
+        };
+
+    private static int GetCandidateProgressPercent(SILeaderCandidateStatus status) =>
+        status switch
+        {
+            SILeaderCandidateStatus.Requested => 25,
+            SILeaderCandidateStatus.YetToInterview => 50,
+            SILeaderCandidateStatus.Interviewed => 75,
+            SILeaderCandidateStatus.Hired => 100,
+            _ => 0
+        };
+
+    private static string NormalizePotentialLeaderCandidates(string? rawValue)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return string.Empty;
+        }
+
+        var candidates = rawValue
+            .Replace("\r", "\n")
+            .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return candidates.Count == 0 ? string.Empty : string.Join('\n', candidates);
+    }
 }

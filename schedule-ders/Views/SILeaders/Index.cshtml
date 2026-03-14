@@ -1,0 +1,173 @@
+@model schedule_ders.ViewModels.SILeaderAdminIndexViewModel
+@{
+    ViewData["Title"] = "SI Leaders";
+}
+
+<section class="page-shell">
+<div class="page-header mb-1">
+    <h1 class="page-title">SI Leaders</h1>
+    <div class="page-actions">
+        <a asp-action="ExportPdf" asp-route-search="@Model.Search" class="btn btn-outline-secondary" target="_blank" rel="noopener">Export PDF</a>
+    </div>
+</div>
+
+@if (TempData["SILeaderMessage"] is string okMessage && !string.IsNullOrWhiteSpace(okMessage))
+{
+    <div class="alert alert-success mb-2" role="status">@okMessage</div>
+}
+@if (TempData["SILeaderError"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+{
+    <div class="alert alert-danger mb-2" role="alert">@errorMessage</div>
+}
+
+<form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
+    <div class="col">
+        <input type="text"
+               name="search"
+               value="@Model.Search"
+               class="form-control"
+               placeholder="Search A-Number or leader name" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-outline-secondary">Apply</button>
+    </div>
+    <div class="col-auto">
+        <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+
+<form asp-action="Create" method="post" class="row g-2 mb-3 surface-card surface-toolbar">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Search" />
+    <div class="col-md-3">
+        <label asp-for="CreateANumber" class="form-label"></label>
+        <input asp-for="CreateANumber" class="form-control" placeholder="A12345678" />
+    </div>
+    <div class="col-md-5">
+        <label asp-for="CreateLeaderName" class="form-label"></label>
+        <input asp-for="CreateLeaderName" class="form-control" placeholder="SI Leader full name" />
+    </div>
+    <div class="col-md-4">
+        <div class="row g-2" data-si-leader-assignment-builder="true">
+            <input asp-for="CreateCourseAssignments" type="hidden" data-assignment-storage="true" />
+            <div class="col-6">
+                <label class="form-label small mb-1">Courses</label>
+                <input type="text"
+                       class="form-control"
+                       data-assignment-course-input="true"
+                       placeholder="Course (example: ACCT 2301)" />
+                <div class="mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-assignment-add-course="true">Add Course</button>
+                </div>
+                <div class="mt-2" data-assignment-course-list="true"></div>
+            </div>
+            <div class="col-6">
+                <label class="form-label small mb-1">Sections</label>
+                <input type="text"
+                       class="form-control"
+                       data-assignment-section-input="true"
+                       placeholder="Section" />
+                <div class="mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-assignment-add-section="true">Add Section</button>
+                </div>
+                <div class="mt-2" data-assignment-section-list="true"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-12 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary">Add SI Leader</button>
+    </div>
+</form>
+
+<div class="table-responsive data-table">
+    <table class="table table-striped table-hover align-middle data-table-compact">
+        <thead>
+            <tr>
+                <th>A-Number</th>
+                <th>SI Leader Name</th>
+                <th>Courses Teaching</th>
+                <th>Section Numbers</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (!Model.Leaders.Any())
+        {
+            <tr>
+                <td colspan="5" class="text-muted">No SI leaders found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model.Leaders)
+            {
+                var updateFormId = $"siLeaderUpdate_{item.SILeaderID}";
+                <tr>
+                    <td>
+                        <input type="text" name="aNumber" value="@item.ANumber" class="form-control form-control-sm" form="@updateFormId" />
+                    </td>
+                    <td>
+                        <input type="text" name="leaderName" value="@item.LeaderName" class="form-control form-control-sm" form="@updateFormId" />
+                    </td>
+                    <td>
+                        <div>@item.CoursesTeaching</div>
+                        <div class="mt-2" data-si-leader-assignment-builder="true">
+                            <textarea name="courseAssignments"
+                                      class="d-none"
+                                      rows="3"
+                                      form="@updateFormId"
+                                      data-assignment-storage="true">@item.CourseAssignmentsInput</textarea>
+                            <div class="row g-2">
+                                <div class="col-sm-6">
+                                    <label class="form-label small mb-1">Courses</label>
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           data-assignment-course-input="true"
+                                           placeholder="Course" />
+                                    <div class="mt-2">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm"
+                                                data-assignment-add-course="true">Add Course</button>
+                                    </div>
+                                    <div class="mt-2" data-assignment-course-list="true"></div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label small mb-1">Sections</label>
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           data-assignment-section-input="true"
+                                           placeholder="Section" />
+                                    <div class="mt-2">
+                                        <button type="button"
+                                                class="btn btn-outline-secondary btn-sm"
+                                                data-assignment-add-section="true">Add Section</button>
+                                    </div>
+                                    <div class="mt-2" data-assignment-section-list="true"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>@item.SectionNumbers</div>
+                    </td>
+                    <td class="text-nowrap">
+                        <form id="@updateFormId" asp-action="Update" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.SILeaderID" />
+                            <input type="hidden" name="search" value="@Model.Search" />
+                        </form>
+                        <button type="submit" class="request-action-link" form="@updateFormId">Save</button>
+                        <form asp-action="Delete" method="post" class="d-inline ms-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.SILeaderID" />
+                            <input type="hidden" name="search" value="@Model.Search" />
+                            <button type="submit" class="request-action-link request-action-delete">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</div>
+</section>

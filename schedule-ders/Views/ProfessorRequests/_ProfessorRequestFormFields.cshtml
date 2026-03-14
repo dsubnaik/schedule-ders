@@ -2,8 +2,17 @@
 @{
     var courseCodeOptions = ViewBag.CourseCodeOptions as List<string> ?? [];
     var courseTitleOptions = ViewBag.CourseTitleOptions as List<string> ?? [];
-    var sectionValue = string.IsNullOrWhiteSpace(Model.RequestedCourseSection) ? string.Empty : Model.RequestedCourseSection;
-    var sectionOptions = new[] { "001", "002", "003", "004", "005", "006" };
+    var siLeaderOptions = ViewBag.SiLeaderOptions as List<string> ?? [];
+    var leaderCandidates = (Model.PotentialSiLeaderName ?? string.Empty)
+        .Replace("\r", "\n")
+        .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    if (leaderCandidates.Count == 0)
+    {
+        leaderCandidates.Add(string.Empty);
+    }
 }
 
 <input asp-for="CourseID" type="hidden" />
@@ -44,16 +53,7 @@
 
 <div class="mb-3">
     <label asp-for="RequestedCourseSection" class="form-label"></label>
-    <input asp-for="RequestedCourseSection" type="hidden" id="requestSectionInput" />
-    <div class="d-flex flex-wrap gap-2" data-request-section-buttons="true">
-        @foreach (var sectionCode in sectionOptions)
-        {
-            var isActive = sectionCode == sectionValue;
-            <button type="button"
-                    class="btn @(isActive ? "btn-primary" : "btn-outline-primary") request-section-btn"
-                    data-section-value="@sectionCode">@sectionCode</button>
-        }
-    </div>
+    <input asp-for="RequestedCourseSection" class="form-control" placeholder="Type section number (e.g. 001)" autocomplete="off" />
     <span asp-validation-for="RequestedCourseSection" class="text-danger"></span>
 </div>
 
@@ -61,4 +61,34 @@
     <label asp-for="RequestNotes" class="form-label"></label>
     <textarea asp-for="RequestNotes" class="form-control" rows="6" placeholder="Describe why SI support is requested, target students, and preferred timing."></textarea>
     <span asp-validation-for="RequestNotes" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="PotentialSiLeaderName" class="form-label"></label>
+    <input asp-for="PotentialSiLeaderName" type="hidden" />
+    <div data-potential-leader-list="true" class="d-flex flex-column gap-2">
+        @foreach (var candidate in leaderCandidates)
+        {
+            <div class="input-group" data-potential-leader-row="true">
+                <input type="text"
+                       class="form-control"
+                       data-potential-leader-input="true"
+                       list="siLeaderOptions"
+                       placeholder="Optional: suggest a student for SI leader"
+                       autocomplete="off"
+                       value="@candidate" />
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-remove-potential-leader="true">Remove</button>
+            </div>
+        }
+    </div>
+    <button type="button" class="btn btn-outline-primary btn-sm mt-2" data-add-potential-leader="true">Add Candidate</button>
+    <datalist id="siLeaderOptions">
+        @foreach (var leader in siLeaderOptions)
+        {
+            <option value="@leader"></option>
+        }
+    </datalist>
+    <span asp-validation-for="PotentialSiLeaderName" class="text-danger"></span>
 </div>

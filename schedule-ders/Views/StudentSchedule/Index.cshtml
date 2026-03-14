@@ -2,6 +2,18 @@
 @{
     ViewData["Title"] = "SI Schedule";
     var dayOptions = ViewData["DayOptions"] as List<string> ?? [];
+    var semesterOptions = ViewData["SemesterOptions"] as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+    static int GetDaySortOrder(string? day) => day?.Trim().ToLowerInvariant() switch
+    {
+        "monday" => 1,
+        "tuesday" => 2,
+        "wednesday" => 3,
+        "thursday" => 4,
+        "friday" => 5,
+        "saturday" => 6,
+        "sunday" => 7,
+        _ => 99
+    };
     var groupedResults = Model.Results
         .GroupBy(r => new { r.CourseName, r.CourseTitle, r.Professor, r.SILeader })
         .Select(g => new
@@ -22,7 +34,8 @@
             Sessions = g
                 .GroupBy(x => new { x.Day, x.Time, x.Location })
                 .Select(x => x.First())
-                .OrderBy(x => x.Day)
+                .OrderBy(x => GetDaySortOrder(x.Day))
+                .ThenBy(x => x.Day)
                 .ThenBy(x => x.Time)
                 .ToList()
         })
@@ -97,6 +110,12 @@
                 <div class="col-lg-2">
                     <label class="form-label mb-1">Professor</label>
                     <input name="professor" value="@Model.Professor" class="form-control" placeholder="Professor name" />
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label mb-1">Semester</label>
+                    <select name="semesterId" class="form-select" asp-items="semesterOptions">
+                        <option value="">All semesters</option>
+                    </select>
                 </div>
                 <div class="col-lg-2 d-grid">
                     <button type="submit" class="btn btn-primary">Apply</button>

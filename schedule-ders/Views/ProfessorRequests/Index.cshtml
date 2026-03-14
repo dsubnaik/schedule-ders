@@ -29,7 +29,8 @@
     <a asp-action="Index" asp-route-status="Pending" class="quick-status-chip @(IsStatusActive("Pending") ? "is-active" : "")">Pending</a>
     <a asp-action="Index" asp-route-status="UnderReview" class="quick-status-chip @(IsStatusActive("UnderReview") ? "is-active" : "")">Under Review</a>
     <a asp-action="Index" asp-route-status="Approved" class="quick-status-chip @(IsStatusActive("Approved") ? "is-active" : "")">Approved</a>
-    <a asp-action="Index" asp-route-status="Denied" class="quick-status-chip @(IsStatusActive("Denied") ? "is-active" : "")">Denied</a>
+    <a asp-action="Index" asp-route-status="SiLeaderFound" class="quick-status-chip @(IsStatusActive("SiLeaderFound") ? "is-active" : "")">SI Leader Found</a>
+    <a asp-action="Index" asp-route-status="Denied" class="quick-status-chip @(IsStatusActive("Denied") ? "is-active" : "")">Not Moving Forward</a>
 </div>
 
 <div class="table-responsive data-table professor-requests-table-scroll">
@@ -63,6 +64,15 @@
                             ? manualCode
                             : $"{manualCode} - {item.RequestedCourseTitle}")
                         : "Manual Course Entry");
+                var statusDisplay = item.Status switch
+                {
+                    schedule_ders.Models.SIRequestStatus.Pending => "Submitted",
+                    schedule_ders.Models.SIRequestStatus.UnderReview => "Under Review",
+                    schedule_ders.Models.SIRequestStatus.SiLeaderFound => "SI Leader Found",
+                    schedule_ders.Models.SIRequestStatus.Approved => "Approved",
+                    schedule_ders.Models.SIRequestStatus.Denied => "Not Moving Forward",
+                    _ => item.Status.ToString()
+                };
                 <tr>
                     <td>@courseDisplay</td>
                     <td>
@@ -75,10 +85,22 @@
                                   schedule_ders.Models.SIRequestStatus.Pending => "status-pill-pending",
                                   schedule_ders.Models.SIRequestStatus.UnderReview => "status-pill-review",
                                   schedule_ders.Models.SIRequestStatus.Approved => "status-pill-approved",
+                                  schedule_ders.Models.SIRequestStatus.SiLeaderFound => "status-pill-approved",
                                   _ => "status-pill-denied"
                               })">
-                            @item.Status
+                            @statusDisplay
                         </span>
+                        <div class="mt-1">
+                            <span class="status-pill @(item.PotentialSiLeaderStatus switch
+                                  {
+                                      schedule_ders.Models.SILeaderReviewStatus.Approved => "status-pill-approved",
+                                      schedule_ders.Models.SILeaderReviewStatus.Denied => "status-pill-denied",
+                                      schedule_ders.Models.SILeaderReviewStatus.UnderReview => "status-pill-review",
+                                      _ => "status-pill-pending"
+                                  })">
+                                Leader: @item.PotentialSiLeaderStatus
+                            </span>
+                        </div>
                     </td>
                     <td class="text-nowrap text-end">
                         <span class="professor-request-actions">

@@ -1,6 +1,9 @@
 @model schedule_ders.Models.Course
 @{
     var professorOptions = ViewBag.ProfessorOptions as List<string> ?? [];
+    var leaderOptions = ViewBag.LeaderOptions as List<string> ?? [];
+    var courseNameOptions = ViewBag.CourseNameOptions as List<string> ?? [];
+    var semesterOptions = ViewBag.SemesterOptions as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
     var minutes = new[] { 0, 15, 30, 45, 50 };
     var timeOptions = new List<string>();
     for (var hour = 7; hour <= 22; hour++)
@@ -16,24 +19,26 @@
 <input type="hidden"
        id="courseFormConfig"
        data-course-form-enhancer="true"
-       data-lookup-url="@Url.Action("LookupByCrn", "Courses")"
        data-leader-lookup-url="@Url.Action("LookupLeaderByCourseName", "Courses")"
        data-exclude-id="@Model.CourseID" />
 
 <div class="mb-3">
     <label asp-for="CourseCrn" class="form-label"></label>
-    <div class="input-group">
-        <input asp-for="CourseCrn" class="form-control" placeholder="12345" id="courseCrnInput" />
-        <button type="button" class="btn btn-outline-secondary" id="lookupCrnBtn">Auto-fill</button>
-    </div>
-    <div class="form-text">Enter CRN and click Auto-fill to load course name and section from saved CRN catalog.</div>
+    <input asp-for="CourseCrn" class="form-control" placeholder="12345" id="courseCrnInput" />
     <span asp-validation-for="CourseCrn" class="text-danger"></span>
 </div>
 
 <div class="row g-3">
+    <div class="col-12 col-md-3">
+        <label asp-for="SemesterId" class="form-label"></label>
+        <select asp-for="SemesterId" class="form-select" asp-items="semesterOptions">
+            <option value="">Select semester</option>
+        </select>
+        <span asp-validation-for="SemesterId" class="text-danger"></span>
+    </div>
     <div class="col-12 col-md-4">
         <label asp-for="CourseName" class="form-label"></label>
-        <input asp-for="CourseName" class="form-control" id="courseNameInput" />
+        <input asp-for="CourseName" class="form-control" id="courseNameInput" list="courseNameOptions" />
         <span asp-validation-for="CourseName" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-5">
@@ -47,6 +52,13 @@
         <span asp-validation-for="CourseSection" class="text-danger"></span>
     </div>
 </div>
+
+<datalist id="courseNameOptions">
+    @foreach (var courseName in courseNameOptions)
+    {
+        <option value="@courseName"></option>
+    }
+</datalist>
 
 <input asp-for="CourseMeetingDays" type="hidden" id="courseMeetingDaysInput" />
 <div class="mb-3">
@@ -109,7 +121,7 @@
     </div>
     <div class="col-12 col-md-6">
         <label asp-for="CourseLeader" class="form-label"></label>
-        <input asp-for="CourseLeader" class="form-control" id="courseLeaderInput" />
+        <input asp-for="CourseLeader" class="form-control" id="courseLeaderInput" list="courseLeaderOptions" />
         <span asp-validation-for="CourseLeader" class="text-danger"></span>
     </div>
 </div>
@@ -117,6 +129,12 @@
     @foreach (var professor in professorOptions)
     {
         <option value="@professor"></option>
+    }
+</datalist>
+<datalist id="courseLeaderOptions">
+    @foreach (var leader in leaderOptions)
+    {
+        <option value="@leader"></option>
     }
 </datalist>
 <div class="form-text mb-3">Search existing professors or type a new one.</div>

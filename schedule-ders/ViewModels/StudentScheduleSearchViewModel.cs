@@ -6,6 +6,7 @@ public class StudentScheduleSearchViewModel
     public string Time { get; set; } = string.Empty;
     public string Day { get; set; } = string.Empty;
     public string Professor { get; set; } = string.Empty;
+    public int? SemesterId { get; set; }
     public bool CanManageFavorites { get; set; }
     public HashSet<int> FavoriteCourseIds { get; set; } = [];
     public List<StudentScheduleRowViewModel> Results { get; set; } = [];

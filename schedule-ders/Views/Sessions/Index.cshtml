@@ -7,6 +7,7 @@
     var currentLocation = ViewData["CurrentLocation"] as string ?? string.Empty;
     var currentDay = ViewData["CurrentDay"] as string ?? string.Empty;
     var currentCourseId = ViewData["CurrentCourseId"] as int?;
+    var currentSemesterId = ViewData["CurrentSemesterId"] as int?;
     var dayOptions = ViewBag.DayOptions as List<string> ?? [];
     var leaderOptions = ViewBag.LeaderOptions as List<string> ?? [];
     var locationOptions = ViewBag.LocationOptions as List<string> ?? [];
@@ -26,14 +27,27 @@
 <section class="page-shell">
 <div class="page-header mb-1">
     <h1 class="page-title">SI Sessions</h1>
-    @if (currentCourseId.HasValue)
-    {
-        <div class="page-actions"><a asp-action="Create" asp-route-courseId="@currentCourseId.Value" asp-route-returnUrl="@currentUrl" class="btn btn-primary">Add Session</a></div>
-    }
-    else
-    {
-        <div class="page-actions"><a asp-action="Create" asp-route-returnUrl="@currentUrl" class="btn btn-primary">Add Session</a></div>
-    }
+    <div class="page-actions d-flex gap-2">
+        <a asp-action="ExportPdf"
+           asp-route-search="@currentSearch"
+           asp-route-time="@currentTime"
+           asp-route-leader="@currentLeader"
+           asp-route-location="@currentLocation"
+           asp-route-day="@currentDay"
+           asp-route-courseId="@currentCourseId"
+           asp-route-semesterId="@currentSemesterId"
+           class="btn btn-outline-secondary"
+           target="_blank"
+           rel="noopener">Export PDF</a>
+        @if (currentCourseId.HasValue)
+        {
+            <a asp-action="Create" asp-route-courseId="@currentCourseId.Value" asp-route-semesterId="@currentSemesterId" asp-route-returnUrl="@currentUrl" class="btn btn-primary">Add Session</a>
+        }
+        else
+        {
+            <a asp-action="Create" asp-route-semesterId="@currentSemesterId" asp-route-returnUrl="@currentUrl" class="btn btn-primary">Add Session</a>
+        }
+    </div>
 </div>
 
 <form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
@@ -105,6 +119,11 @@
     <div class="col">
         <select name="courseId" class="form-select" asp-items="ViewBag.CourseFilterOptions">
             <option value="">All courses</option>
+        </select>
+    </div>
+    <div class="col">
+        <select name="semesterId" class="form-select" asp-items="ViewBag.SemesterOptions" onchange="this.form.requestSubmit()">
+            <option value="">All semesters</option>
         </select>
     </div>
     <div class="col-auto d-grid">

@@ -1,0 +1,286 @@
+@model schedule_ders.ViewModels.SessionExportPdfViewModel
+@{
+    Layout = null;
+    var title = "Supplemental Instruction (SI) Schedule";
+    var hasFilters = !string.IsNullOrWhiteSpace(Model.Search)
+        || !string.IsNullOrWhiteSpace(Model.Day)
+        || !string.IsNullOrWhiteSpace(Model.Time)
+        || !string.IsNullOrWhiteSpace(Model.Leader)
+        || !string.IsNullOrWhiteSpace(Model.Location)
+        || !string.IsNullOrWhiteSpace(Model.CourseLabel);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@title</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            margin: 0;
+            background: #f2f2f2;
+            color: #000;
+            font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+        }
+
+        .page {
+            width: 11in;
+            min-height: 8.5in;
+            margin: 0 auto;
+            padding: 0.35in 0.32in;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .toolbar {
+            width: 11in;
+            margin: 1rem auto 0;
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            border: 1px solid #111;
+            background: #fff;
+            color: #000;
+            padding: 0.45rem 0.8rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .title {
+            margin: 0 0 0.3rem;
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .meta {
+            margin: 0 0 0.5rem;
+            text-align: center;
+            font-size: 0.72rem;
+        }
+
+        .filters {
+            margin: 0 0 0.6rem;
+            text-align: center;
+            font-size: 0.7rem;
+        }
+
+        .filters span + span::before {
+            content: " | ";
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 0.72rem;
+        }
+
+        th, td {
+            border: 1px solid #222;
+            padding: 0.14rem 0.18rem;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #e6e6e6;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .sessions-header {
+            background: #000;
+            color: #fff;
+            text-transform: none;
+        }
+
+        .number-col {
+            width: 4%;
+            text-align: center;
+        }
+
+        .course-section-col {
+            width: 18%;
+        }
+
+        .course-name-col {
+            width: 18%;
+        }
+
+        .professor-col {
+            width: 15%;
+        }
+
+        .leader-col {
+            width: 8%;
+            text-align: center;
+        }
+
+        .office-col {
+            width: 8%;
+            text-align: center;
+        }
+
+        .day-col {
+            width: 12%;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .time-col {
+            width: 11%;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .location-col {
+            width: 10%;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .course-meta {
+            display: block;
+            margin-top: 0.12rem;
+            font-size: 0.68rem;
+        }
+
+        .multiline {
+            white-space: pre-line;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        @@page {
+            size: landscape;
+            margin: 0.3in;
+        }
+
+        @@media print {
+            body {
+                background: #fff;
+            }
+
+            .toolbar {
+                display: none;
+            }
+
+            .page {
+                width: auto;
+                min-height: auto;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" class="btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    <main class="page">
+        <h1 class="title">@title</h1>
+        <p class="meta">Generated @Model.GeneratedAtLocal.ToString("MMMM d, yyyy h:mm tt")</p>
+
+        @if (hasFilters)
+        {
+            <p class="filters">
+                @if (!string.IsNullOrWhiteSpace(Model.CourseLabel))
+                {
+                    <span>Course: @Model.CourseLabel</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Search))
+                {
+                    <span>Search: @Model.Search</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Day))
+                {
+                    <span>Day: @Model.Day</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Time))
+                {
+                    <span>Time: @Model.Time</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Leader))
+                {
+                    <span>Leader: @Model.Leader</span>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Location))
+                {
+                    <span>Location: @Model.Location</span>
+                }
+            </p>
+        }
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="number-col" rowspan="2"></th>
+                    <th class="course-section-col" rowspan="2">Course/Section(s)</th>
+                    <th class="course-name-col" rowspan="2">Course Name</th>
+                    <th class="professor-col" rowspan="2">Professor</th>
+                    <th class="leader-col" rowspan="2">SI Leader</th>
+                    <th class="office-col" rowspan="2">Office Hour(s)</th>
+                    <th class="sessions-header" colspan="3">SI Sessions</th>
+                </tr>
+                <tr>
+                    <th class="day-col">Day</th>
+                    <th class="time-col">Time</th>
+                    <th class="location-col">Session Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Courses.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="empty">No schedule rows matched the current filters.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var course in Model.Courses)
+                    {
+                        var sessions = course.Sessions.Count == 0
+                            ? [new schedule_ders.ViewModels.SessionExportPdfSlotViewModel
+                            {
+                                Day = "-",
+                                Time = "-",
+                                Location = "-"
+                            }]
+                            : course.Sessions;
+
+                        for (var i = 0; i < sessions.Count; i++)
+                        {
+                            var session = sessions[i];
+                            <tr>
+                                @if (i == 0)
+                                {
+                                    <td class="number-col" rowspan="@sessions.Count">@course.RowNumber</td>
+                                    <td class="course-section-col multiline" rowspan="@sessions.Count">@course.CourseAndSection</td>
+                                    <td class="course-name-col multiline" rowspan="@sessions.Count">@course.CourseName</td>
+                                    <td class="professor-col multiline" rowspan="@sessions.Count">@course.Professor</td>
+                                    <td class="leader-col multiline" rowspan="@sessions.Count">@course.Leader</td>
+                                    <td class="office-col multiline" rowspan="@sessions.Count">@course.OfficeHours</td>
+                                }
+                                <td class="day-col">@session.Day</td>
+                                <td class="time-col">@session.Time</td>
+                                <td class="location-col">@session.Location</td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>

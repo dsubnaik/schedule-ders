@@ -68,6 +68,7 @@ public class AdminRequestService : IAdminRequestService
                 ProfessorName = r.ProfessorName,
                 ProfessorEmail = r.ProfessorEmail,
                 Status = r.Status.ToString(),
+                PotentialSiLeaderStatus = r.PotentialSiLeaderStatus.ToString(),
                 SubmittedAtUtc = r.SubmittedAtUtc,
                 LastUpdatedAtUtc = r.LastUpdatedAtUtc
             })
@@ -93,6 +94,10 @@ public class AdminRequestService : IAdminRequestService
         }
 
         request.Status = input.Status;
+        if (input.PotentialSiLeaderStatus.HasValue)
+        {
+            request.PotentialSiLeaderStatus = input.PotentialSiLeaderStatus.Value;
+        }
         request.AdminNotes = input.AdminNotes?.Trim() ?? string.Empty;
         request.LastUpdatedAtUtc = DateTime.UtcNow;
 
@@ -122,7 +127,9 @@ public class AdminRequestService : IAdminRequestService
             return RemoveAdminRequestResult.NotFound;
         }
 
-        if (request.Status != SIRequestStatus.Approved && request.Status != SIRequestStatus.Denied)
+        if (request.Status != SIRequestStatus.Approved
+            && request.Status != SIRequestStatus.SiLeaderFound
+            && request.Status != SIRequestStatus.Denied)
         {
             return RemoveAdminRequestResult.NotAllowed;
         }

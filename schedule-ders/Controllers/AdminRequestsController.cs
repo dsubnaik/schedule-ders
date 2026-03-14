@@ -48,6 +48,7 @@ public class AdminRequestsController : Controller
         var request = await _context.SIRequests
             .AsNoTracking()
             .Include(r => r.Course)
+            .Include(r => r.LeaderCandidates)
             .FirstOrDefaultAsync(r => r.SIRequestID == id);
 
         if (request is null)
@@ -65,10 +66,21 @@ public class AdminRequestsController : Controller
             RequestNotes = request.RequestNotes,
             SubmittedAtUtc = request.SubmittedAtUtc,
             Status = request.Status,
+            PotentialSiLeaderName = request.PotentialSiLeaderName,
+            LeaderCandidates = request.LeaderCandidates
+                .OrderBy(c => c.CandidateName)
+                .Select(c => new AdminLeaderCandidateStatusItemViewModel
+                {
+                    CandidateId = c.SIRequestLeaderCandidateID,
+                    CandidateName = c.CandidateName,
+                    Status = c.Status
+                })
+                .ToList(),
             AdminNotes = request.AdminNotes
         };
 
         ViewBag.Statuses = new SelectList(Enum.GetValues<SIRequestStatus>());
+        ViewBag.CandidateStatuses = new SelectList(Enum.GetValues<SILeaderCandidateStatus>());
         return View(vm);
     }
 
@@ -79,18 +91,54 @@ public class AdminRequestsController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.Statuses = new SelectList(Enum.GetValues<SIRequestStatus>());
+            ViewBag.CandidateStatuses = new SelectList(Enum.GetValues<SILeaderCandidateStatus>());
             return View(input);
         }
 
-        var updated = await _adminRequestService.UpdateStatusAsync(input.SIRequestID, new UpdateRequestStatusDto
-        {
-            Status = input.Status,
-            AdminNotes = input.AdminNotes
-        });
-
-        if (updated is null)
+        var request = await _context.SIRequests
+            .Include(r => r.LeaderCandidates)
+            .FirstOrDefaultAsync(r => r.SIRequestID == input.SIRequestID);
+        if (request is null)
         {
             return NotFound();
+        }
+
+        request.Status = input.Status;
+        request.AdminNotes = input.AdminNotes?.Trim() ?? string.Empty;
+        request.LastUpdatedAtUtc = DateTime.UtcNow;
+
+        var candidateUpdates = input.LeaderCandidates ?? [];
+        foreach (var candidate in request.LeaderCandidates)
+        {
+            var update = candidateUpdates.FirstOrDefault(x => x.CandidateId == candidate.SIRequestLeaderCandidateID);
+            if (update is null)
+            {
+                continue;
+            }
+
+            candidate.Status = update.Status;
+            candidate.LastUpdatedAtUtc = DateTime.UtcNow;
+        }
+
+        request.PotentialSiLeaderName = string.Join('\n', request.LeaderCandidates
+            .OrderBy(c => c.CandidateName)
+            .Select(c => c.CandidateName));
+        request.PotentialSiLeaderStatus = MapAggregateLeaderStatus(request.LeaderCandidates);
+        if (request.LeaderCandidates.Any(c => c.Status == SILeaderCandidateStatus.Hired)
+            && request.Status != SIRequestStatus.Denied)
+        {
+            request.Status = SIRequestStatus.SiLeaderFound;
+        }
+
+        await _context.SaveChangesAsync();
+
+        if (request.Status == SIRequestStatus.Approved || request.Status == SIRequestStatus.SiLeaderFound)
+        {
+            await _adminRequestService.UpdateStatusAsync(input.SIRequestID, new UpdateRequestStatusDto
+            {
+                Status = request.Status,
+                AdminNotes = request.AdminNotes
+            });
         }
 
         return RedirectToAction(nameof(Index));
@@ -115,4 +163,24 @@ public class AdminRequestsController : Controller
         return string.IsNullOrWhiteSpace(title) ? code : $"{code} - {title}";
     }
 
+    private static SILeaderReviewStatus MapAggregateLeaderStatus(IEnumerable<SIRequestLeaderCandidate> candidates)
+    {
+        var list = candidates.ToList();
+        if (list.Count == 0)
+        {
+            return SILeaderReviewStatus.NotSubmitted;
+        }
+
+        if (list.Any(c => c.Status == SILeaderCandidateStatus.Hired))
+        {
+            return SILeaderReviewStatus.Approved;
+        }
+
+        if (list.Any(c => c.Status is SILeaderCandidateStatus.YetToInterview or SILeaderCandidateStatus.Interviewed))
+        {
+            return SILeaderReviewStatus.UnderReview;
+        }
+
+        return SILeaderReviewStatus.Pending;
+    }
 }

@@ -1,0 +1,83 @@
+@model schedule_ders.ViewModels.SemestersIndexViewModel
+
+@{
+    ViewData["Title"] = "Semesters";
+}
+
+<section class="page-shell">
+    <div class="page-header mb-1">
+        <h1 class="page-title">Semesters</h1>
+        <div class="page-actions">
+            <a asp-controller="Courses" asp-action="Index" class="btn btn-outline-secondary">Back to Courses</a>
+        </div>
+    </div>
+
+    @if (TempData["SemesterMessage"] is string okMessage && !string.IsNullOrWhiteSpace(okMessage))
+    {
+        <div class="alert alert-success mb-2" role="status">@okMessage</div>
+    }
+    @if (TempData["SemesterError"] is string errorMessage && !string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger mb-2" role="alert">@errorMessage</div>
+    }
+
+    <form asp-action="Create" method="post" class="row g-2 mb-3 surface-card surface-toolbar">
+        @Html.AntiForgeryToken()
+        <div class="col-md-4">
+            <label asp-for="NewSemesterCode" class="form-label"></label>
+            <input asp-for="NewSemesterCode" class="form-control" placeholder="202601" />
+            <div class="form-text">Examples: Spring `202601`, Fall `202609`.</div>
+        </div>
+        <div class="col-md-auto d-flex align-items-end">
+            <button type="submit" class="btn btn-primary">Add Semester</button>
+        </div>
+    </form>
+
+    <div class="table-responsive data-table">
+        <table class="table table-striped table-hover align-middle data-table-compact">
+            <thead>
+                <tr>
+                    <th>Semester</th>
+                    <th>Code</th>
+                    <th>Courses</th>
+                    <th>Sessions</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (!Model.Semesters.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-muted">No semesters added yet.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var semester in Model.Semesters)
+                {
+                    <tr>
+                        <td>@semester.DisplayName</td>
+                        <td>@semester.SemesterCode</td>
+                        <td>@semester.CourseCount</td>
+                        <td>@semester.SessionCount</td>
+                        <td class="text-nowrap">
+                            @if (semester.CanDelete)
+                            {
+                                <form asp-action="Delete" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@semester.SemesterId" />
+                                    <button type="submit" class="request-action-link request-action-delete">Delete</button>
+                                </form>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">@semester.DeleteHint</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
