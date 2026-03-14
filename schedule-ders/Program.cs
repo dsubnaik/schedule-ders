@@ -3,6 +3,7 @@ using schedule_ders.Models;
 using schedule_ders.Options;
 using schedule_ders.Services;
 using schedule_ders.Services.Interfaces;
+using schedule_ders.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -15,11 +16,10 @@ builder.Services.AddRazorPages();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("DefaultConnection is not configured.");
+var connectionString = DatabaseConnectionStringResolver.ResolveConfigurationConnectionString(builder.Configuration);
 
 builder.Services.AddDbContext<ScheduleContext>(options =>
-    options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
+    options.UseNpgsql(connectionString, npgsql => npgsql.EnableRetryOnFailure()));
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
