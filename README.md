@@ -1,30 +1,42 @@
 # schedule-ders Quick Setup
 
-## Local Run (default)
-The app uses LocalDB by default via `ConnectionStrings:DefaultConnection`.
+## Local Run with PostgreSQL
+The app now uses PostgreSQL via `ConnectionStrings:DefaultConnection`. You can override that locally with user secrets or use Railway's `DATABASE_URL` in production.
 
 ```powershell
 dotnet restore
 dotnet build schedule-ders/schedule-ders.csproj -t:Compile
-dotnet ef database update --project schedule-ders
+dotnet ef database update --project schedule-ders --context ScheduleContext
 dotnet run --project schedule-ders
 ```
 
-## Shared Azure SQL Setup
-The app will use SQL connection strings in this order:
-1. `AZURE_SQL_CONNECTIONSTRING` (environment variable)
-2. `ConnectionStrings:AzureSqlConnection`
-3. `ConnectionStrings:DefaultConnection` (LocalDB fallback)
+Default local connection string in `appsettings.json`:
 
-Recommended: use user secrets (do not commit credentials).
-
-```powershell
-dotnet user-secrets init --project schedule-ders
-dotnet user-secrets set "ConnectionStrings:AzureSqlConnection" "Server=tcp:<server>.database.windows.net,1433;Initial Catalog=<db>;User ID=<user>;Password=<password>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;" --project schedule-ders
-dotnet ef database update --project schedule-ders
+```text
+Host=localhost;Port=5432;Database=ScheduleDB;Username=postgres;Password=postgres;SSL Mode=Disable;Trust Server Certificate=true
 ```
 
-## Optional Demo Accounts (development only)
+## Railway Deploy
+Recommended Railway setup:
+1. Create a new Railway project.
+2. Add a PostgreSQL service.
+3. Add a web service from this repo.
+4. Set the app service's `DATABASE_URL` variable to the PostgreSQL connection string or Railway reference.
+5. Optionally set `Seed__DemoUserPassword` if you want demo accounts in development-like environments.
+
+The app accepts connection settings in this order:
+1. `DATABASE_URL`
+2. `ConnectionStrings:DefaultConnection`
+
+## Migrations
+The old SQL Server migrations are still in `schedule-ders/Migrations` for reference, but they are excluded from compilation. Generate PostgreSQL migrations into a new folder like this:
+
+```powershell
+dotnet ef migrations add InitialPostgres --project schedule-ders --context ScheduleContext --output-dir PostgresMigrations
+dotnet ef database update --project schedule-ders --context ScheduleContext
+```
+
+## Optional Demo Accounts
 Demo users are only seeded in Development and only when a password is provided.
 
 ```powershell
@@ -35,5 +47,3 @@ Demo emails:
 - `admin@scheduleders.app`
 - `professor@scheduleders.app`
 - `student@scheduleders.app`
-
-If `Seed:DemoUserPassword` is not set, you can still register/login normally.
