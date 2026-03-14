@@ -492,6 +492,59 @@ namespace schedule_ders.Migrations
                     b.ToTable("SILeaders");
                 });
 
+            modelBuilder.Entity("schedule_ders.Models.SILeaderCustomField", b =>
+                {
+                    b.Property<int>("SILeaderCustomFieldId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SILeaderCustomFieldId"));
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.HasKey("SILeaderCustomFieldId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("SILeaderCustomFields");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.SILeaderCustomValue", b =>
+                {
+                    b.Property<int>("SILeaderCustomValueId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SILeaderCustomValueId"));
+
+                    b.Property<int>("SILeaderCustomFieldId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SILeaderID")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("SILeaderCustomValueId");
+
+                    b.HasIndex("SILeaderCustomFieldId");
+
+                    b.HasIndex("SILeaderID", "SILeaderCustomFieldId")
+                        .IsUnique();
+
+                    b.ToTable("SILeaderCustomValues");
+                });
+
             modelBuilder.Entity("schedule_ders.Models.Session", b =>
                 {
                     b.Property<int>("SessionID")
@@ -622,6 +675,25 @@ namespace schedule_ders.Migrations
                     b.Navigation("SIRequest");
                 });
 
+            modelBuilder.Entity("schedule_ders.Models.SILeaderCustomValue", b =>
+                {
+                    b.HasOne("schedule_ders.Models.SILeaderCustomField", "SILeaderCustomField")
+                        .WithMany("Values")
+                        .HasForeignKey("SILeaderCustomFieldId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("schedule_ders.Models.SILeader", "SILeader")
+                        .WithMany("CustomValues")
+                        .HasForeignKey("SILeaderID")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SILeader");
+
+                    b.Navigation("SILeaderCustomField");
+                });
+
             modelBuilder.Entity("schedule_ders.Models.Session", b =>
                 {
                     b.HasOne("schedule_ders.Models.Course", "Course")
@@ -662,6 +734,16 @@ namespace schedule_ders.Migrations
             modelBuilder.Entity("schedule_ders.Models.Semester", b =>
                 {
                     b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.SILeader", b =>
+                {
+                    b.Navigation("CustomValues");
+                });
+
+            modelBuilder.Entity("schedule_ders.Models.SILeaderCustomField", b =>
+                {
+                    b.Navigation("Values");
                 });
 
             modelBuilder.Entity("schedule_ders.Models.SIRequest", b =>

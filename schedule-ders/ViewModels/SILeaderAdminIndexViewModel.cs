@@ -6,6 +6,16 @@ public class SILeaderAdminIndexViewModel
 {
     public string Search { get; set; } = string.Empty;
     public List<SILeaderAdminRowViewModel> Leaders { get; set; } = [];
+    public List<SILeaderCustomFieldViewModel> CustomFields { get; set; } = [];
+    public bool ShowANumber { get; set; } = true;
+    public bool ShowLeaderName { get; set; } = true;
+    public bool ShowCoursesTeaching { get; set; } = true;
+    public bool ShowSectionNumbers { get; set; } = true;
+    public string ExportTitle { get; set; } = "SI Leaders";
+    public string ExportANumberLabel { get; set; } = "A-Number";
+    public string ExportLeaderNameLabel { get; set; } = "SI Leader Name";
+    public string ExportCoursesTeachingLabel { get; set; } = "Courses Teaching";
+    public string ExportSectionNumbersLabel { get; set; } = "Section Numbers";
 
     [Required]
     [StringLength(20)]
@@ -19,6 +29,12 @@ public class SILeaderAdminIndexViewModel
 
     [Display(Name = "Course / Section Assignments")]
     public string CreateCourseAssignments { get; set; } = string.Empty;
+
+    [StringLength(80)]
+    [Display(Name = "New Column Name")]
+    public string CreateCustomFieldName { get; set; } = string.Empty;
+
+    public Dictionary<int, string> CreateCustomFieldValues { get; set; } = [];
 }
 
 public class SILeaderAdminRowViewModel
@@ -29,4 +45,11 @@ public class SILeaderAdminRowViewModel
     public string CoursesTeaching { get; set; } = "-";
     public string SectionNumbers { get; set; } = "-";
     public string CourseAssignmentsInput { get; set; } = string.Empty;
+    public Dictionary<int, string> CustomFieldValues { get; set; } = [];
+}
+
+public class SILeaderCustomFieldViewModel
+{
+    public int SILeaderCustomFieldId { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

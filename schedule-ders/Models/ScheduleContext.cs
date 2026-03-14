@@ -16,6 +16,8 @@ public class ScheduleContext : IdentityDbContext
     public DbSet<SIRequest> SIRequests { get; set; }
     public DbSet<SIRequestLeaderCandidate> SIRequestLeaderCandidates { get; set; }
     public DbSet<SILeader> SILeaders { get; set; }
+    public DbSet<SILeaderCustomField> SILeaderCustomFields { get; set; }
+    public DbSet<SILeaderCustomValue> SILeaderCustomValues { get; set; }
     public DbSet<StudentFavoriteCourse> StudentFavoriteCourses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
@@ -37,6 +39,26 @@ public class ScheduleContext : IdentityDbContext
         builder.Entity<SILeader>()
             .HasIndex(l => l.ANumber)
             .IsUnique();
+
+        builder.Entity<SILeaderCustomField>()
+            .HasIndex(f => f.Name)
+            .IsUnique();
+
+        builder.Entity<SILeaderCustomValue>()
+            .HasIndex(v => new { v.SILeaderID, v.SILeaderCustomFieldId })
+            .IsUnique();
+
+        builder.Entity<SILeaderCustomValue>()
+            .HasOne(v => v.SILeader)
+            .WithMany(l => l.CustomValues)
+            .HasForeignKey(v => v.SILeaderID)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<SILeaderCustomValue>()
+            .HasOne(v => v.SILeaderCustomField)
+            .WithMany(f => f.Values)
+            .HasForeignKey(v => v.SILeaderCustomFieldId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<SIRequestLeaderCandidate>()
             .HasOne(c => c.SIRequest)

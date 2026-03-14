@@ -121,7 +121,7 @@
                 <th>@Html.DisplayNameFor(model => model.CourseMeetingDays)</th>
                 <th>@Html.DisplayNameFor(model => model.CourseMeetingTime)</th>
                 <th>Sessions</th>
-                <th></th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -151,16 +151,16 @@
                             .Count())
                     }
                 </td>
-                <td class="text-nowrap">
+                <td class="course-actions-cell">
                     @{
                         var courseDisplay = $"{item.CourseName} ({item.CourseSection}) - {item.CourseTitle}";
                     }
-                    <span class="professor-request-actions">
-                        <a asp-action="Details" asp-route-id="@item.CourseID" class="request-action-link">Details</a>
-                        <a asp-action="Edit" asp-route-id="@item.CourseID" class="request-action-link">Edit</a>
-                        <a asp-controller="Sessions" asp-action="Index" asp-route-courseId="@item.CourseID" class="request-action-link">Sessions</a>
+                    <span class="professor-request-actions course-row-actions">
+                        <a asp-action="Details" asp-route-id="@item.CourseID" class="request-action-link request-action-link-compact">Details</a>
+                        <a asp-action="Edit" asp-route-id="@item.CourseID" class="request-action-link request-action-link-compact">Edit</a>
+                        <a asp-controller="Sessions" asp-action="Index" asp-route-courseId="@item.CourseID" class="request-action-link request-action-link-compact">Sessions</a>
                         <button type="button"
-                                class="request-action-link request-action-delete"
+                                class="request-action-link request-action-delete request-action-link-compact"
                                 data-course-delete-trigger="true"
                                 data-course-id="@item.CourseID"
                                 data-course-display="@courseDisplay"

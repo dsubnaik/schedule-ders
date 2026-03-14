@@ -18,4 +18,6 @@ public class SILeader
 
     [Display(Name = "Stored Course Assignments")]
     public string StoredCourseAssignments { get; set; } = string.Empty;
+
+    public ICollection<SILeaderCustomValue> CustomValues { get; set; } = [];
 }
