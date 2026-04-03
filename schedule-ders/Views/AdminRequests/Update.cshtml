@@ -47,7 +47,11 @@
 
 <form asp-action="Update"
       method="post"
-      class="admin-track-form">
+      class="admin-track-form"
+      data-admin-request-update-form="true"
+      data-api-url="@Url.Content($"~/api/v1/admin/requests/{Model.SIRequestID}/status")"
+      data-success-url="@Url.Action("Index", "AdminRequests")">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     <input type="hidden" asp-for="SIRequestID" />
     <input type="hidden" asp-for="CourseID" />
     <input type="hidden" asp-for="CourseDisplay" />
