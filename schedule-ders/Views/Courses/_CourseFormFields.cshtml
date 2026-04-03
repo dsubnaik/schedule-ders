@@ -23,7 +23,7 @@
        data-exclude-id="@Model.CourseID" />
 
 <div class="mb-3">
-    <label asp-for="CourseCrn" class="form-label"></label>
+    <label asp-for="CourseCrn" class="form-label" for="courseCrnInput"></label>
     <input asp-for="CourseCrn" class="form-control" placeholder="12345" id="courseCrnInput" />
     <span asp-validation-for="CourseCrn" class="text-danger"></span>
 </div>
@@ -37,17 +37,17 @@
         <span asp-validation-for="SemesterId" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-4">
-        <label asp-for="CourseName" class="form-label"></label>
+        <label asp-for="CourseName" class="form-label" for="courseNameInput"></label>
         <input asp-for="CourseName" class="form-control" id="courseNameInput" list="courseNameOptions" />
         <span asp-validation-for="CourseName" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-5">
-        <label asp-for="CourseTitle" class="form-label"></label>
+        <label asp-for="CourseTitle" class="form-label" for="courseTitleInput"></label>
         <input asp-for="CourseTitle" class="form-control" id="courseTitleInput" />
         <span asp-validation-for="CourseTitle" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-3">
-        <label asp-for="CourseSection" class="form-label"></label>
+        <label asp-for="CourseSection" class="form-label" for="courseSectionInput"></label>
         <input asp-for="CourseSection" class="form-control" id="courseSectionInput" />
         <span asp-validation-for="CourseSection" class="text-danger"></span>
     </div>
@@ -61,8 +61,8 @@
 </datalist>
 
 <input asp-for="CourseMeetingDays" type="hidden" id="courseMeetingDaysInput" />
-<div class="mb-3">
-    <label class="form-label">Meeting Day(s)</label>
+<fieldset class="mb-3">
+    <legend class="form-label mb-2">Meeting Day(s)</legend>
     <div class="d-flex flex-wrap gap-2">
         <button type="button" class="btn btn-outline-primary day-toggle" data-day="M">M</button>
         <button type="button" class="btn btn-outline-primary day-toggle" data-day="T">T</button>
@@ -72,14 +72,14 @@
     </div>
     <div class="form-text">Click one or more days.</div>
     <span asp-validation-for="CourseMeetingDays" class="text-danger"></span>
-</div>
+</fieldset>
 
 <input asp-for="CourseMeetingTime" type="hidden" id="courseMeetingTimeInput" />
-<div class="mb-3">
-    <label class="form-label">Meeting Time</label>
+<fieldset class="mb-3">
+    <legend class="form-label mb-2">Meeting Time</legend>
     <div class="row g-2">
         <div class="col-6">
-            <label class="form-label small mb-1">Start</label>
+            <label class="form-label small mb-1" for="meetingStartInput">Start</label>
             <div class="time-picker">
                 <input type="text"
                        id="meetingStartInput"
@@ -91,7 +91,7 @@
             </div>
         </div>
         <div class="col-6">
-            <label class="form-label small mb-1">End</label>
+            <label class="form-label small mb-1" for="meetingEndInput">End</label>
             <div class="time-picker">
                 <input type="text"
                        id="meetingEndInput"
@@ -104,7 +104,7 @@
         </div>
     </div>
     <span asp-validation-for="CourseMeetingTime" class="text-danger"></span>
-</div>
+</fieldset>
 
 <datalist id="courseTimeOptions">
     @foreach (var t in timeOptions)
@@ -115,12 +115,12 @@
 
 <div class="row g-3 mb-3">
     <div class="col-12 col-md-6">
-        <label asp-for="CourseProfessor" class="form-label"></label>
+        <label asp-for="CourseProfessor" class="form-label" for="courseProfessorInput"></label>
         <input asp-for="CourseProfessor" class="form-control" list="professorOptions" id="courseProfessorInput" />
         <span asp-validation-for="CourseProfessor" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-6">
-        <label asp-for="CourseLeader" class="form-label"></label>
+        <label asp-for="CourseLeader" class="form-label" for="courseLeaderInput"></label>
         <input asp-for="CourseLeader" class="form-control" id="courseLeaderInput" list="courseLeaderOptions" />
         <span asp-validation-for="CourseLeader" class="text-danger"></span>
     </div>
@@ -144,8 +144,8 @@
 <div class="card border-secondary-subtle mb-3">
     <div class="card-body">
         <h2 class="h6 mb-3">Office Hours</h2>
-        <div class="mb-3">
-            <label class="form-label" asp-for="OfficeHoursDay"></label>
+        <fieldset class="mb-3">
+            <legend class="form-label mb-2">@Html.DisplayNameFor(model => model.OfficeHoursDay)</legend>
             <div class="d-flex flex-wrap gap-2">
                 <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="M">M</button>
                 <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="T">T</button>
@@ -154,10 +154,11 @@
                 <button type="button" class="btn btn-outline-primary office-day-toggle" data-day="F">F</button>
             </div>
             <span asp-validation-for="OfficeHoursDay" class="text-danger"></span>
-        </div>
-        <div class="row g-2 mb-3">
+        </fieldset>
+        <fieldset class="row g-2 mb-3">
+            <legend class="form-label mb-0">Office Hours Time</legend>
             <div class="col-6">
-                <label class="form-label small mb-1">Start</label>
+                <label class="form-label small mb-1" for="officeStartInput">Start</label>
                 <div class="time-picker">
                     <input type="text"
                            id="officeStartInput"
@@ -169,7 +170,7 @@
                 </div>
             </div>
             <div class="col-6">
-                <label class="form-label small mb-1">End</label>
+                <label class="form-label small mb-1" for="officeEndInput">End</label>
                 <div class="time-picker">
                     <input type="text"
                            id="officeEndInput"
@@ -181,9 +182,9 @@
                 </div>
             </div>
             <span asp-validation-for="OfficeHoursTime" class="text-danger"></span>
-        </div>
+        </fieldset>
         <div class="mb-0">
-            <label asp-for="OfficeHoursLocation" class="form-label"></label>
+            <label asp-for="OfficeHoursLocation" class="form-label" for="officeHoursLocationInput"></label>
             <input asp-for="OfficeHoursLocation" class="form-control" id="officeHoursLocationInput" placeholder="Library" />
             <span asp-validation-for="OfficeHoursLocation" class="text-danger"></span>
         </div>

@@ -29,7 +29,10 @@
             </div>
             <div class="page-title-row-main">
                 <h1 class="page-title">@pageTitle</h1>
-                <p class="page-subtitle">@pageSubtitle</p>
+                @if (!string.IsNullOrWhiteSpace(pageSubtitle))
+                {
+                    <p class="page-subtitle">@pageSubtitle</p>
+                }
             </div>
             <div></div>
         </div>

@@ -999,10 +999,13 @@
         };
 
         const buildPotentialLeaderRow = (value = "") => {
+            const inputId = `potentialSiLeader_${Math.random().toString(36).slice(2, 10)}`;
             const row = document.createElement("div");
             row.className = "input-group";
             row.setAttribute("data-potential-leader-row", "true");
-            row.innerHTML = `<input type="text"
+            row.innerHTML = `<label class="visually-hidden" for="${inputId}">Suggested SI leader candidate</label>
+                             <input type="text"
+                                     id="${inputId}"
                                      class="form-control"
                                      data-potential-leader-input="true"
                                      list="siLeaderOptions"

@@ -165,8 +165,9 @@
         <div class="si-leaders-assignment-grid" data-si-leader-assignment-builder="true" data-auto-collect-on-submit>
             <input asp-for="CreateCourseAssignments" type="hidden" data-assignment-storage="true" />
             <div>
-                <label class="form-label">Courses</label>
+                <label class="form-label" for="createAssignmentCourseInput">Courses</label>
                 <input type="text"
+                       id="createAssignmentCourseInput"
                        class="form-control"
                        data-assignment-course-input="true"
                        placeholder="Course" />
@@ -174,8 +175,9 @@
                 <div class="d-none" data-assignment-course-list="true"></div>
             </div>
             <div>
-                <label class="form-label">Sections</label>
+                <label class="form-label" for="createAssignmentSectionInput">Sections</label>
                 <input type="text"
+                       id="createAssignmentSectionInput"
                        class="form-control"
                        data-assignment-section-input="true"
                        placeholder="Section" />
@@ -298,7 +300,7 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content request-delete-modal">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="@(editModalId)_label">Edit SI Leader</h5>
+                    <h2 class="modal-title h5" id="@(editModalId)_label">Edit SI Leader</h2>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -309,22 +311,33 @@
 
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label">A-Number</label>
-                                <input type="text" name="aNumber" value="@item.ANumber" class="form-control" />
+                                <label class="form-label" for="aNumber_@item.SILeaderID">A-Number</label>
+                                <input type="text"
+                                       id="aNumber_@item.SILeaderID"
+                                       name="aNumber"
+                                       value="@item.ANumber"
+                                       class="form-control" />
                             </div>
                             <div class="col-md-8">
-                                <label class="form-label">SI Leader Name</label>
-                                <input type="text" name="leaderName" value="@item.LeaderName" class="form-control" />
+                                <label class="form-label" for="leaderName_@item.SILeaderID">SI Leader Name</label>
+                                <input type="text"
+                                       id="leaderName_@item.SILeaderID"
+                                       name="leaderName"
+                                       value="@item.LeaderName"
+                                       class="form-control" />
                             </div>
                             <div class="col-12" data-si-leader-assignment-builder="true">
                                 <textarea name="courseAssignments"
+                                          id="courseAssignments_@item.SILeaderID"
+                                          aria-label="Course and section assignments"
                                           class="d-none"
                                           rows="3"
                                           data-assignment-storage="true">@item.CourseAssignmentsInput</textarea>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label">Courses</label>
+                                        <label class="form-label" for="assignmentCourseInput_@item.SILeaderID">Courses</label>
                                         <input type="text"
+                                               id="assignmentCourseInput_@item.SILeaderID"
                                                class="form-control"
                                                data-assignment-course-input="true"
                                                placeholder="Course" />
@@ -336,8 +349,9 @@
                                         <div class="mt-2" data-assignment-course-list="true"></div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Sections</label>
+                                        <label class="form-label" for="assignmentSectionInput_@item.SILeaderID">Sections</label>
                                         <input type="text"
+                                               id="assignmentSectionInput_@item.SILeaderID"
                                                class="form-control"
                                                data-assignment-section-input="true"
                                                placeholder="Section" />
