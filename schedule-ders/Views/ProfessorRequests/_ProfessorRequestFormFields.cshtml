@@ -1,17 +1,13 @@
 @model schedule_ders.ViewModels.ProfessorRequestCreateViewModel
+@using schedule_ders.Utilities
 @{
     var courseCodeOptions = ViewBag.CourseCodeOptions as List<string> ?? [];
     var courseTitleOptions = ViewBag.CourseTitleOptions as List<string> ?? [];
     var siLeaderOptions = ViewBag.SiLeaderOptions as List<string> ?? [];
-    var leaderCandidates = (Model.PotentialSiLeaderName ?? string.Empty)
-        .Replace("\r", "\n")
-        .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        .Where(x => !string.IsNullOrWhiteSpace(x))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .ToList();
+    var leaderCandidates = LeaderCandidateCodec.Parse(Model.PotentialSiLeaderName);
     if (leaderCandidates.Count == 0)
     {
-        leaderCandidates.Add(string.Empty);
+        leaderCandidates.Add(new LeaderCandidateEntry(string.Empty, string.Empty));
     }
 }
 
@@ -70,16 +66,29 @@
         @foreach (var candidate in leaderCandidates)
         {
             var candidateInputId = $"potentialSiLeader_{Guid.NewGuid():N}";
-            <div class="input-group" data-potential-leader-row="true">
-                <label class="visually-hidden" for="@candidateInputId">Suggested SI leader candidate</label>
-                <input type="text"
-                       id="@candidateInputId"
-                       class="form-control"
-                       data-potential-leader-input="true"
-                       list="siLeaderOptions"
-                       placeholder="Optional: suggest a student for SI leader"
-                       autocomplete="off"
-                       value="@candidate" />
+            var candidateANumberId = $"potentialSiLeaderANumber_{Guid.NewGuid():N}";
+            <div class="d-flex flex-column flex-md-row gap-2 align-items-stretch" data-potential-leader-row="true">
+                <div class="flex-fill">
+                    <label class="visually-hidden" for="@candidateInputId">Suggested SI leader candidate</label>
+                    <input type="text"
+                           id="@candidateInputId"
+                           class="form-control"
+                           data-potential-leader-input="true"
+                           list="siLeaderOptions"
+                           placeholder="Optional: suggest a student for SI leader"
+                           autocomplete="off"
+                           value="@candidate.CandidateName" />
+                </div>
+                <div class="candidate-anumber-field">
+                    <label class="visually-hidden" for="@candidateANumberId">Candidate A-number</label>
+                    <input type="text"
+                           id="@candidateANumberId"
+                           class="form-control"
+                           data-potential-leader-anumber-input="true"
+                           placeholder="A-number"
+                           autocomplete="off"
+                           value="@candidate.CandidateANumber" />
+                </div>
                 <button type="button"
                         class="btn btn-outline-secondary"
                         data-remove-potential-leader="true">Remove</button>

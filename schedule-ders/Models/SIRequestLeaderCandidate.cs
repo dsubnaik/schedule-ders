@@ -12,6 +12,9 @@ public class SIRequestLeaderCandidate
     [StringLength(120)]
     public string CandidateName { get; set; } = string.Empty;
 
+    [StringLength(20)]
+    public string CandidateANumber { get; set; } = string.Empty;
+
     [Required]
     public SILeaderCandidateStatus Status { get; set; } = SILeaderCandidateStatus.Requested;
 
@@ -23,7 +26,9 @@ public class SIRequestLeaderCandidate
 public enum SILeaderCandidateStatus
 {
     Requested = 0,
-    YetToInterview = 1,
-    Interviewed = 2,
-    Hired = 3
+    Vetted = 1,
+    YetToInterview = 2,
+    Interviewed = 3,
+    Hired = 4,
+    NotMovingForward = 5
 }

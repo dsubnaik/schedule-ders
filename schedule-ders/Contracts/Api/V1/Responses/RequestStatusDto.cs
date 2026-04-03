@@ -18,6 +18,7 @@ public class LeaderCandidateStatusDto
 {
     public int CandidateId { get; set; }
     public string CandidateName { get; set; } = string.Empty;
+    public string CandidateANumber { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public int ProgressPercent { get; set; }
 }

@@ -991,27 +991,51 @@
                 return;
             }
 
-            const values = Array.from(potentialLeaderList.querySelectorAll("[data-potential-leader-input='true']"))
-                .map((input) => (input.value || "").trim())
+            const rows = Array.from(potentialLeaderList.querySelectorAll("[data-potential-leader-row='true']"));
+            const values = rows
+                .map((row) => {
+                    const nameInput = row.querySelector("[data-potential-leader-input='true']");
+                    const aNumberInput = row.querySelector("[data-potential-leader-anumber-input='true']");
+                    const candidateName = (nameInput?.value || "").trim();
+                    const candidateANumber = (aNumberInput?.value || "").trim();
+                    if (!candidateName) {
+                        return "";
+                    }
+
+                    return candidateANumber ? `${candidateName}|${candidateANumber}` : candidateName;
+                })
                 .filter((value, index, arr) => value && arr.findIndex((x) => x.toLowerCase() === value.toLowerCase()) === index);
 
             potentialLeadersHiddenInput.value = values.join("\n");
         };
 
-        const buildPotentialLeaderRow = (value = "") => {
+        const buildPotentialLeaderRow = (value = "", aNumber = "") => {
             const inputId = `potentialSiLeader_${Math.random().toString(36).slice(2, 10)}`;
+            const aNumberId = `potentialSiLeaderANumber_${Math.random().toString(36).slice(2, 10)}`;
             const row = document.createElement("div");
-            row.className = "input-group";
+            row.className = "d-flex flex-column flex-md-row gap-2 align-items-stretch";
             row.setAttribute("data-potential-leader-row", "true");
-            row.innerHTML = `<label class="visually-hidden" for="${inputId}">Suggested SI leader candidate</label>
-                             <input type="text"
-                                     id="${inputId}"
-                                     class="form-control"
-                                     data-potential-leader-input="true"
-                                     list="siLeaderOptions"
-                                     placeholder="Optional: suggest a student for SI leader"
-                                     autocomplete="off"
-                                     value="${htmlEncode(value)}" />
+            row.innerHTML = `<div class="flex-fill">
+                                <label class="visually-hidden" for="${inputId}">Suggested SI leader candidate</label>
+                                <input type="text"
+                                        id="${inputId}"
+                                        class="form-control"
+                                        data-potential-leader-input="true"
+                                        list="siLeaderOptions"
+                                        placeholder="Optional: suggest a student for SI leader"
+                                        autocomplete="off"
+                                        value="${htmlEncode(value)}" />
+                             </div>
+                             <div class="candidate-anumber-field">
+                                <label class="visually-hidden" for="${aNumberId}">Candidate A-number</label>
+                                <input type="text"
+                                        id="${aNumberId}"
+                                        class="form-control"
+                                        data-potential-leader-anumber-input="true"
+                                        placeholder="A-number"
+                                        autocomplete="off"
+                                        value="${htmlEncode(aNumber)}" />
+                             </div>
                              <button type="button"
                                      class="btn btn-outline-secondary"
                                      data-remove-potential-leader="true">Remove</button>`;
@@ -1021,7 +1045,9 @@
         if (potentialLeaderList) {
             potentialLeaderList.addEventListener("input", (event) => {
                 const target = event.target;
-                if (!(target instanceof HTMLElement) || !target.matches("[data-potential-leader-input='true']")) {
+                if (!(target instanceof HTMLElement)
+                    || (!target.matches("[data-potential-leader-input='true']")
+                        && !target.matches("[data-potential-leader-anumber-input='true']"))) {
                     return;
                 }
                 syncPotentialLeaderHiddenInput();
@@ -1043,6 +1069,10 @@
                     const input = rows[0]?.querySelector("[data-potential-leader-input='true']");
                     if (input instanceof HTMLInputElement) {
                         input.value = "";
+                    }
+                    const aNumberInput = rows[0]?.querySelector("[data-potential-leader-anumber-input='true']");
+                    if (aNumberInput instanceof HTMLInputElement) {
+                        aNumberInput.value = "";
                     }
                     syncPotentialLeaderHiddenInput();
                     return;
@@ -1165,9 +1195,20 @@
                 if (leaderNameText) {
                     const leaderNames = String(data.potentialSiLeaderName || "")
                         .replace(/\r/g, "\n")
-                        .split(/[\n;,]+/)
+                        .replace(/;/g, "\n")
+                        .split("\n")
                         .map((value) => value.trim())
-                        .filter((value, index, arr) => value && arr.findIndex((x) => x.toLowerCase() === value.toLowerCase()) === index);
+                        .filter((value, index, arr) => value && arr.findIndex((x) => x.toLowerCase() === value.toLowerCase()) === index)
+                        .map((value) => {
+                            const separatorIndex = value.indexOf("|");
+                            if (separatorIndex < 0) {
+                                return value;
+                            }
+
+                            const candidateName = value.slice(0, separatorIndex).trim();
+                            const candidateANumber = value.slice(separatorIndex + 1).trim();
+                            return candidateANumber ? `${candidateName} (${candidateANumber})` : candidateName;
+                        });
                     leaderNameText.innerHTML = leaderNames.length > 0
                         ? leaderNames.map((name) => `<span class="candidate-chip">${htmlEncode(name)}</span>`).join("")
                         : "<span class=\"candidate-chip candidate-chip-empty\">Not provided</span>";
@@ -1185,21 +1226,33 @@
                         leaderCandidatesContainer.innerHTML = items.map((candidate) => {
                             const candidateStatus = String(candidate.status || "Requested");
                             const normalized = candidateStatus.toLowerCase().replace(/\s+/g, "");
+                            const displayName = candidate.candidateANumber
+                                ? `${candidate.candidateName || ""} (${candidate.candidateANumber})`
+                                : (candidate.candidateName || "");
                             const statusPillClass = normalized === "hired"
                                 ? "status-pill-approved"
-                                : (normalized === "interviewed" ? "status-pill-review" : "status-pill-pending");
+                                : (normalized === "notmovingforward"
+                                    ? "status-pill-denied"
+                                    : (["interviewed", "yettointerview", "vetted"].includes(normalized) ? "status-pill-review" : "status-pill-pending"));
                             const currentStep = normalized === "hired"
-                                ? 3
+                                ? 4
                                 : (normalized === "interviewed"
-                                    ? 2
-                                    : (normalized === "yettointerview" ? 1 : 0));
-                            const checkpointClass = (index) => currentStep > index
-                                ? "is-complete"
-                                : (currentStep === index ? "is-current" : "is-pending");
+                                    ? 3
+                                    : (normalized === "yettointerview"
+                                        ? 2
+                                        : (normalized === "vetted" ? 1 : (normalized === "notmovingforward" ? 5 : 0))));
+                            const checkpointClass = (index) => {
+                                if (normalized === "notmovingforward") {
+                                    return index === 5 ? "is-denied" : "is-pending";
+                                }
+                                return currentStep > index
+                                    ? "is-complete"
+                                    : (currentStep === index ? "is-current" : "is-pending");
+                            };
                             return `<article class="card leader-candidate-card">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-semibold">${htmlEncode(candidate.candidateName || "")}</span>
+                                        <span class="fw-semibold">${htmlEncode(displayName)}</span>
                                         <span class="status-pill ${statusPillClass}">${htmlEncode(candidateStatus)}</span>
                                     </div>
                                     <div class="candidate-checkpoint-list">
@@ -1209,15 +1262,23 @@
                                         </div>
                                         <div class="candidate-checkpoint ${checkpointClass(1)}">
                                             <span class="candidate-checkpoint-dot"></span>
-                                            <span class="candidate-checkpoint-label">Interview Pending</span>
+                                            <span class="candidate-checkpoint-label">Vetted</span>
                                         </div>
                                         <div class="candidate-checkpoint ${checkpointClass(2)}">
                                             <span class="candidate-checkpoint-dot"></span>
+                                            <span class="candidate-checkpoint-label">Interview Pending</span>
+                                        </div>
+                                        <div class="candidate-checkpoint ${checkpointClass(3)}">
+                                            <span class="candidate-checkpoint-dot"></span>
                                             <span class="candidate-checkpoint-label">Interview Complete</span>
                                         </div>
-                                        <div class="candidate-checkpoint ${currentStep === 3 ? "is-complete" : "is-pending"}">
+                                        <div class="candidate-checkpoint ${checkpointClass(4)}">
                                             <span class="candidate-checkpoint-dot"></span>
                                             <span class="candidate-checkpoint-label">Selected as SI Leader</span>
+                                        </div>
+                                        <div class="candidate-checkpoint ${checkpointClass(5)}">
+                                            <span class="candidate-checkpoint-dot"></span>
+                                            <span class="candidate-checkpoint-label">Not Moving Forward</span>
                                         </div>
                                     </div>
                                 </div>

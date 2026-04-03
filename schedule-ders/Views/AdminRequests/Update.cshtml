@@ -1,13 +1,9 @@
 @model schedule_ders.ViewModels.AdminRequestStatusUpdateViewModel
+@using schedule_ders.Utilities
 @{
     ViewData["Title"] = "Review SI Request";
-    var leaderCandidates = (Model.PotentialSiLeaderName ?? string.Empty)
-        .Replace("\r", "\n")
-        .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-        .Where(x => !string.IsNullOrWhiteSpace(x))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .ToList();
-    var leaderDisplay = leaderCandidates.Count == 0 ? "Not provided" : string.Join(", ", leaderCandidates);
+    var leaderCandidates = LeaderCandidateCodec.Parse(Model.PotentialSiLeaderName);
+    var leaderDisplay = leaderCandidates.Count == 0 ? "Not provided" : string.Join(", ", leaderCandidates.Select(candidate => candidate.DisplayName));
     var courseProgress = Model.Status switch
     {
         schedule_ders.Models.SIRequestStatus.Pending => 0,
@@ -110,21 +106,35 @@
                     var candidateStepIndex = candidate.Status switch
                     {
                         schedule_ders.Models.SILeaderCandidateStatus.Requested => 0,
-                        schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => 1,
-                        schedule_ders.Models.SILeaderCandidateStatus.Interviewed => 2,
-                        schedule_ders.Models.SILeaderCandidateStatus.Hired => 3,
+                        schedule_ders.Models.SILeaderCandidateStatus.Vetted => 1,
+                        schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => 2,
+                        schedule_ders.Models.SILeaderCandidateStatus.Interviewed => 3,
+                        schedule_ders.Models.SILeaderCandidateStatus.Hired => 4,
+                        schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward => 5,
                         _ => 0
+                    };
+                    var candidateDisplayName = new LeaderCandidateEntry(candidate.CandidateName, candidate.CandidateANumber).DisplayName;
+                    var candidateStatusLabel = candidate.Status switch
+                    {
+                        schedule_ders.Models.SILeaderCandidateStatus.Requested => "Requested",
+                        schedule_ders.Models.SILeaderCandidateStatus.Vetted => "Vetted",
+                        schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => "Interview Pending",
+                        schedule_ders.Models.SILeaderCandidateStatus.Interviewed => "Interview Complete",
+                        schedule_ders.Models.SILeaderCandidateStatus.Hired => "Selected",
+                        schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward => "Not Moving Forward",
+                        _ => candidate.Status.ToString()
                     };
                     <div class="row g-2 align-items-center">
                         <input type="hidden" name="LeaderCandidates[@i].CandidateId" value="@candidate.CandidateId" />
                         <input type="hidden" name="LeaderCandidates[@i].CandidateName" value="@candidate.CandidateName" />
+                        <input type="hidden" name="LeaderCandidates[@i].CandidateANumber" value="@candidate.CandidateANumber" />
                         <input type="hidden" id="leaderCandidateStatus_@i" name="LeaderCandidates[@i].Status" value="@((int)candidate.Status)" />
                         <div class="col-12">
                             <article class="card leader-candidate-card">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span class="fw-semibold">@candidate.CandidateName</span>
-                                        <span class="status-pill @(candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Hired ? "status-pill-approved" : candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Interviewed ? "status-pill-review" : "status-pill-pending")" data-candidate-status-pill="true">@candidate.Status</span>
+                                        <span class="fw-semibold">@candidateDisplayName</span>
+                                        <span class="status-pill @(candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Hired ? "status-pill-approved" : candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward ? "status-pill-denied" : candidate.Status is schedule_ders.Models.SILeaderCandidateStatus.Interviewed or schedule_ders.Models.SILeaderCandidateStatus.YetToInterview or schedule_ders.Models.SILeaderCandidateStatus.Vetted ? "status-pill-review" : "status-pill-pending")" data-candidate-status-pill="true">@candidateStatusLabel</span>
                                     </div>
                                     <div class="candidate-checkpoint-list"
                                          data-candidate-checkpoints="true"
@@ -134,16 +144,24 @@
                                             <span class="candidate-checkpoint-label">Nominated by Professor</span>
                                         </div>
                                         <div class="candidate-checkpoint @(candidateStepIndex > 1 ? "is-complete" : candidateStepIndex == 1 ? "is-current" : "is-pending")" data-step="1" data-status-value="1">
+                                            <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Vetted"></button>
+                                            <span class="candidate-checkpoint-label">Vetted</span>
+                                        </div>
+                                        <div class="candidate-checkpoint @(candidateStepIndex > 2 ? "is-complete" : candidateStepIndex == 2 ? "is-current" : "is-pending")" data-step="2" data-status-value="2">
                                             <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Yet To Interview"></button>
                                             <span class="candidate-checkpoint-label">Interview Pending</span>
                                         </div>
-                                        <div class="candidate-checkpoint @(candidateStepIndex > 2 ? "is-complete" : candidateStepIndex == 2 ? "is-current" : "is-pending")" data-step="2" data-status-value="2">
+                                        <div class="candidate-checkpoint @(candidateStepIndex > 3 ? "is-complete" : candidateStepIndex == 3 ? "is-current" : "is-pending")" data-step="3" data-status-value="3">
                                             <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Interviewed"></button>
                                             <span class="candidate-checkpoint-label">Interview Complete</span>
                                         </div>
-                                        <div class="candidate-checkpoint @(candidateStepIndex == 3 ? "is-complete" : "is-pending")" data-step="3" data-status-value="3">
+                                        <div class="candidate-checkpoint @(candidateStepIndex == 4 ? "is-complete" : "is-pending")" data-step="4" data-status-value="4">
                                             <button type="button" class="checkpoint-dot-btn" aria-label="Set candidate status to Hired"></button>
                                             <span class="candidate-checkpoint-label">Selected as SI Leader</span>
+                                        </div>
+                                        <div class="candidate-checkpoint @(candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward ? "is-denied" : "is-pending")" data-step="5" data-status-value="5">
+                                            <button type="button" class="checkpoint-dot-btn checkpoint-dot-btn-danger" aria-label="Set candidate status to Not Moving Forward"></button>
+                                            <span class="candidate-checkpoint-label">Not Moving Forward</span>
                                         </div>
                                     </div>
                                 </div>
@@ -182,6 +200,7 @@
 
             const checkpointStepFromStatus = (value) => {
                 const numeric = Number(value);
+                if (numeric === 4) return 4;
                 if (numeric === 3) return 3;
                 if (numeric === 2) return 2;
                 if (numeric === 1) return 1;
@@ -193,6 +212,14 @@
                 checkpoints.forEach((checkpoint) => {
                     const idx = Number(checkpoint.getAttribute("data-step") || "0");
                     checkpoint.classList.remove("is-complete", "is-current", "is-pending", "is-denied");
+                    if (!isCourse && String(container.getAttribute("data-current-value")) === "5") {
+                        if (idx === 5) {
+                            checkpoint.classList.add("is-denied");
+                        } else {
+                            checkpoint.classList.add("is-pending");
+                        }
+                        return;
+                    }
                     if (step > idx) checkpoint.classList.add("is-complete");
                     else if (step === idx) checkpoint.classList.add("is-current");
                     else checkpoint.classList.add("is-pending");
@@ -230,16 +257,18 @@
                 if (!(input instanceof HTMLInputElement)) return;
 
                 const setCandidateState = () => {
+                    list.setAttribute("data-current-value", String(input.value || ""));
                     const step = checkpointStepFromStatus(input.value);
                     applyCheckpointClasses(list, step, false);
                     const card = list.closest(".leader-candidate-card");
                     const statusPill = card?.querySelector("[data-candidate-status-pill='true']");
                     if (statusPill instanceof HTMLElement) {
-                        const map = { "0": "Requested", "1": "Yet To Interview", "2": "Interviewed", "3": "Hired" };
+                        const map = { "0": "Requested", "1": "Vetted", "2": "Yet To Interview", "3": "Interviewed", "4": "Hired", "5": "Not Moving Forward" };
                         statusPill.textContent = map[String(input.value)] || "Requested";
-                        statusPill.classList.remove("status-pill-pending", "status-pill-review", "status-pill-approved");
-                        if (String(input.value) === "3") statusPill.classList.add("status-pill-approved");
-                        else if (String(input.value) === "2") statusPill.classList.add("status-pill-review");
+                        statusPill.classList.remove("status-pill-pending", "status-pill-review", "status-pill-approved", "status-pill-denied");
+                        if (String(input.value) === "5") statusPill.classList.add("status-pill-denied");
+                        else if (String(input.value) === "4") statusPill.classList.add("status-pill-approved");
+                        else if (["1", "2", "3"].includes(String(input.value))) statusPill.classList.add("status-pill-review");
                         else statusPill.classList.add("status-pill-pending");
                     }
                 };
@@ -253,7 +282,7 @@
                     if (!value) return;
                     input.value = value;
                     setCandidateState();
-                    if (String(value) === "3") {
+                    if (String(value) === "4") {
                         const courseInput = document.getElementById("adminCourseStatusInput");
                         if (courseInput instanceof HTMLInputElement && courseInput.value !== "3") {
                             courseInput.value = "4";

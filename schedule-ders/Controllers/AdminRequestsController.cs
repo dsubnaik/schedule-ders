@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using schedule_ders.Contracts.Api.V1.Requests;
 using schedule_ders.Models;
 using schedule_ders.Services.Interfaces;
+using schedule_ders.Utilities;
 using schedule_ders.ViewModels;
 
 namespace schedule_ders.Controllers;
@@ -69,10 +70,12 @@ public class AdminRequestsController : Controller
             PotentialSiLeaderName = request.PotentialSiLeaderName,
             LeaderCandidates = request.LeaderCandidates
                 .OrderBy(c => c.CandidateName)
+                .ThenBy(c => c.CandidateANumber)
                 .Select(c => new AdminLeaderCandidateStatusItemViewModel
                 {
                     CandidateId = c.SIRequestLeaderCandidateID,
                     CandidateName = c.CandidateName,
+                    CandidateANumber = c.CandidateANumber,
                     Status = c.Status
                 })
                 .ToList(),
@@ -120,9 +123,10 @@ public class AdminRequestsController : Controller
             candidate.LastUpdatedAtUtc = DateTime.UtcNow;
         }
 
-        request.PotentialSiLeaderName = string.Join('\n', request.LeaderCandidates
+        request.PotentialSiLeaderName = LeaderCandidateCodec.Serialize(request.LeaderCandidates
             .OrderBy(c => c.CandidateName)
-            .Select(c => c.CandidateName));
+            .ThenBy(c => c.CandidateANumber)
+            .Select(c => new LeaderCandidateEntry(c.CandidateName, c.CandidateANumber)));
         request.PotentialSiLeaderStatus = MapAggregateLeaderStatus(request.LeaderCandidates);
         if (request.LeaderCandidates.Any(c => c.Status == SILeaderCandidateStatus.Hired)
             && request.Status != SIRequestStatus.Denied)
@@ -176,7 +180,12 @@ public class AdminRequestsController : Controller
             return SILeaderReviewStatus.Approved;
         }
 
-        if (list.Any(c => c.Status is SILeaderCandidateStatus.YetToInterview or SILeaderCandidateStatus.Interviewed))
+        if (list.All(c => c.Status == SILeaderCandidateStatus.NotMovingForward))
+        {
+            return SILeaderReviewStatus.Denied;
+        }
+
+        if (list.Any(c => c.Status is SILeaderCandidateStatus.Vetted or SILeaderCandidateStatus.YetToInterview or SILeaderCandidateStatus.Interviewed))
         {
             return SILeaderReviewStatus.UnderReview;
         }
