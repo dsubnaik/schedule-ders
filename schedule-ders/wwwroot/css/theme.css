@@ -111,6 +111,19 @@ html[data-theme="dark"] .session-meta-badge-leader {
   border-color: #4f8e6c;
   color: #def5e8;
 }
+html[data-theme="dark"] .student-course-card h2,
+html[data-theme="dark"] .student-course-card h3 {
+  color: #f2f7fd;
+}
+html[data-theme="dark"] .student-course-card h2 .fw-bold,
+html[data-theme="dark"] .student-course-card h3 .fw-bold {
+  color: #f7fbff;
+}
+html[data-theme="dark"] .student-course-card h2 .text-muted,
+html[data-theme="dark"] .student-course-card h3 .text-muted,
+html[data-theme="dark"] .student-course-card .text-muted {
+  color: #d4e0ec !important;
+}
 html[data-theme="dark"] .details-item {
   background: #1a2a3e;
   border-color: var(--sd-border);
@@ -242,19 +255,19 @@ html[data-theme="dark"] .track-stage-complete {
   color: #9be8c3 !important;
 }
 html[data-theme="dark"] .quick-status-chip {
-  background: #1f3148;
-  border-color: #3e6287;
-  color: #cfe2f7;
+  background: #1b2a3d;
+  border-color: #54749a;
+  color: #e3eefb;
 }
 html[data-theme="dark"] .quick-status-chip:hover,
 html[data-theme="dark"] .quick-status-chip:focus {
-  background: #27405d;
-  border-color: #5682b1;
-  color: #e9f3ff;
+  background: #233851;
+  border-color: #6c92bf;
+  color: #f5f9ff;
 }
 html[data-theme="dark"] .quick-status-chip.is-active {
-  background: #1f7fd5;
-  border-color: #1f7fd5;
+  background: #004b8a;
+  border-color: #004b8a;
   color: #ffffff;
 }
 html[data-theme="dark"] .row-action-menu-btn {
@@ -372,7 +385,7 @@ html[data-theme="dark"] .auth-input:focus {
   box-shadow: 0 0 0 0.2rem rgba(120, 174, 231, 0.2);
 }
 html[data-theme="dark"] .auth-card .form-floating > label {
-  color: #36516e !important;
+  color: #a9c4dd !important;
 }
 html[data-theme="dark"] .auth-card .form-floating > .form-control::placeholder {
   color: #9fb5cc;
@@ -472,6 +485,114 @@ html[data-theme="dark"] .request-delete-modal .btn-outline-secondary:focus {
 html[data-theme="dark"] .request-delete-modal .btn-close {
   filter: invert(1) grayscale(100%) brightness(180%);
   opacity: 0.85;
+}
+html[data-theme="dark"] .track-section-label {
+  color: #dce9f8;
+}
+html[data-theme="dark"] [data-professor-request-track="true"] > p.text-muted,
+html[data-theme="dark"] [data-professor-request-track="true"] .small.text-muted {
+  color: #c8d8ea !important;
+}
+html[data-theme="dark"] .candidate-checkpoint:not(:last-child)::after {
+  border-left-color: #516983;
+}
+html[data-theme="dark"] .candidate-checkpoint.is-current .candidate-checkpoint-label {
+  color: #f5f9ff;
+}
+html[data-theme="dark"] .candidate-checkpoint.is-complete .candidate-checkpoint-label {
+  color: #8de6b9;
+}
+html[data-theme="dark"] .candidate-checkpoint.is-pending .candidate-checkpoint-label {
+  color: #c0d0e1;
+}
+html[data-theme="dark"] .candidate-checkpoint.is-denied .candidate-checkpoint-label {
+  color: #ffc4cd;
+}
+html[data-theme="dark"] .course-track-panel,
+html[data-theme="dark"] .leader-candidate-card,
+html[data-theme="dark"] .leader-candidate-card .card-body {
+  background: #162638 !important;
+  border-color: #33506d;
+  color: #e7f0fa;
+}
+html[data-theme="dark"] .course-track-panel .card-body {
+  background: #162638;
+}
+html[data-theme="dark"] .course-track-panel .request-progress {
+  background: #0d1723 !important;
+  border-color: #42617f;
+}
+html[data-theme="dark"] .leader-candidate-card .fw-semibold {
+  color: #f4f8fd;
+}
+html[data-theme="dark"] .course-track-panel .admin-course-checkpoint-list .candidate-checkpoint.is-current .candidate-checkpoint-label {
+  color: #f5f9ff;
+}
+html[data-theme="dark"] .course-track-panel .admin-course-checkpoint-list .candidate-checkpoint[data-step="2"].is-complete .candidate-checkpoint-label,
+html[data-theme="dark"] .course-track-panel .admin-course-checkpoint-list .candidate-checkpoint[data-step="3"].is-complete .candidate-checkpoint-label {
+  color: #9fddff;
+}
+html[data-theme="dark"] .admin-track-form .candidate-checkpoint.is-current .candidate-checkpoint-label,
+html[data-theme="dark"] .admin-track-panel .candidate-checkpoint.is-current .candidate-checkpoint-label {
+  color: #f5f9ff;
+}
+html[data-theme="dark"] .admin-track-form .candidate-checkpoint.is-complete .candidate-checkpoint-label,
+html[data-theme="dark"] .admin-track-panel .candidate-checkpoint.is-complete .candidate-checkpoint-label {
+  color: #8de6b9;
+}
+html[data-theme="dark"] .admin-track-form .candidate-checkpoint.is-pending .candidate-checkpoint-label,
+html[data-theme="dark"] .admin-track-panel .candidate-checkpoint.is-pending .candidate-checkpoint-label {
+  color: #c6d6e7;
+}
+html[data-theme="dark"] .admin-track-form .candidate-checkpoint.is-denied .candidate-checkpoint-label,
+html[data-theme="dark"] .admin-track-panel .candidate-checkpoint.is-denied .candidate-checkpoint-label {
+  color: #ffc4cd;
+}
+html[data-theme="dark"] .si-leaders-settings-panel,
+html[data-theme="dark"] .si-leaders-settings-panel .surface-card-soft,
+html[data-theme="dark"] .si-leaders-create-card {
+  background: #162638 !important;
+  border-color: #33506d !important;
+  color: #e7f0fa;
+}
+html[data-theme="dark"] .si-leaders-panel-title {
+  color: #f2f7fd;
+}
+html[data-theme="dark"] .si-leaders-panel-copy,
+html[data-theme="dark"] .si-leaders-empty-state,
+html[data-theme="dark"] .si-leaders-custom-list,
+html[data-theme="dark"] .si-leaders-create-card .text-muted {
+  color: #c6d6e7 !important;
+}
+html[data-theme="dark"] .si-leaders-toggle-pill {
+  background: #1c3047;
+  border-color: #486989;
+  color: #e7f0fa;
+}
+html[data-theme="dark"] .si-leaders-toggle-pill .form-check-input {
+  background-color: #152233;
+  border-color: #7aa3cf;
+}
+html[data-theme="dark"] .si-leaders-inline-btn {
+  color: #e7f0fa;
+}
+html[data-theme="dark"] .si-leaders-export-label-form .form-label,
+html[data-theme="dark"] .si-leaders-add-column-form .form-label,
+html[data-theme="dark"] .si-leaders-create-card .form-label {
+  color: #d9e6f4;
+}
+html[data-theme="dark"] .si-leaders-custom-toolbar,
+html[data-theme="dark"] .si-leaders-settings-stack,
+html[data-theme="dark"] .si-leaders-visibility-form,
+html[data-theme="dark"] .si-leaders-export-label-form {
+  color: #e7f0fa;
+}
+html[data-theme="dark"] .si-leaders-chip {
+  background: #1b2d43;
+  border-color: #486989;
+}
+html[data-theme="dark"] .si-leaders-chip-name {
+  color: #e7f0fa;
 }
 
 

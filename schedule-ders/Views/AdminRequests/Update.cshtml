@@ -62,8 +62,8 @@
     <input type="hidden" asp-for="SubmittedAtUtc" />
     <input type="hidden" asp-for="Status" id="adminCourseStatusInput" />
 
-    <div class="mb-3">
-        <label class="form-label">Course Request Pipeline</label>
+    <fieldset class="mb-3">
+        <legend class="form-label mb-2">Course Request Pipeline</legend>
         <div class="surface-card p-3 admin-track-panel">
             <div class="progress request-progress mb-2" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@courseProgress">
                 <div class="progress-bar @(courseIsDenied ? "bg-danger" : "request-progress-warning")" id="adminCourseProgressBar" style="width:@courseProgress%"></div>
@@ -93,10 +93,10 @@
                 </div>
             </div>
         </div>
-    </div>
+    </fieldset>
 
-    <div class="mb-3">
-        <label class="form-label">Leader Candidate Pipeline</label>
+    <fieldset class="mb-3">
+        <legend class="form-label mb-2">Leader Candidate Pipeline</legend>
         @if (Model.LeaderCandidates.Count == 0)
         {
             <div class="text-muted">No candidate names were submitted.</div>
@@ -153,7 +153,7 @@
                 }
             </div>
         }
-    </div>
+    </fieldset>
 
     <div class="mb-3">
         <label asp-for="AdminNotes" class="form-label"></label>
