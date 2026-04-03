@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using schedule_ders.Contracts.Api.V1.Requests;
 using schedule_ders.Models;
 using schedule_ders.Services.Interfaces;
+using schedule_ders.Utilities;
 using schedule_ders.ViewModels;
 
 namespace schedule_ders.Controllers;
@@ -330,7 +331,7 @@ public class ProfessorRequestsController : Controller
         input.RequestedCourseTitle = input.RequestedCourseTitle.Trim();
         input.RequestedCourseSection = input.RequestedCourseSection.Trim();
         input.RequestedCourseProfessor = input.RequestedCourseProfessor.Trim();
-        input.PotentialSiLeaderName = NormalizePotentialLeaderCandidates(input.PotentialSiLeaderName);
+        input.PotentialSiLeaderName = LeaderCandidateCodec.Normalize(input.PotentialSiLeaderName);
 
         var hasManualCourse = !string.IsNullOrWhiteSpace(input.RequestedCourseName) ||
                               !string.IsNullOrWhiteSpace(input.RequestedCourseTitle) ||
@@ -416,6 +417,7 @@ public class ProfessorRequestsController : Controller
     private static void ApplyPotentialLeaderUpdate(SIRequest request, string? potentialLeaderName)
     {
         var normalized = NormalizePotentialLeaderCandidates(potentialLeaderName);
+        normalized = LeaderCandidateCodec.Normalize(normalized);
         var current = request.PotentialSiLeaderName?.Trim() ?? string.Empty;
         var changed = !string.Equals(normalized, current, StringComparison.Ordinal);
 
@@ -435,32 +437,34 @@ public class ProfessorRequestsController : Controller
 
     private async Task SyncLeaderCandidatesAsync(int requestId, string? potentialLeaderName)
     {
-        var normalizedCandidates = NormalizePotentialLeaderCandidates(potentialLeaderName)
-            .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
+        var normalizedCandidates = LeaderCandidateCodec.Parse(potentialLeaderName);
 
         var existing = await _context.SIRequestLeaderCandidates
             .Where(c => c.SIRequestID == requestId)
             .ToListAsync();
 
         var toRemove = existing
-            .Where(c => !normalizedCandidates.Any(name => string.Equals(name, c.CandidateName, StringComparison.OrdinalIgnoreCase)))
+            .Where(c => !normalizedCandidates.Any(candidate =>
+                string.Equals(candidate.CandidateName, c.CandidateName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(candidate.CandidateANumber, c.CandidateANumber, StringComparison.OrdinalIgnoreCase)))
             .ToList();
         if (toRemove.Count > 0)
         {
             _context.SIRequestLeaderCandidates.RemoveRange(toRemove);
         }
 
-        foreach (var candidateName in normalizedCandidates)
+        foreach (var candidate in normalizedCandidates)
         {
-            var match = existing.FirstOrDefault(c => string.Equals(c.CandidateName, candidateName, StringComparison.OrdinalIgnoreCase));
+            var match = existing.FirstOrDefault(c =>
+                string.Equals(c.CandidateName, candidate.CandidateName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(c.CandidateANumber, candidate.CandidateANumber, StringComparison.OrdinalIgnoreCase));
             if (match is null)
             {
                 _context.SIRequestLeaderCandidates.Add(new SIRequestLeaderCandidate
                 {
                     SIRequestID = requestId,
-                    CandidateName = candidateName,
+                    CandidateName = candidate.CandidateName,
+                    CandidateANumber = candidate.CandidateANumber,
                     Status = SILeaderCandidateStatus.Requested
                 });
             }
@@ -469,18 +473,6 @@ public class ProfessorRequestsController : Controller
 
     private static string NormalizePotentialLeaderCandidates(string? rawValue)
     {
-        if (string.IsNullOrWhiteSpace(rawValue))
-        {
-            return string.Empty;
-        }
-
-        var candidates = rawValue
-            .Replace("\r", "\n")
-            .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        return candidates.Count == 0 ? string.Empty : string.Join('\n', candidates);
+        return LeaderCandidateCodec.Normalize(rawValue);
     }
 }

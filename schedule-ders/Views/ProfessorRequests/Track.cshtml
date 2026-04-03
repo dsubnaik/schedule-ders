@@ -1,4 +1,5 @@
 @model schedule_ders.Models.SIRequest
+@using schedule_ders.Utilities
 @{
     ViewData["Title"] = "Track Request";
     var progress = Model.Status switch
@@ -39,6 +40,7 @@
     };
     var leaderCandidates = Model.LeaderCandidates
         .OrderBy(x => x.CandidateName)
+        .ThenBy(x => x.CandidateANumber)
         .ToList();
 }
 
@@ -121,16 +123,36 @@
             var candidateStepIndex = candidate.Status switch
             {
                 schedule_ders.Models.SILeaderCandidateStatus.Requested => 0,
-                schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => 1,
-                schedule_ders.Models.SILeaderCandidateStatus.Interviewed => 2,
-                schedule_ders.Models.SILeaderCandidateStatus.Hired => 3,
+                schedule_ders.Models.SILeaderCandidateStatus.Vetted => 1,
+                schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => 2,
+                schedule_ders.Models.SILeaderCandidateStatus.Interviewed => 3,
+                schedule_ders.Models.SILeaderCandidateStatus.Hired => 4,
+                schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward => 5,
                 _ => 0
+            };
+            var candidateDisplayName = new LeaderCandidateEntry(candidate.CandidateName, candidate.CandidateANumber).DisplayName;
+            var candidateStatusLabel = candidate.Status switch
+            {
+                schedule_ders.Models.SILeaderCandidateStatus.Requested => "Requested",
+                schedule_ders.Models.SILeaderCandidateStatus.Vetted => "Vetted",
+                schedule_ders.Models.SILeaderCandidateStatus.YetToInterview => "Interview Pending",
+                schedule_ders.Models.SILeaderCandidateStatus.Interviewed => "Interview Complete",
+                schedule_ders.Models.SILeaderCandidateStatus.Hired => "Selected",
+                schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward => "Not Moving Forward",
+                _ => candidate.Status.ToString()
+            };
+            var candidateStatusClass = candidate.Status switch
+            {
+                schedule_ders.Models.SILeaderCandidateStatus.Hired => "status-pill-approved",
+                schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward => "status-pill-denied",
+                schedule_ders.Models.SILeaderCandidateStatus.Interviewed or schedule_ders.Models.SILeaderCandidateStatus.YetToInterview or schedule_ders.Models.SILeaderCandidateStatus.Vetted => "status-pill-review",
+                _ => "status-pill-pending"
             };
             <article class="card leader-candidate-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="fw-semibold">@candidate.CandidateName</span>
-                        <span class="status-pill @(candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Hired ? "status-pill-approved" : candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.Interviewed ? "status-pill-review" : "status-pill-pending")">@candidate.Status</span>
+                        <span class="fw-semibold">@candidateDisplayName</span>
+                        <span class="status-pill @candidateStatusClass">@candidateStatusLabel</span>
                     </div>
                     <div class="candidate-checkpoint-list">
                         <div class="candidate-checkpoint @(candidateStepIndex > 0 ? "is-complete" : candidateStepIndex == 0 ? "is-current" : "is-pending")">
@@ -139,15 +161,23 @@
                         </div>
                         <div class="candidate-checkpoint @(candidateStepIndex > 1 ? "is-complete" : candidateStepIndex == 1 ? "is-current" : "is-pending")">
                             <span class="candidate-checkpoint-dot"></span>
-                            <span class="candidate-checkpoint-label">Interview Pending</span>
+                            <span class="candidate-checkpoint-label">Vetted</span>
                         </div>
                         <div class="candidate-checkpoint @(candidateStepIndex > 2 ? "is-complete" : candidateStepIndex == 2 ? "is-current" : "is-pending")">
                             <span class="candidate-checkpoint-dot"></span>
+                            <span class="candidate-checkpoint-label">Interview Pending</span>
+                        </div>
+                        <div class="candidate-checkpoint @(candidateStepIndex > 3 ? "is-complete" : candidateStepIndex == 3 ? "is-current" : "is-pending")">
+                            <span class="candidate-checkpoint-dot"></span>
                             <span class="candidate-checkpoint-label">Interview Complete</span>
                         </div>
-                        <div class="candidate-checkpoint @(candidateStepIndex == 3 ? "is-complete" : "is-pending")">
+                        <div class="candidate-checkpoint @(candidateStepIndex == 4 ? "is-complete" : "is-pending")">
                             <span class="candidate-checkpoint-dot"></span>
                             <span class="candidate-checkpoint-label">Selected as SI Leader</span>
+                        </div>
+                        <div class="candidate-checkpoint @(candidate.Status == schedule_ders.Models.SILeaderCandidateStatus.NotMovingForward ? "is-denied" : "is-pending")">
+                            <span class="candidate-checkpoint-dot"></span>
+                            <span class="candidate-checkpoint-label">Not Moving Forward</span>
                         </div>
                     </div>
                 </div>
@@ -177,7 +207,7 @@
                 {
                     @foreach (var candidate in leaderCandidates)
                     {
-                        <span class="candidate-chip">@candidate.CandidateName</span>
+                        <span class="candidate-chip">@(new LeaderCandidateEntry(candidate.CandidateName, candidate.CandidateANumber).DisplayName)</span>
                     }
                 }
             </div>

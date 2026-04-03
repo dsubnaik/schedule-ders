@@ -506,6 +506,11 @@ namespace schedule_ders.PostgresMigrations
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<string>("CandidateANumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<DateTime?>("LastUpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 

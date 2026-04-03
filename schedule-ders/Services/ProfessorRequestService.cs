@@ -3,6 +3,7 @@ using schedule_ders.Contracts.Api.V1.Requests;
 using schedule_ders.Contracts.Api.V1.Responses;
 using schedule_ders.Models;
 using schedule_ders.Services.Interfaces;
+using schedule_ders.Utilities;
 
 namespace schedule_ders.Services;
 
@@ -40,7 +41,7 @@ public class ProfessorRequestService : IProfessorRequestService
             }
         }
 
-        var normalizedPotentialLeaderCandidates = NormalizePotentialLeaderCandidates(input.PotentialSiLeaderName);
+        var normalizedPotentialLeaderCandidates = LeaderCandidateCodec.Normalize(input.PotentialSiLeaderName);
 
         var request = new SIRequest
         {
@@ -64,16 +65,14 @@ public class ProfessorRequestService : IProfessorRequestService
         _context.SIRequests.Add(request);
         await _context.SaveChangesAsync();
 
-        var candidateNames = normalizedPotentialLeaderCandidates
-            .Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .ToList();
-        if (candidateNames.Count > 0)
+        var candidateEntries = LeaderCandidateCodec.Parse(normalizedPotentialLeaderCandidates);
+        if (candidateEntries.Count > 0)
         {
-            _context.SIRequestLeaderCandidates.AddRange(candidateNames.Select(name => new SIRequestLeaderCandidate
+            _context.SIRequestLeaderCandidates.AddRange(candidateEntries.Select(entry => new SIRequestLeaderCandidate
             {
                 SIRequestID = request.SIRequestID,
-                CandidateName = name,
+                CandidateName = entry.CandidateName,
+                CandidateANumber = entry.CandidateANumber,
                 Status = SILeaderCandidateStatus.Requested
             }));
             await _context.SaveChangesAsync();
@@ -123,10 +122,12 @@ public class ProfessorRequestService : IProfessorRequestService
                     .AsNoTracking()
                     .Where(c => c.SIRequestID == ownedRequest.SIRequestID)
                     .OrderBy(c => c.CandidateName)
+                    .ThenBy(c => c.CandidateANumber)
                     .Select(c => new LeaderCandidateStatusDto
                     {
                         CandidateId = c.SIRequestLeaderCandidateID,
                         CandidateName = c.CandidateName,
+                        CandidateANumber = c.CandidateANumber,
                         Status = c.Status.ToString(),
                         ProgressPercent = GetCandidateProgressPercent(c.Status)
                     })
@@ -187,26 +188,11 @@ public class ProfessorRequestService : IProfessorRequestService
         status switch
         {
             SILeaderCandidateStatus.Requested => 25,
-            SILeaderCandidateStatus.YetToInterview => 50,
+            SILeaderCandidateStatus.Vetted => 40,
+            SILeaderCandidateStatus.YetToInterview => 55,
             SILeaderCandidateStatus.Interviewed => 75,
             SILeaderCandidateStatus.Hired => 100,
+            SILeaderCandidateStatus.NotMovingForward => 100,
             _ => 0
         };
-
-    private static string NormalizePotentialLeaderCandidates(string? rawValue)
-    {
-        if (string.IsNullOrWhiteSpace(rawValue))
-        {
-            return string.Empty;
-        }
-
-        var candidates = rawValue
-            .Replace("\r", "\n")
-            .Split(new[] { '\n', ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        return candidates.Count == 0 ? string.Empty : string.Join('\n', candidates);
-    }
 }

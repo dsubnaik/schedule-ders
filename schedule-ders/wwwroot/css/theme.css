@@ -552,7 +552,12 @@ html[data-theme="dark"] .si-leaders-settings-panel,
 html[data-theme="dark"] .si-leaders-settings-panel .surface-card-soft,
 html[data-theme="dark"] .si-leaders-create-card {
   background: #162638 !important;
-  border-color: #33506d !important;
+  border-color: #0a8f4e !important;
+  color: #e7f0fa;
+}
+html[data-theme="dark"] .si-leaders-add-column-form {
+  background: #162638 !important;
+  border-color: #0a8f4e !important;
   color: #e7f0fa;
 }
 html[data-theme="dark"] .si-leaders-panel-title {
@@ -566,7 +571,7 @@ html[data-theme="dark"] .si-leaders-create-card .text-muted {
 }
 html[data-theme="dark"] .si-leaders-toggle-pill {
   background: #1c3047;
-  border-color: #486989;
+  border-color: #456987;
   color: #e7f0fa;
 }
 html[data-theme="dark"] .si-leaders-toggle-pill .form-check-input {
@@ -575,6 +580,39 @@ html[data-theme="dark"] .si-leaders-toggle-pill .form-check-input {
 }
 html[data-theme="dark"] .si-leaders-inline-btn {
   color: #e7f0fa;
+}
+html[data-theme="dark"] .si-leaders-settings-panel .btn-outline-secondary,
+html[data-theme="dark"] .si-leaders-create-card .btn-outline-secondary {
+  border-color: #0a8f4e;
+}
+html[data-theme="dark"] .si-leaders-settings-panel .btn-outline-secondary:hover,
+html[data-theme="dark"] .si-leaders-settings-panel .btn-outline-secondary:focus,
+html[data-theme="dark"] .si-leaders-create-card .btn-outline-secondary:hover,
+html[data-theme="dark"] .si-leaders-create-card .btn-outline-secondary:focus {
+  border-color: #16a85e;
+}
+html[data-theme="dark"] .si-leaders-create-submit {
+  background: rgba(142, 194, 255, 0.18) !important;
+  border-color: #0a8f4e;
+  color: #e7f0fa;
+  box-shadow: none;
+}
+html[data-theme="dark"] .si-leaders-create-submit:hover,
+html[data-theme="dark"] .si-leaders-create-submit:focus {
+  background: rgba(142, 194, 255, 0.28) !important;
+  border-color: #16a85e;
+  color: #f2f8ff;
+  box-shadow: none;
+}
+html[data-theme="dark"] .si-leaders-create-card .si-leaders-create-submit,
+html[data-theme="dark"] .si-leaders-create-card .si-leaders-create-submit:hover,
+html[data-theme="dark"] .si-leaders-create-card .si-leaders-create-submit:focus {
+  background-image: none !important;
+}
+html[data-theme="dark"] .si-leaders-settings-panel .si-leaders-inline-btn,
+html[data-theme="dark"] .si-leaders-create-card .si-leaders-create-submit {
+  border-width: 2px;
+  font-weight: 700;
 }
 html[data-theme="dark"] .si-leaders-export-label-form .form-label,
 html[data-theme="dark"] .si-leaders-add-column-form .form-label,

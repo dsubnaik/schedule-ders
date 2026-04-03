@@ -30,5 +30,6 @@ public class AdminLeaderCandidateStatusItemViewModel
 {
     public int CandidateId { get; set; }
     public string CandidateName { get; set; } = string.Empty;
+    public string CandidateANumber { get; set; } = string.Empty;
     public SILeaderCandidateStatus Status { get; set; }
 }
