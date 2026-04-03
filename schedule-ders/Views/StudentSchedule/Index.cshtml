@@ -70,15 +70,17 @@
                   data-student-schedule-form="true"
                   data-api-url="@Url.Content("~/api/v1/schedule/sessions")">
                 <div class="col-lg-4">
-                    <label class="form-label mb-1">Search</label>
+                    <label class="form-label mb-1" for="studentScheduleSearch">Search</label>
                     <input name="search"
+                           id="studentScheduleSearch"
                            value="@Model.Search"
                            class="form-control"
                            placeholder="Course, section, location, or SI leader" />
                 </div>
                 <div class="col-lg-2">
-                    <label class="form-label mb-1">Time</label>
+                    <label class="form-label mb-1" for="studentScheduleTime">Time</label>
                     <input name="time"
+                           id="studentScheduleTime"
                            value="@Model.Time"
                            class="form-control"
                            list="student-search-time-options"
@@ -91,8 +93,8 @@
                     </datalist>
                 </div>
                 <div class="col-lg-2">
-                    <label class="form-label mb-1">Day</label>
-                    <select name="day" class="form-select">
+                    <label class="form-label mb-1" for="studentScheduleDay">Day</label>
+                    <select id="studentScheduleDay" name="day" class="form-select">
                         <option value="">All days</option>
                         @foreach (var day in dayOptions)
                         {
@@ -108,12 +110,16 @@
                     </select>
                 </div>
                 <div class="col-lg-2">
-                    <label class="form-label mb-1">Professor</label>
-                    <input name="professor" value="@Model.Professor" class="form-control" placeholder="Professor name" />
+                    <label class="form-label mb-1" for="studentScheduleProfessor">Professor</label>
+                    <input id="studentScheduleProfessor"
+                           name="professor"
+                           value="@Model.Professor"
+                           class="form-control"
+                           placeholder="Professor name" />
                 </div>
                 <div class="col-lg-2">
-                    <label class="form-label mb-1">Semester</label>
-                    <select name="semesterId" class="form-select" asp-items="semesterOptions">
+                    <label class="form-label mb-1" for="studentScheduleSemester">Semester</label>
+                    <select id="studentScheduleSemester" name="semesterId" class="form-select" asp-items="semesterOptions">
                         <option value="">All semesters</option>
                     </select>
                 </div>

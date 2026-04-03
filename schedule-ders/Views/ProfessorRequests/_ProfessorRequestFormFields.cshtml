@@ -69,8 +69,11 @@
     <div data-potential-leader-list="true" class="d-flex flex-column gap-2">
         @foreach (var candidate in leaderCandidates)
         {
+            var candidateInputId = $"potentialSiLeader_{Guid.NewGuid():N}";
             <div class="input-group" data-potential-leader-row="true">
+                <label class="visually-hidden" for="@candidateInputId">Suggested SI leader candidate</label>
                 <input type="text"
+                       id="@candidateInputId"
                        class="form-control"
                        data-potential-leader-input="true"
                        list="siLeaderOptions"
