@@ -20,6 +20,7 @@
        id="courseFormConfig"
        data-course-form-enhancer="true"
        data-leader-lookup-url="@Url.Action("LookupLeaderByCourseName", "Courses")"
+       data-office-hours-lookup-url="@Url.Action("LookupOfficeHoursByLeader", "Courses")"
        data-exclude-id="@Model.CourseID" />
 
 <div class="mb-3">
@@ -76,7 +77,7 @@
 
 <input asp-for="CourseMeetingTime" type="hidden" id="courseMeetingTimeInput" />
 <fieldset class="mb-3">
-    <legend class="form-label mb-2">Meeting Time</legend>
+    <legend class="form-label mb-2">Lecture Time</legend>
     <div class="row g-2">
         <div class="col-6">
             <label class="form-label small mb-1" for="meetingStartInput">Start</label>
@@ -97,8 +98,10 @@
                        id="meetingEndInput"
                        class="form-control time-picker-input"
                        data-time-options="courseTimeOptions"
+                       data-suggest-from="meetingStartInput"
+                       data-suggest-offsets="50,75"
                        autocomplete="off"
-                       placeholder="End time (e.g. 9:50am)" />
+                       placeholder="Choose or enter end time" />
                 <div class="time-picker-menu" data-time-picker-menu="true"></div>
             </div>
         </div>

@@ -55,6 +55,51 @@
         field.value = value;
     };
 
+    const parseClockTime = (value) => {
+        const normalized = String(value || "").trim().toLowerCase();
+        const match = normalized.match(/^(\d{1,2}):(\d{2})(am|pm)$/);
+        if (!match) {
+            return null;
+        }
+
+        let hours = Number(match[1]);
+        const minutes = Number(match[2]);
+        if (Number.isNaN(hours) || Number.isNaN(minutes) || hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+            return null;
+        }
+
+        if (hours === 12) {
+            hours = 0;
+        }
+        if (match[3] === "pm") {
+            hours += 12;
+        }
+
+        return { hours, minutes };
+    };
+
+    const formatClockTime = (hours24, minutes) => {
+        const boundedHours = ((hours24 % 24) + 24) % 24;
+        const meridiem = boundedHours >= 12 ? "pm" : "am";
+        let displayHours = boundedHours % 12;
+        if (displayHours === 0) {
+            displayHours = 12;
+        }
+
+        return `${displayHours}:${String(minutes).padStart(2, "0")}${meridiem}`;
+    };
+
+    const addMinutesToClockTime = (value, minutesToAdd) => {
+        const parsed = parseClockTime(value);
+        if (!parsed) {
+            return "";
+        }
+
+        const totalMinutes = (parsed.hours * 60) + parsed.minutes + minutesToAdd;
+        const wrapped = ((totalMinutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+        return formatClockTime(Math.floor(wrapped / 60), wrapped % 60);
+    };
+
     const initCourseFormEnhancer = () => {
         const config = document.querySelector("[data-course-form-enhancer='true']");
         if (!config) {
@@ -70,8 +115,17 @@
         const officeHoursDayInput = document.getElementById("officeHoursDayInput");
         const officeStartInput = document.getElementById("officeStartInput");
         const officeEndInput = document.getElementById("officeEndInput");
+        const officeLocationInput = document.getElementById("officeHoursLocationInput");
         const dayButtons = Array.from(document.querySelectorAll(".day-toggle"));
         const officeDayButtons = Array.from(document.querySelectorAll(".office-day-toggle"));
+        let lastAutoOfficeEndValue = "";
+        let officeEndManuallyEdited = false;
+        let officeDayManuallyEdited = false;
+        let officeStartManuallyEdited = false;
+        let officeLocationManuallyEdited = false;
+        let lastAutoOfficeDayValue = "";
+        let lastAutoOfficeStartValue = "";
+        let lastAutoOfficeLocationValue = "";
 
         const officeDayMap = {
             monday: "M",
@@ -164,6 +218,29 @@
             }
         };
 
+        const maybeAutofillOfficeHoursEnd = () => {
+            if (!officeStartInput || !officeEndInput) {
+                return;
+            }
+
+            const start = officeStartInput.value.trim();
+            const end = officeEndInput.value.trim();
+            if (!start) {
+                return;
+            }
+
+            const generatedEnd = addMinutesToClockTime(start, 60);
+            if (!generatedEnd) {
+                return;
+            }
+
+            if (!end || !officeEndManuallyEdited || end === lastAutoOfficeEndValue) {
+                officeEndInput.value = generatedEnd;
+                lastAutoOfficeEndValue = generatedEnd;
+                officeEndManuallyEdited = false;
+            }
+        };
+
         dayButtons.forEach((btn) => {
             btn.addEventListener("click", () => {
                 btn.classList.toggle("btn-primary");
@@ -174,6 +251,7 @@
 
         officeDayButtons.forEach((btn) => {
             btn.addEventListener("click", () => {
+                officeDayManuallyEdited = true;
                 if (officeHoursDayInput) {
                     officeHoursDayInput.value = btn.dataset.day || "";
                 }
@@ -185,21 +263,65 @@
         endInput?.addEventListener("input", updateTimeHidden);
         startInput?.addEventListener("change", updateTimeHidden);
         endInput?.addEventListener("change", updateTimeHidden);
-        officeStartInput?.addEventListener("input", updateOfficeHoursHidden);
-        officeEndInput?.addEventListener("input", updateOfficeHoursHidden);
-        officeStartInput?.addEventListener("change", updateOfficeHoursHidden);
-        officeEndInput?.addEventListener("change", updateOfficeHoursHidden);
+        officeStartInput?.addEventListener("input", () => {
+            if (officeStartInput.value.trim() !== lastAutoOfficeStartValue) {
+                officeStartManuallyEdited = true;
+            }
+            maybeAutofillOfficeHoursEnd();
+            updateOfficeHoursHidden();
+        });
+        officeStartInput?.addEventListener("change", () => {
+            if (officeStartInput.value.trim() !== lastAutoOfficeStartValue) {
+                officeStartManuallyEdited = true;
+            }
+            maybeAutofillOfficeHoursEnd();
+            updateOfficeHoursHidden();
+        });
+        officeEndInput?.addEventListener("input", () => {
+            if (officeEndInput.value.trim() !== lastAutoOfficeEndValue) {
+                officeEndManuallyEdited = true;
+            }
+            updateOfficeHoursHidden();
+        });
+        officeEndInput?.addEventListener("change", () => {
+            if (officeEndInput.value.trim() !== lastAutoOfficeEndValue) {
+                officeEndManuallyEdited = true;
+            }
+            updateOfficeHoursHidden();
+        });
+        officeLocationInput?.addEventListener("input", () => {
+            if (officeLocationInput.value.trim() !== lastAutoOfficeLocationValue) {
+                officeLocationManuallyEdited = true;
+            }
+        });
 
         applyDaysToButtons();
         applyOfficeDayToButtons();
         applyHiddenTimeToSelects();
         applyHiddenOfficeHoursToSelects();
+        if (officeEndInput) {
+            lastAutoOfficeEndValue = officeEndInput.value.trim();
+            officeEndManuallyEdited = !!lastAutoOfficeEndValue;
+        }
+        if (officeHoursDayInput) {
+            lastAutoOfficeDayValue = officeHoursDayInput.value.trim();
+            officeDayManuallyEdited = !!lastAutoOfficeDayValue;
+        }
+        if (officeStartInput) {
+            lastAutoOfficeStartValue = officeStartInput.value.trim();
+            officeStartManuallyEdited = !!lastAutoOfficeStartValue;
+        }
+        if (officeLocationInput) {
+            lastAutoOfficeLocationValue = officeLocationInput.value.trim();
+            officeLocationManuallyEdited = !!lastAutoOfficeLocationValue;
+        }
 
         const courseNameInput = document.getElementById("courseNameInput");
         const courseTitleInput = document.getElementById("courseTitleInput");
         const sectionInput = document.getElementById("courseSectionInput");
         const leaderInput = document.getElementById("courseLeaderInput");
         const leaderLookupBaseUrl = config.getAttribute("data-leader-lookup-url") || "";
+        const officeHoursLookupBaseUrl = config.getAttribute("data-office-hours-lookup-url") || "";
         const excludeId = config.getAttribute("data-exclude-id") || "";
         let leaderManuallyEdited = false;
 
@@ -219,9 +341,61 @@
                 const data = await response.json();
                 if (leaderInput && data.courseLeader) {
                     leaderInput.value = data.courseLeader;
+                    await fetchOfficeHoursForLeader();
                 }
             } catch {
                 // Leave manual entry untouched if lookup fails.
+            }
+        };
+
+        const fetchOfficeHoursForLeader = async () => {
+            const leaderName = (leaderInput?.value || "").trim();
+            if (!officeHoursLookupBaseUrl || !leaderName) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${officeHoursLookupBaseUrl}?leaderName=${encodeURIComponent(leaderName)}&excludeId=${encodeURIComponent(excludeId)}`);
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json();
+                const officeDay = String(data.officeHoursDay || "").trim();
+                const officeTime = String(data.officeHoursTime || "").trim();
+                const officeLocation = String(data.officeHoursLocation || "").trim();
+                const parts = officeTime.split("-");
+                const officeStart = parts.length === 2 ? parts[0].trim() : "";
+                const officeEnd = parts.length === 2 ? parts[1].trim() : "";
+
+                if (officeHoursDayInput && officeDay && (!officeDayManuallyEdited || !officeHoursDayInput.value.trim() || officeHoursDayInput.value.trim() === lastAutoOfficeDayValue)) {
+                    officeHoursDayInput.value = officeDay;
+                    lastAutoOfficeDayValue = officeDay;
+                    officeDayManuallyEdited = false;
+                    applyOfficeDayToButtons();
+                }
+
+                if (officeStartInput && officeStart && (!officeStartManuallyEdited || !officeStartInput.value.trim() || officeStartInput.value.trim() === lastAutoOfficeStartValue)) {
+                    officeStartInput.value = officeStart;
+                    lastAutoOfficeStartValue = officeStart;
+                    officeStartManuallyEdited = false;
+                }
+
+                if (officeEndInput && officeEnd && (!officeEndManuallyEdited || !officeEndInput.value.trim() || officeEndInput.value.trim() === lastAutoOfficeEndValue)) {
+                    officeEndInput.value = officeEnd;
+                    lastAutoOfficeEndValue = officeEnd;
+                    officeEndManuallyEdited = false;
+                }
+
+                if (officeLocationInput && officeLocation && (!officeLocationManuallyEdited || !officeLocationInput.value.trim() || officeLocationInput.value.trim() === lastAutoOfficeLocationValue)) {
+                    officeLocationInput.value = officeLocation;
+                    lastAutoOfficeLocationValue = officeLocation;
+                    officeLocationManuallyEdited = false;
+                }
+
+                updateOfficeHoursHidden();
+            } catch {
+                // Leave manual values in place if lookup fails.
             }
         };
 
@@ -232,6 +406,10 @@
         leaderInput?.addEventListener("input", () => {
             leaderManuallyEdited = true;
         });
+        leaderInput?.addEventListener("change", fetchOfficeHoursForLeader);
+        if (leaderInput?.value?.trim()) {
+            fetchOfficeHoursForLeader();
+        }
     };
 
     const initTimePickerDropdowns = () => {
@@ -260,10 +438,29 @@
                 .map((o) => (o.getAttribute("value") || "").trim())
                 .filter((v) => v.length > 0);
 
+            const suggestionSourceId = input.getAttribute("data-suggest-from");
+            const suggestionOffsets = (input.getAttribute("data-suggest-offsets") || "")
+                .split(",")
+                .map((value) => Number(value.trim()))
+                .filter((value) => Number.isFinite(value) && value > 0);
+            const suggestionSource = suggestionSourceId ? document.getElementById(suggestionSourceId) : null;
+            const suggestedValues = suggestionSource instanceof HTMLInputElement && suggestionOffsets.length > 0
+                ? suggestionOffsets
+                    .map((offset) => addMinutesToClockTime(suggestionSource.value, offset))
+                    .filter((value, index, array) => value && array.indexOf(value) === index)
+                : [];
+
             const normalizedFilter = filterText.trim().toLowerCase();
-            const filtered = normalizedFilter
+            const filteredSuggestions = normalizedFilter
+                ? suggestedValues.filter((o) => o.toLowerCase().includes(normalizedFilter))
+                : suggestedValues;
+            const filteredOptions = normalizedFilter
                 ? options.filter((o) => o.toLowerCase().includes(normalizedFilter))
                 : options;
+            const filtered = [
+                ...filteredSuggestions,
+                ...filteredOptions.filter((value) => !filteredSuggestions.includes(value))
+            ];
 
             menu.innerHTML = "";
             if (filtered.length === 0) {
@@ -320,8 +517,22 @@
         const endInput = document.getElementById("sessionEndInput");
         const dayButtons = Array.from(document.querySelectorAll(".session-day-toggle"));
         const courseSelect = document.getElementById("CourseID");
+        const siLeaderInput = document.getElementById("siLeaderInput");
         const sectionTargetsContainer = document.querySelector("[data-section-targets-container='true']");
         const sectionTargetsList = sectionTargetsContainer?.querySelector("[data-section-targets-list='true']");
+        let sessionLeaderMap = {};
+        let leaderManuallyEdited = false;
+        let lastAutoLeaderValue = "";
+
+        try {
+            const rawLeaderMap = marker.getAttribute("data-course-leader-map") || "{}";
+            const parsedLeaderMap = JSON.parse(rawLeaderMap);
+            if (parsedLeaderMap && typeof parsedLeaderMap === "object") {
+                sessionLeaderMap = parsedLeaderMap;
+            }
+        } catch {
+            sessionLeaderMap = {};
+        }
 
         const wireSectionTargetButtons = () => {
             sectionTargetsList?.querySelectorAll("label.btn input[type='checkbox']").forEach((input) => {
@@ -393,6 +604,34 @@
                 renderSectionTargets(items, courseIdValue);
             } catch {
                 // Keep current selection if lookup fails.
+            }
+        };
+
+        const autoFillLeaderFromCourse = () => {
+            if (!(courseSelect instanceof HTMLSelectElement) || !(siLeaderInput instanceof HTMLInputElement)) {
+                return;
+            }
+
+            const selectedCourseId = String(courseSelect.value || "").trim();
+            if (!selectedCourseId) {
+                if (!leaderManuallyEdited || siLeaderInput.value.trim() === lastAutoLeaderValue) {
+                    siLeaderInput.value = "";
+                    lastAutoLeaderValue = "";
+                    leaderManuallyEdited = false;
+                }
+                return;
+            }
+
+            const suggestedLeader = String(sessionLeaderMap[selectedCourseId] || "").trim();
+            if (!suggestedLeader) {
+                return;
+            }
+
+            const currentLeader = siLeaderInput.value.trim();
+            if (!currentLeader || !leaderManuallyEdited || currentLeader === lastAutoLeaderValue) {
+                siLeaderInput.value = suggestedLeader;
+                lastAutoLeaderValue = suggestedLeader;
+                leaderManuallyEdited = false;
             }
         };
 
@@ -537,12 +776,25 @@
             endWasManuallyChanged = current.length > 0 && current !== lastAutoEndValue;
             updateTime();
         });
-        courseSelect?.addEventListener("change", refreshSectionTargets);
+        courseSelect?.addEventListener("change", () => {
+            refreshSectionTargets();
+            autoFillLeaderFromCourse();
+        });
+        siLeaderInput?.addEventListener("input", () => {
+            if (siLeaderInput.value.trim() !== lastAutoLeaderValue) {
+                leaderManuallyEdited = true;
+            }
+        });
 
         applyDay();
         applyTime();
         autoFillEndFromStart(true);
         wireSectionTargetButtons();
+        if (siLeaderInput instanceof HTMLInputElement) {
+            lastAutoLeaderValue = siLeaderInput.value.trim();
+            leaderManuallyEdited = !!lastAutoLeaderValue;
+        }
+        autoFillLeaderFromCourse();
     };
 
     const initSiLeaderAssignmentBuilders = () => {

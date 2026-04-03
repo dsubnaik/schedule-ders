@@ -273,6 +273,30 @@ footer.footer a:focus {
   max-height: 68vh;
   overflow-y: auto;
 }
+.professor-requests-header {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 1fr auto 1fr;
+}
+.professor-requests-header .page-title {
+  grid-column: 2;
+  justify-self: center;
+  text-align: center;
+}
+.professor-requests-header .page-actions {
+  grid-column: 3;
+  justify-self: end;
+}
+.professor-requests-table caption {
+  background: #ffffff;
+  padding: 0.9rem 1rem 0.55rem;
+}
+.admin-courses-table caption,
+.admin-requests-table caption {
+  background: #ffffff;
+  padding: 0.9rem 1rem 0.55rem;
+}
 .professor-requests-table thead th {
   position: sticky;
   top: 0;
@@ -715,12 +739,57 @@ body.home-landing .landing-logo {
 .request-tracker-header .page-actions {
   justify-self: end;
 }
+.request-tracker-course-line {
+  text-align: center;
+}
+.course-editor-title-row {
+  align-items: center;
+  grid-template-columns: 1fr auto 1fr;
+}
+.course-editor-title-row .page-title-row-main {
+  justify-self: center;
+  text-align: center;
+}
+.session-editor-title-row {
+  align-items: center;
+  grid-template-columns: 1fr auto 1fr;
+}
+.session-editor-title-row .page-title-row-main {
+  justify-self: center;
+  text-align: center;
+}
 @media (max-width: 767.98px) {
+  .professor-requests-header {
+    grid-template-columns: 1fr;
+  }
+  .professor-requests-header .page-title,
+  .professor-requests-header .page-actions {
+    grid-column: auto;
+    justify-self: start;
+    text-align: left;
+  }
   .request-tracker-header {
     grid-template-columns: 1fr;
   }
   .request-tracker-header .page-title-row-main,
   .request-tracker-header .page-actions {
+    justify-self: start;
+    text-align: left;
+  }
+  .request-tracker-course-line {
+    text-align: left;
+  }
+  .course-editor-title-row {
+    grid-template-columns: 1fr;
+  }
+  .course-editor-title-row .page-title-row-main {
+    justify-self: start;
+    text-align: left;
+  }
+  .session-editor-title-row {
+    grid-template-columns: 1fr;
+  }
+  .session-editor-title-row .page-title-row-main {
     justify-self: start;
     text-align: left;
   }
@@ -1197,6 +1266,14 @@ body.home-landing .landing-logo {
 .new-request-page {
   max-width: 980px;
   margin: 0 auto;
+}
+.new-request-page .page-title-row {
+  align-items: center;
+  grid-template-columns: 1fr auto 1fr;
+}
+.new-request-page .page-title-row-main {
+  justify-self: center;
+  text-align: center;
 }
 .professor-request-actions {
   align-items: center;
