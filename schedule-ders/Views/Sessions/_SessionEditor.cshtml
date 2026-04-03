@@ -11,12 +11,14 @@
     var widthClass = ViewData["EditorWidthClass"] as string ?? "col-12 col-lg-9 col-xl-8";
 }
 
-<section class="page-shell">
-<input type="hidden" data-session-form-enhancer="true" />
+<section class="page-shell session-editor-page">
+<input type="hidden"
+       data-session-form-enhancer="true"
+       data-course-leader-map='@Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.CourseLeaderMap ?? new Dictionary<int, string>()))' />
 
 <div class="row justify-content-center">
     <div class="@widthClass">
-        <div class="page-title-row mb-1">
+        <div class="page-title-row mb-1 session-editor-title-row">
             <div>
                 @if (!string.IsNullOrWhiteSpace(returnUrl))
                 {

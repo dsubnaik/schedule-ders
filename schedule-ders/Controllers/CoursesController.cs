@@ -379,6 +379,64 @@ public class CoursesController : Controller
         return Json(new { courseLeader = GetDisplayLeaderName(leader) });
     }
 
+    [HttpGet]
+    public async Task<IActionResult> LookupOfficeHoursByLeader(string? leaderName, int? excludeId)
+    {
+        if (string.IsNullOrWhiteSpace(leaderName))
+        {
+            return BadRequest();
+        }
+
+        var normalizedLeader = leaderName.Trim();
+        var courseOfficeHours = await _context.Courses
+            .AsNoTracking()
+            .Where(c => !string.IsNullOrWhiteSpace(c.CourseLeader)
+                        && !string.IsNullOrWhiteSpace(c.OfficeHoursDay)
+                        && !string.IsNullOrWhiteSpace(c.OfficeHoursTime)
+                        && !string.IsNullOrWhiteSpace(c.OfficeHoursLocation))
+            .Where(c => !excludeId.HasValue || c.CourseID != excludeId.Value)
+            .Select(c => new
+            {
+                c.CourseLeader,
+                c.OfficeHoursDay,
+                c.OfficeHoursTime,
+                c.OfficeHoursLocation
+            })
+            .ToListAsync();
+
+        var matches = courseOfficeHours
+            .Where(c =>
+                string.Equals(c.CourseLeader, normalizedLeader, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(GetDisplayLeaderName(c.CourseLeader), normalizedLeader, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (matches.Count == 0)
+        {
+            return NotFound();
+        }
+
+        var officeHours = matches
+            .GroupBy(c => new
+            {
+                Day = c.OfficeHoursDay.Trim(),
+                Time = c.OfficeHoursTime.Trim(),
+                Location = c.OfficeHoursLocation.Trim()
+            })
+            .OrderByDescending(g => g.Count())
+            .ThenBy(g => g.Key.Day)
+            .ThenBy(g => g.Key.Time)
+            .ThenBy(g => g.Key.Location)
+            .Select(g => g.Key)
+            .First();
+
+        return Json(new
+        {
+            officeHoursDay = officeHours.Day,
+            officeHoursTime = officeHours.Time,
+            officeHoursLocation = officeHours.Location
+        });
+    }
+
     public async Task<IActionResult> Delete(int? id)
     {
         return RedirectToAction(nameof(Index));

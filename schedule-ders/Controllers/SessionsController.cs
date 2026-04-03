@@ -611,10 +611,16 @@ public class SessionsController : Controller
         var courses = await query
             .OrderBy(c => c.CourseName)
             .ThenBy(c => c.CourseSection)
-            .Select(c => new { c.CourseID, Label = $"{c.CourseName} - {c.CourseTitle} ({c.CourseSection}) - {c.CourseProfessor}" })
+            .Select(c => new
+            {
+                c.CourseID,
+                c.CourseLeader,
+                Label = $"{c.CourseName} - {c.CourseTitle} ({c.CourseSection}) - {c.CourseProfessor}"
+            })
             .ToListAsync();
 
         ViewBag.CourseOptions = new SelectList(courses, "CourseID", "Label", selectedCourseId);
+        ViewBag.CourseLeaderMap = courses.ToDictionary(c => c.CourseID, c => c.CourseLeader ?? string.Empty);
     }
 
     private async Task PopulateLeaderOptionsAsync()

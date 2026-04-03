@@ -303,6 +303,47 @@ html[data-theme="dark"] .table caption,
 html[data-theme="dark"] .filter-label {
   color: #c9def3;
 }
+html[data-theme="dark"] .professor-requests-table {
+  --bs-table-bg: #162638;
+  --bs-table-color: #e7f0fa;
+  --bs-table-border-color: #0a8f4e;
+  --bs-table-striped-bg: #1b2d43;
+  --bs-table-striped-color: #e7f0fa;
+  --bs-table-hover-bg: #22364d;
+  --bs-table-hover-color: #f2f8ff;
+}
+html[data-theme="dark"] .professor-requests-table caption {
+  background: #162638;
+  border-bottom: 2px solid #0a8f4e;
+  color: #d9e6f4;
+}
+html[data-theme="dark"] .admin-courses-table caption,
+html[data-theme="dark"] .admin-requests-table caption {
+  background: #162638;
+  border-bottom: 2px solid #0a8f4e;
+  color: #d9e6f4;
+}
+html[data-theme="dark"] .professor-requests-table thead th {
+  background: #21344b;
+  border-bottom-color: #0a8f4e;
+  color: #f2f7fd;
+}
+html[data-theme="dark"] .admin-courses-table thead th,
+html[data-theme="dark"] .admin-requests-table thead th {
+  background: #21344b;
+  border-bottom-color: #0a8f4e;
+  color: #f2f7fd;
+}
+html[data-theme="dark"] .professor-requests-table tbody th,
+html[data-theme="dark"] .professor-requests-table tbody td {
+  border-color: #0a8f4e;
+}
+html[data-theme="dark"] .admin-courses-table tbody th,
+html[data-theme="dark"] .admin-courses-table tbody td,
+html[data-theme="dark"] .admin-requests-table tbody th,
+html[data-theme="dark"] .admin-requests-table tbody td {
+  border-color: #0a8f4e;
+}
 html[data-theme="dark"] .btn-outline-light {
   color: #d4e5f8;
   border-color: #7f9abb;
