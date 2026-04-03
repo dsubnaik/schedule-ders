@@ -52,14 +52,18 @@
 
 <form asp-action="Index" method="get" class="row g-2 mb-3 surface-card surface-toolbar">
     <div class="col">
+        <label class="filter-label" for="sessionSearchFilter">Course</label>
         <input type="text"
+               id="sessionSearchFilter"
                name="search"
                value="@currentSearch"
                class="form-control"
                placeholder="Course" />
     </div>
     <div class="col">
+        <label class="filter-label" for="sessionTimeFilter">Time</label>
         <input type="text"
+               id="sessionTimeFilter"
                name="time"
                value="@currentTime"
                class="form-control"
@@ -73,7 +77,9 @@
         </datalist>
     </div>
     <div class="col">
+        <label class="filter-label" for="sessionLeaderFilter">SI leader</label>
         <input type="text"
+               id="sessionLeaderFilter"
                name="leader"
                value="@currentLeader"
                class="form-control"
@@ -87,7 +93,9 @@
         </datalist>
     </div>
     <div class="col">
+        <label class="filter-label" for="sessionLocationFilter">Location</label>
         <input type="text"
+               id="sessionLocationFilter"
                name="location"
                value="@currentLocation"
                class="form-control"
@@ -101,7 +109,8 @@
         </datalist>
     </div>
     <div class="col">
-        <select name="day" class="form-select">
+        <label class="filter-label" for="sessionDayFilter">Day</label>
+        <select id="sessionDayFilter" name="day" class="form-select">
             <option value="">All days</option>
             @foreach (var day in dayOptions)
             {
@@ -117,19 +126,21 @@
         </select>
     </div>
     <div class="col">
-        <select name="courseId" class="form-select" asp-items="ViewBag.CourseFilterOptions">
+        <label class="filter-label" for="sessionCourseFilter">Course section</label>
+        <select id="sessionCourseFilter" name="courseId" class="form-select" asp-items="ViewBag.CourseFilterOptions">
             <option value="">All courses</option>
         </select>
     </div>
     <div class="col">
-        <select name="semesterId" class="form-select" asp-items="ViewBag.SemesterOptions" onchange="this.form.requestSubmit()">
+        <label class="filter-label" for="sessionSemesterFilter">Semester</label>
+        <select id="sessionSemesterFilter" name="semesterId" class="form-select" asp-items="ViewBag.SemesterOptions" onchange="this.form.requestSubmit()">
             <option value="">All semesters</option>
         </select>
     </div>
-    <div class="col-auto d-grid">
+    <div class="col-auto d-grid filter-row-actions">
         <button type="submit" class="btn btn-outline-secondary">Apply</button>
     </div>
-    <div class="col-auto d-grid">
+    <div class="col-auto d-grid filter-row-actions">
         <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
     </div>
 </form>

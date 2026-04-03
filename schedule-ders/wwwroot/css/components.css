@@ -241,6 +241,14 @@ footer.footer a:focus {
 .data-table table {
   margin-bottom: 0;
 }
+.data-table caption,
+.table caption {
+  caption-side: top;
+  color: #385a79;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.75rem 0.75rem 0.4rem;
+}
 .data-table thead th {
   background: #eef5ff;
   color: #204867;
@@ -547,6 +555,15 @@ body.home-landing .landing-logo {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.7rem;
+}
+.filter-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #204867;
+  margin-bottom: 0.25rem;
+}
+.filter-row-actions {
+  align-items: end;
 }
 .landing-hero-glow {
   position: absolute;

@@ -17,6 +17,7 @@
         const label = isDark ? "Switch to light mode" : "Switch to dark mode";
         toggleButton.setAttribute("aria-label", label);
         toggleButton.setAttribute("title", label);
+        toggleButton.setAttribute("aria-pressed", String(isDark));
         toggleButton.classList.toggle("is-dark", isDark);
     };
 
