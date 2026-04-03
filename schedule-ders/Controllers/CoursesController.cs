@@ -29,6 +29,9 @@ public class CoursesController : Controller
         var timeValue = time?.Trim() ?? string.Empty;
         var professorValue = professor?.Trim() ?? string.Empty;
         var dayValue = day?.Trim() ?? string.Empty;
+        var normalizedCourseValue = courseValue.ToLower();
+        var normalizedProfessorValue = professorValue.ToLower();
+        var normalizedTimeValue = timeValue.ToLower();
         var compactTime = TimeSearchHelper.ToCompactToken(timeValue);
         var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
 
@@ -45,23 +48,20 @@ public class CoursesController : Controller
 
         if (!string.IsNullOrWhiteSpace(courseValue))
         {
-            query = query.Where(c => c.CourseName.Contains(courseValue) || c.CourseTitle.Contains(courseValue));
+            query = query.Where(c =>
+                c.CourseName.ToLower().Contains(normalizedCourseValue) ||
+                c.CourseTitle.ToLower().Contains(normalizedCourseValue));
         }
 
         if (!string.IsNullOrWhiteSpace(professorValue))
         {
-            query = query.Where(c => c.CourseProfessor.Contains(professorValue));
-        }
-
-        if (!string.IsNullOrWhiteSpace(dayValue))
-        {
-            query = query.Where(c => c.CourseMeetingDays.Contains(dayValue));
+            query = query.Where(c => c.CourseProfessor.ToLower().Contains(normalizedProfessorValue));
         }
 
         if (!string.IsNullOrWhiteSpace(timeValue) && !hasSearchTime)
         {
             query = query.Where(c =>
-                c.CourseMeetingTime.Contains(timeValue) ||
+                c.CourseMeetingTime.ToLower().Contains(normalizedTimeValue) ||
                 c.CourseMeetingTime.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactTime));
         }
 
@@ -81,6 +81,13 @@ public class CoursesController : Controller
                 .Where(c =>
                     TimeSearchHelper.MatchesTimeRange(c.CourseMeetingTime, timeValue) ||
                     TimeSearchHelper.MatchesTimeText(c.CourseMeetingTime, timeValue))
+                .ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(dayValue))
+        {
+            courses = courses
+                .Where(c => MatchesMeetingDayFilter(c.CourseMeetingDays, dayValue))
                 .ToList();
         }
 
@@ -654,6 +661,68 @@ public class CoursesController : Controller
             .Where(x => !string.IsNullOrWhiteSpace(x.CourseName) && !string.IsNullOrWhiteSpace(x.CourseSection))
             .Distinct()
             .ToList();
+    }
+
+    private static bool MatchesMeetingDayFilter(string? storedMeetingDays, string searchValue)
+    {
+        if (string.IsNullOrWhiteSpace(searchValue))
+        {
+            return true;
+        }
+
+        var normalizedMeetingDays = (storedMeetingDays ?? string.Empty)
+            .Trim()
+            .ToUpperInvariant();
+
+        if (string.IsNullOrWhiteSpace(normalizedMeetingDays))
+        {
+            return false;
+        }
+
+        var normalizedSearch = searchValue.Trim();
+        var mappedDayCode = TryMapDayCode(normalizedSearch);
+        if (!string.IsNullOrWhiteSpace(mappedDayCode))
+        {
+            return normalizedMeetingDays.Contains(mappedDayCode, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return normalizedMeetingDays.Contains(normalizedSearch.Trim().ToUpperInvariant(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? TryMapDayCode(string value)
+    {
+        var normalized = value.Trim().ToLowerInvariant().Replace(" ", string.Empty);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return null;
+        }
+
+        if (normalized is "m" or "mon" or "monday")
+        {
+            return "M";
+        }
+
+        if (normalized is "t" or "tu" or "tue" or "tues" or "tuesday")
+        {
+            return "T";
+        }
+
+        if (normalized is "w" or "wed" or "wednesday")
+        {
+            return "W";
+        }
+
+        if (normalized is "r" or "th" or "thu" or "thur" or "thurs" or "thursday")
+        {
+            return "R";
+        }
+
+        if (normalized is "f" or "fri" or "friday")
+        {
+            return "F";
+        }
+
+        return null;
     }
 
     private static string GetDisplayLeaderName(string leaderName)
