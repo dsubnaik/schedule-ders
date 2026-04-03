@@ -27,8 +27,9 @@
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
 }
 <body class="@((currentController == "Home" && currentAction == "Index") ? "home-landing" : string.Empty)">
+    <a class="skip-link" href="#mainContent">Skip to main content</a>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3" aria-label="Primary">
             <div class="container-fluid">
                 <a class="navbar-brand brand-with-logo" asp-area="" asp-controller="Home" asp-action="Index">
                     <img src="~/images/schedule-ders-logo.png"
@@ -49,22 +50,26 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-dark @(currentController == "Courses" ? "active" : string.Empty)"
                                        asp-controller="Courses"
-                                       asp-action="Index">Courses</a>
+                                       asp-action="Index"
+                                       aria-current="@(currentController == "Courses" ? "page" : null)">Courses</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-dark @(currentController == "Sessions" ? "active" : string.Empty)"
                                        asp-controller="Sessions"
-                                       asp-action="Index">Sessions</a>
+                                       asp-action="Index"
+                                       aria-current="@(currentController == "Sessions" ? "page" : null)">Sessions</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-dark @(currentController == "AdminRequests" ? "active" : string.Empty)"
                                        asp-controller="AdminRequests"
-                                       asp-action="Index">SI Requests</a>
+                                       asp-action="Index"
+                                       aria-current="@(currentController == "AdminRequests" ? "page" : null)">SI Requests</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link text-dark @(currentController == "SILeaders" ? "active" : string.Empty)"
                                        asp-controller="SILeaders"
-                                       asp-action="Index">SI Leaders</a>
+                                       asp-action="Index"
+                                       aria-current="@(currentController == "SILeaders" ? "page" : null)">SI Leaders</a>
                                 </li>
                             }
                             @if (User.IsInRole("Professor"))
@@ -72,7 +77,8 @@
                                 <li class="nav-item">
                                     <a class="nav-link text-dark @(currentController == "ProfessorRequests" ? "active" : string.Empty)"
                                        asp-controller="ProfessorRequests"
-                                       asp-action="Index">My Requests</a>
+                                       asp-action="Index"
+                                       aria-current="@(currentController == "ProfessorRequests" ? "page" : null)">My Requests</a>
                                 </li>
                             }
                         }
@@ -82,19 +88,22 @@
                                 <a class="nav-link text-dark @((currentController == "Home" && currentAction == "Index") ? "active" : string.Empty)"
                                    asp-area=""
                                    asp-controller="Home"
-                                   asp-action="Index">Home</a>
+                                   asp-action="Index"
+                                   aria-current="@((currentController == "Home" && currentAction == "Index") ? "page" : null)">Home</a>
                             </li>
                         }
                         <li class="nav-item">
                             <a class="nav-link text-dark @(currentController == "StudentSchedule" ? "active" : string.Empty)"
                                asp-controller="StudentSchedule"
-                               asp-action="Index">SI Schedule</a>
+                               asp-action="Index"
+                               aria-current="@(currentController == "StudentSchedule" ? "page" : null)">SI Schedule</a>
                         </li>
                     </ul>
 
                     <button type="button"
                             class="btn btn-sm theme-toggle-btn me-2"
                             id="themeToggleBtn"
+                            aria-pressed="false"
                             aria-label="Switch to dark mode"
                             title="Switch to dark mode">
                         <svg class="theme-toggle-icon" viewBox="0 0 24 24" role="img" aria-hidden="true" focusable="false">
@@ -109,7 +118,7 @@
         </nav>
     </header>
     <div class="container">
-        <main role="main" class="pb-3">
+        <main id="mainContent" role="main" class="pb-3" tabindex="-1">
             @RenderBody()
         </main>
     </div>

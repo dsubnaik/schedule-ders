@@ -35,12 +35,13 @@
 
 <div class="table-responsive data-table professor-requests-table-scroll">
     <table class="table table-striped align-middle data-table-compact professor-requests-table">
+        <caption>Your SI requests with submission times, current status, and available actions.</caption>
         <thead>
             <tr>
-                <th>Course</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th class="request-actions-col"></th>
+                <th scope="col">Course</th>
+                <th scope="col">Submitted</th>
+                <th scope="col">Status</th>
+                <th scope="col" class="request-actions-col">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -74,7 +75,7 @@
                     _ => item.Status.ToString()
                 };
                 <tr>
-                    <td>@courseDisplay</td>
+                    <th scope="row">@courseDisplay</th>
                     <td>
                         <div>@item.SubmittedAtUtc.ToLocalTime().ToString("g")</div>
                         <span class="relative-time-pill">@schedule_ders.Utilities.RelativeTimeFormatter.Format(item.SubmittedAtUtc, nowUtc)</span>

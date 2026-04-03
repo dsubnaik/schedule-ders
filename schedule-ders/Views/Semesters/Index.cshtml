@@ -35,13 +35,14 @@
 
     <div class="table-responsive data-table">
         <table class="table table-striped table-hover align-middle data-table-compact">
+            <caption>Configured semesters, including course and session totals, plus whether each term can be deleted.</caption>
             <thead>
                 <tr>
-                    <th>Semester</th>
-                    <th>Code</th>
-                    <th>Courses</th>
-                    <th>Sessions</th>
-                    <th></th>
+                    <th scope="col">Semester</th>
+                    <th scope="col">Code</th>
+                    <th scope="col">Courses</th>
+                    <th scope="col">Sessions</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -56,7 +57,7 @@
                 @foreach (var semester in Model.Semesters)
                 {
                     <tr>
-                        <td>@semester.DisplayName</td>
+                        <th scope="row">@semester.DisplayName</th>
                         <td>@semester.SemesterCode</td>
                         <td>@semester.CourseCount</td>
                         <td>@semester.SessionCount</td>

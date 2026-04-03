@@ -285,6 +285,11 @@ html[data-theme="dark"] .row-action-menu .dropdown-item:active {
 html[data-theme="dark"] .table-helper-text {
   color: #9fb5cc;
 }
+html[data-theme="dark"] .data-table caption,
+html[data-theme="dark"] .table caption,
+html[data-theme="dark"] .filter-label {
+  color: #c9def3;
+}
 html[data-theme="dark"] .btn-outline-light {
   color: #d4e5f8;
   border-color: #7f9abb;

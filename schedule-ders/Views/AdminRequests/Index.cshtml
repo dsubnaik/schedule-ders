@@ -43,13 +43,14 @@
 
 <div class="table-responsive data-table admin-requests-table-scroll">
     <table class="table table-striped align-middle data-table-compact admin-requests-table-compact">
+        <caption>Supplemental instruction requests with professor, submission date, review status, and actions.</caption>
         <thead>
             <tr>
-                <th>Course</th>
-                <th>Professor</th>
-                <th>Submitted</th>
-                <th>Status</th>
-                <th></th>
+                <th scope="col">Course</th>
+                <th scope="col">Professor</th>
+                <th scope="col">Submitted</th>
+                <th scope="col">Status</th>
+                <th scope="col">Actions</th>
             </tr>
         </thead>
         <tbody data-admin-requests-tbody="true">
@@ -83,7 +84,7 @@
                     _ => item.Status.ToString()
                 };
                 <tr>
-                    <td>@courseDisplay</td>
+                    <th scope="row">@courseDisplay</th>
                     <td>@item.ProfessorName</td>
                     <td>
                         <div>@item.SubmittedAtUtc.ToLocalTime().ToString("g")</div>
