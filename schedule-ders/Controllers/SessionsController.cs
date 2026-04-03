@@ -29,8 +29,9 @@ public class SessionsController : Controller
         var timeValue = time?.Trim() ?? string.Empty;
         var leaderValue = leader?.Trim() ?? string.Empty;
         var locationValue = location?.Trim() ?? string.Empty;
+        var dayValue = day?.Trim() ?? string.Empty;
         var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
-        var query = BuildFilteredSessionsQuery(searchValue, day, courseId, timeValue, leaderValue, locationValue, semesterId);
+        var query = BuildFilteredSessionsQuery(searchValue, dayValue, courseId, timeValue, leaderValue, locationValue, semesterId);
 
         var sessions = await query
             .OrderBy(s => s.Day)
@@ -60,7 +61,7 @@ public class SessionsController : Controller
         ViewData["CurrentTime"] = timeValue;
         ViewData["CurrentLeader"] = leaderValue;
         ViewData["CurrentLocation"] = locationValue;
-        ViewData["CurrentDay"] = day ?? string.Empty;
+        ViewData["CurrentDay"] = dayValue;
         ViewData["CurrentCourseId"] = courseId;
         ViewData["CurrentSemesterId"] = semesterId;
 
@@ -741,6 +742,10 @@ public class SessionsController : Controller
 
     private IQueryable<Session> BuildFilteredSessionsQuery(string search, string? day, int? courseId, string time, string leader, string location, int? semesterId)
     {
+        var normalizedSearch = search.Trim().ToLower();
+        var normalizedTime = time.Trim().ToLower();
+        var normalizedLeader = leader.Trim().ToLower();
+        var normalizedLocation = location.Trim().ToLower();
         var compactTime = TimeSearchHelper.ToCompactToken(time);
         var hasSearchTime = TimeSearchHelper.TryParseSearchTime(time, out _);
 
@@ -752,30 +757,31 @@ public class SessionsController : Controller
         if (!string.IsNullOrWhiteSpace(search))
         {
             query = query.Where(s =>
-                (s.Course != null && (s.Course.CourseName.Contains(search) || s.Course.CourseTitle.Contains(search))) ||
-                (s.Course != null && s.Course.CourseSection.Contains(search)));
+                (s.Course != null && (s.Course.CourseName.ToLower().Contains(normalizedSearch) || s.Course.CourseTitle.ToLower().Contains(normalizedSearch))) ||
+                (s.Course != null && s.Course.CourseSection.ToLower().Contains(normalizedSearch)));
         }
 
         if (!string.IsNullOrWhiteSpace(time) && !hasSearchTime)
         {
             query = query.Where(s =>
-                s.Time.Contains(time) ||
+                s.Time.ToLower().Contains(normalizedTime) ||
                 s.Time.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactTime));
         }
 
         if (!string.IsNullOrWhiteSpace(leader))
         {
-            query = query.Where(s => s.Course != null && s.Course.CourseLeader.Contains(leader));
+            query = query.Where(s => s.Course != null && s.Course.CourseLeader.ToLower().Contains(normalizedLeader));
         }
 
         if (!string.IsNullOrWhiteSpace(location))
         {
-            query = query.Where(s => s.Location.Contains(location));
+            query = query.Where(s => s.Location.ToLower().Contains(normalizedLocation));
         }
 
         if (!string.IsNullOrWhiteSpace(day))
         {
-            query = query.Where(s => s.Day == day);
+            var normalizedDay = day.Trim().ToLower();
+            query = query.Where(s => s.Day.ToLower() == normalizedDay);
         }
 
         if (courseId.HasValue)

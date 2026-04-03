@@ -28,6 +28,11 @@ public class ScheduleQueryService : IScheduleQueryService
         pageSize = Math.Clamp(pageSize, 1, 100);
         var searchValue = search?.Trim() ?? string.Empty;
         var timeValue = time?.Trim() ?? string.Empty;
+        var dayValue = day?.Trim() ?? string.Empty;
+        var professorValue = professor?.Trim() ?? string.Empty;
+        var normalizedSearch = searchValue.ToLower();
+        var normalizedTime = timeValue.ToLower();
+        var normalizedProfessor = professorValue.ToLower();
         var compactTime = TimeSearchHelper.ToCompactToken(timeValue);
         var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
         var compactSearch = TimeSearchHelper.ToCompactToken(searchValue);
@@ -40,29 +45,30 @@ public class ScheduleQueryService : IScheduleQueryService
         if (!string.IsNullOrWhiteSpace(searchValue))
         {
             query = query.Where(s =>
-                (s.Course != null && (s.Course.CourseName.Contains(searchValue) || s.Course.CourseTitle.Contains(searchValue))) ||
-                (s.Course != null && s.Course.CourseSection.Contains(searchValue)) ||
-                (s.Course != null && s.Course.CourseLeader.Contains(searchValue)) ||
-                s.Day.Contains(searchValue) ||
-                s.Location.Contains(searchValue) ||
+                (s.Course != null && (s.Course.CourseName.ToLower().Contains(normalizedSearch) || s.Course.CourseTitle.ToLower().Contains(normalizedSearch))) ||
+                (s.Course != null && s.Course.CourseSection.ToLower().Contains(normalizedSearch)) ||
+                (s.Course != null && s.Course.CourseLeader.ToLower().Contains(normalizedSearch)) ||
+                s.Day.ToLower().Contains(normalizedSearch) ||
+                s.Location.ToLower().Contains(normalizedSearch) ||
                 s.Time.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactSearch));
         }
 
         if (!string.IsNullOrWhiteSpace(timeValue) && !hasSearchTime)
         {
             query = query.Where(s =>
-                s.Time.Contains(timeValue) ||
+                s.Time.ToLower().Contains(normalizedTime) ||
                 s.Time.Replace(":", "").Replace(".", "").Replace(" ", "").Replace("-", "").Contains(compactTime));
         }
 
-        if (!string.IsNullOrWhiteSpace(day))
+        if (!string.IsNullOrWhiteSpace(dayValue))
         {
-            query = query.Where(s => s.Day == day);
+            var normalizedDay = NormalizeDayQuery(dayValue);
+            query = query.Where(s => s.Day.ToLower() == normalizedDay);
         }
 
-        if (!string.IsNullOrWhiteSpace(professor))
+        if (!string.IsNullOrWhiteSpace(professorValue))
         {
-            query = query.Where(s => s.Course != null && s.Course.CourseProfessor.Contains(professor));
+            query = query.Where(s => s.Course != null && s.Course.CourseProfessor.ToLower().Contains(normalizedProfessor));
         }
 
         if (courseId.HasValue)
@@ -209,5 +215,21 @@ public class ScheduleQueryService : IScheduleQueryService
         return splitIndex >= 0 && splitIndex + 1 < time.Length
             ? time[(splitIndex + 1)..].Trim()
             : string.Empty;
+    }
+
+    private static string NormalizeDayQuery(string day)
+    {
+        var normalized = day.Trim().ToLowerInvariant().Replace(" ", string.Empty);
+        return normalized switch
+        {
+            "m" or "mon" or "monday" => "monday",
+            "t" or "tu" or "tue" or "tues" or "tuesday" => "tuesday",
+            "w" or "wed" or "wednesday" => "wednesday",
+            "r" or "th" or "thu" or "thur" or "thurs" or "thursday" => "thursday",
+            "f" or "fri" or "friday" => "friday",
+            "sat" or "saturday" => "saturday",
+            "sun" or "sunday" => "sunday",
+            _ => day.Trim().ToLowerInvariant()
+        };
     }
 }

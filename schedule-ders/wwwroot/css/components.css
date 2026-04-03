@@ -292,11 +292,6 @@ footer.footer a:focus {
   background: #ffffff;
   padding: 0.9rem 1rem 0.55rem;
 }
-.admin-courses-table caption,
-.admin-requests-table caption {
-  background: #ffffff;
-  padding: 0.9rem 1rem 0.55rem;
-}
 .professor-requests-table thead th {
   position: sticky;
   top: 0;

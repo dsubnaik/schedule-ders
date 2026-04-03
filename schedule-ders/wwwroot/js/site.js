@@ -1920,6 +1920,66 @@
             });
     };
 
+    const initCourseFilterForm = () => {
+        const form = document.querySelector("[data-course-filter-form='true']");
+        if (!(form instanceof HTMLFormElement)) {
+            return;
+        }
+
+        let submitTimeout = null;
+        const scheduleSubmit = () => {
+            if (submitTimeout) {
+                window.clearTimeout(submitTimeout);
+            }
+
+            submitTimeout = window.setTimeout(() => {
+                form.requestSubmit();
+            }, 250);
+        };
+
+        form.querySelectorAll("input, select").forEach((field) => {
+            if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) {
+                return;
+            }
+
+            if (field.name === "semesterId") {
+                field.addEventListener("change", scheduleSubmit);
+                return;
+            }
+
+            field.addEventListener("input", scheduleSubmit);
+            field.addEventListener("change", scheduleSubmit);
+        });
+    };
+
+    const initLiveFilterForms = () => {
+        document.querySelectorAll("[data-live-filter-form='true']").forEach((form) => {
+            if (!(form instanceof HTMLFormElement)) {
+                return;
+            }
+
+            let submitTimeout = null;
+            const scheduleSubmit = () => {
+                if (submitTimeout) {
+                    window.clearTimeout(submitTimeout);
+                }
+
+                submitTimeout = window.setTimeout(() => {
+                    form.requestSubmit();
+                }, 250);
+            };
+
+            form.querySelectorAll("input, select").forEach((field) => {
+                if (!(field instanceof HTMLInputElement || field instanceof HTMLSelectElement)) {
+                    return;
+                }
+
+                field.addEventListener("input", scheduleSubmit);
+                field.addEventListener("change", scheduleSubmit);
+            });
+        });
+    };
+
     document.addEventListener("DOMContentLoaded", () => {
         initThemeToggle();
         initTimePickerDropdowns();
@@ -1959,6 +2019,8 @@
         initAdminRequestApiUpdate();
         initCourseDetailsApiSessions();
         initStudentScheduleApiSummary();
+        initCourseFilterForm();
+        initLiveFilterForms();
     });
 })();
 
