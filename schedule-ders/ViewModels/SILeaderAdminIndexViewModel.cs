@@ -6,6 +6,7 @@ public class SILeaderAdminIndexViewModel
 {
     public string Search { get; set; } = string.Empty;
     public List<SILeaderAdminRowViewModel> Leaders { get; set; } = [];
+    public int TotalLeaders { get; set; }
     public List<SILeaderCustomFieldViewModel> CustomFields { get; set; } = [];
     public bool ShowANumber { get; set; } = true;
     public bool ShowLeaderName { get; set; } = true;

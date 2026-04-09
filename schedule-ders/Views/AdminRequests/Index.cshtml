@@ -1,4 +1,4 @@
-@model IEnumerable<schedule_ders.Models.SIRequest>
+@model schedule_ders.ViewModels.AdminRequestsIndexViewModel
 @{
     ViewData["Title"] = "SI Requests";
     var nowUtc = DateTime.UtcNow;
@@ -18,7 +18,14 @@
 
 <section class="page-shell">
 <div class="page-header mb-1">
-    <h1 class="page-title">SI Requests</h1>
+    <div>
+        <h1 class="page-title">SI Requests</h1>
+        <p class="page-subtitle">Total requests: <strong data-admin-requests-count="true">@Model.TotalRequests</strong></p>
+    </div>
+    <div class="page-actions">
+        <a asp-action="ExportPdf" asp-route-status="@Model.CurrentStatus" class="btn btn-outline-secondary" data-admin-requests-export="pdf" target="_blank" rel="noopener">Export PDF</a>
+        <a asp-action="ExportCsv" asp-route-status="@Model.CurrentStatus" class="btn btn-outline-secondary" data-admin-requests-export="csv">Export CSV</a>
+    </div>
 </div>
 
 <form asp-action="Index"
@@ -53,7 +60,7 @@
             </tr>
         </thead>
         <tbody data-admin-requests-tbody="true">
-        @if (!Model.Any())
+        @if (!Model.Requests.Any())
         {
             <tr>
                 <td colspan="5" class="text-muted">No SI requests found.</td>
@@ -61,7 +68,7 @@
         }
         else
         {
-            @foreach (var item in Model)
+            @foreach (var item in Model.Requests)
             {
                 var manualCode = string.IsNullOrWhiteSpace(item.RequestedCourseSection)
                     ? item.RequestedCourseName

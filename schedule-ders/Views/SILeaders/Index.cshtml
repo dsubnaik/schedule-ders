@@ -5,9 +5,13 @@
 
 <section class="page-shell">
 <div class="page-header mb-1">
-    <h1 class="page-title">SI Leaders</h1>
+    <div>
+        <h1 class="page-title">SI Leaders</h1>
+        <p class="page-subtitle">Total SI leaders: <strong>@Model.TotalLeaders</strong></p>
+    </div>
     <div class="page-actions">
         <a asp-action="ExportPdf" asp-route-search="@Model.Search" class="btn btn-outline-secondary" target="_blank" rel="noopener">Export PDF</a>
+        <a asp-action="ExportCsv" asp-route-search="@Model.Search" class="btn btn-outline-secondary">Export CSV</a>
     </div>
 </div>
 
@@ -202,7 +206,6 @@
 
 <div class="table-responsive data-table">
     <table class="table table-striped table-hover align-middle data-table-compact">
-        <caption>SI leaders with assignments, custom fields, and edit or delete actions.</caption>
         <thead>
             <tr>
                 @if (Model.ShowANumber)

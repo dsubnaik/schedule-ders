@@ -1591,11 +1591,30 @@
         const removeTemplate = form.getAttribute("data-remove-api-url-template");
         const statusSelect = form.querySelector("[name='status']");
         const statusChips = Array.from(form.querySelectorAll("[data-admin-status-chips='true'] [data-status-value]"));
+        const countTarget = document.querySelector("[data-admin-requests-count='true']");
+        const pdfExportLink = document.querySelector("[data-admin-requests-export='pdf']");
+        const csvExportLink = document.querySelector("[data-admin-requests-export='csv']");
         if (!apiUrl || !reviewTemplate || !removeTemplate) {
             return;
         }
 
         const normalizeStatusValue = (value) => String(value || "").replace(/\s+/g, "").toLowerCase();
+
+        const updateExportLink = (link) => {
+            if (!(link instanceof HTMLAnchorElement)) {
+                return;
+            }
+
+            const url = new URL(link.href, window.location.origin);
+            const currentStatus = statusSelect?.value || "";
+            if (currentStatus) {
+                url.searchParams.set("status", currentStatus);
+            } else {
+                url.searchParams.delete("status");
+            }
+
+            link.href = `${url.pathname}${url.search}`;
+        };
 
         const refreshStatusChipState = () => {
             const current = normalizeStatusValue(statusSelect?.value || "");
@@ -1604,9 +1623,15 @@
                 const isActive = current === chipValue;
                 chip.classList.toggle("is-active", isActive);
             });
+            updateExportLink(pdfExportLink);
+            updateExportLink(csvExportLink);
         };
 
         const renderRows = (items) => {
+            if (countTarget instanceof HTMLElement) {
+                countTarget.textContent = Array.isArray(items) ? String(items.length) : "0";
+            }
+
             if (!Array.isArray(items) || items.length === 0) {
                 tbody.innerHTML = "<tr><td colspan=\"5\" class=\"text-muted\">No SI requests found.</td></tr>";
                 return;

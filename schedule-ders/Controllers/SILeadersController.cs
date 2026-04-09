@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using schedule_ders.Models;
 using schedule_ders.ViewModels;
+using System.Text;
 
 namespace schedule_ders.Controllers;
 
@@ -187,6 +188,72 @@ public class SILeadersController : Controller
     {
         var vm = await BuildIndexViewModelAsync(search);
         return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportCsv(string? search)
+    {
+        var vm = await BuildIndexViewModelAsync(search);
+        var csv = new StringBuilder();
+        var headers = new List<string>();
+
+        if (vm.ShowANumber)
+        {
+            headers.Add(CsvEscape(vm.ExportANumberLabel));
+        }
+
+        if (vm.ShowLeaderName)
+        {
+            headers.Add(CsvEscape(vm.ExportLeaderNameLabel));
+        }
+
+        if (vm.ShowCoursesTeaching)
+        {
+            headers.Add(CsvEscape(vm.ExportCoursesTeachingLabel));
+        }
+
+        if (vm.ShowSectionNumbers)
+        {
+            headers.Add(CsvEscape(vm.ExportSectionNumbersLabel));
+        }
+
+        headers.AddRange(vm.CustomFields.Select(field => CsvEscape(field.Name)));
+        csv.AppendLine(string.Join(",", headers));
+
+        foreach (var leader in vm.Leaders)
+        {
+            var row = new List<string>();
+
+            if (vm.ShowANumber)
+            {
+                row.Add(CsvEscape(leader.ANumber));
+            }
+
+            if (vm.ShowLeaderName)
+            {
+                row.Add(CsvEscape(leader.LeaderName));
+            }
+
+            if (vm.ShowCoursesTeaching)
+            {
+                row.Add(CsvEscape(leader.CoursesTeaching));
+            }
+
+            if (vm.ShowSectionNumbers)
+            {
+                row.Add(CsvEscape(leader.SectionNumbers));
+            }
+
+            row.AddRange(vm.CustomFields.Select(field =>
+                CsvEscape(leader.CustomFieldValues.TryGetValue(field.SILeaderCustomFieldId, out var value) && !string.IsNullOrWhiteSpace(value)
+                    ? value
+                    : "-")));
+
+            csv.AppendLine(string.Join(",", row));
+        }
+
+        var fileName = $"si-leaders-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
     }
 
     [HttpPost]
@@ -389,6 +456,7 @@ public class SILeadersController : Controller
         {
             Search = searchValue,
             Leaders = rows,
+            TotalLeaders = rows.Count,
             CustomFields = customFields,
             CreateCustomFieldValues = customFields.ToDictionary(field => field.SILeaderCustomFieldId, _ => string.Empty),
             ShowANumber = visibility.ShowANumber,
@@ -585,5 +653,15 @@ public class SILeadersController : Controller
                 .Select(x => $"{x.CourseName.Trim()}|{x.CourseSection.Trim()}")
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+    }
+
+    private static string CsvEscape(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "\"\"";
+        }
+
+        return $"\"{value.Replace("\"", "\"\"")}\"";
     }
 }
