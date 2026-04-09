@@ -12,6 +12,17 @@
     var leaderOptions = ViewBag.LeaderOptions as List<string> ?? [];
     var locationOptions = ViewBag.LocationOptions as List<string> ?? [];
     var currentUrl = Context.Request.Path + Context.Request.QueryString;
+    var groupedSessionCount = Model
+        .GroupBy(s => new
+        {
+            CourseName = s.Course?.CourseName ?? "Unknown Course",
+            CourseTitle = s.Course?.CourseTitle ?? string.Empty,
+            Leader = s.Course?.CourseLeader ?? string.Empty,
+            s.Day,
+            s.Time,
+            s.Location
+        })
+        .Count();
     var timeSuggestions = new List<string>();
     for (var hour = 6; hour <= 22; hour++)
     {
@@ -26,7 +37,10 @@
 
 <section class="page-shell">
 <div class="page-header mb-1">
-    <h1 class="page-title">SI Sessions</h1>
+    <div>
+        <h1 class="page-title">SI Sessions</h1>
+        <p class="page-subtitle">Total sessions: <strong>@groupedSessionCount</strong></p>
+    </div>
     <div class="page-actions d-flex gap-2">
         <a asp-action="ExportPdf"
            asp-route-search="@currentSearch"
@@ -39,6 +53,15 @@
            class="btn btn-outline-secondary"
            target="_blank"
            rel="noopener">Export PDF</a>
+        <a asp-action="ExportCsv"
+           asp-route-search="@currentSearch"
+           asp-route-time="@currentTime"
+           asp-route-leader="@currentLeader"
+           asp-route-location="@currentLocation"
+           asp-route-day="@currentDay"
+           asp-route-courseId="@currentCourseId"
+           asp-route-semesterId="@currentSemesterId"
+           class="btn btn-outline-secondary">Export CSV</a>
         @if (currentCourseId.HasValue)
         {
             <a asp-action="Create" asp-route-courseId="@currentCourseId.Value" asp-route-semesterId="@currentSemesterId" asp-route-returnUrl="@currentUrl" class="btn btn-primary">Add Session</a>

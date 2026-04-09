@@ -1,0 +1,160 @@
+@model schedule_ders.ViewModels.AdminRequestsIndexViewModel
+@using schedule_ders.Utilities
+@{
+    Layout = null;
+    var generated = DateTime.Now;
+
+    string StatusDisplay(schedule_ders.Models.SIRequestStatus status) => status switch
+    {
+        schedule_ders.Models.SIRequestStatus.Pending => "Submitted",
+        schedule_ders.Models.SIRequestStatus.UnderReview => "Under Review",
+        schedule_ders.Models.SIRequestStatus.SiLeaderFound => "SI Leader Found",
+        schedule_ders.Models.SIRequestStatus.Approved => "Approved",
+        schedule_ders.Models.SIRequestStatus.Denied => "Not Moving Forward",
+        _ => status.ToString()
+    };
+
+    string LeaderStatusDisplay(schedule_ders.Models.SILeaderReviewStatus status) => status switch
+    {
+        schedule_ders.Models.SILeaderReviewStatus.NotSubmitted => "Not Submitted",
+        schedule_ders.Models.SILeaderReviewStatus.UnderReview => "Under Review",
+        _ => status.ToString()
+    };
+
+    string CourseDisplay(schedule_ders.Models.SIRequest item)
+    {
+        var manualCode = string.IsNullOrWhiteSpace(item.RequestedCourseSection)
+            ? item.RequestedCourseName
+            : $"{item.RequestedCourseName} ({item.RequestedCourseSection})";
+
+        return item.Course is not null
+            ? $"{item.Course.CourseName} ({item.Course.CourseSection}) - {item.Course.CourseTitle}"
+            : (!string.IsNullOrWhiteSpace(item.RequestedCourseName)
+                ? (string.IsNullOrWhiteSpace(item.RequestedCourseTitle)
+                    ? manualCode
+                    : $"{manualCode} - {item.RequestedCourseTitle}")
+                : "Manual Course Entry");
+    }
+
+    string LeaderDisplay(schedule_ders.Models.SIRequest item)
+    {
+        if (item.LeaderCandidates.Count > 0)
+        {
+            return string.Join(", ",
+                item.LeaderCandidates
+                    .OrderBy(candidate => candidate.CandidateName)
+                    .ThenBy(candidate => candidate.CandidateANumber)
+                    .Select(candidate => new LeaderCandidateEntry(candidate.CandidateName, candidate.CandidateANumber).DisplayName));
+        }
+
+        var parsed = LeaderCandidateCodec.Parse(item.PotentialSiLeaderName);
+        return parsed.Count == 0
+            ? "Not provided"
+            : string.Join(", ", parsed.Select(candidate => candidate.DisplayName));
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SI Requests</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 1rem;
+            color: #1b2d42;
+        }
+        h1 {
+            margin: 0 0 0.35rem 0;
+            font-size: 1.6rem;
+        }
+        .meta {
+            margin-bottom: 1rem;
+            color: #46627e;
+            font-size: 0.92rem;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #9db4cc;
+            padding: 0.45rem 0.5rem;
+            text-align: left;
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+        th {
+            background: #eaf2fb;
+        }
+        .toolbar {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .btn {
+            border: 1px solid #5f89b4;
+            border-radius: 8px;
+            background: #f4f8fd;
+            color: #1e4d79;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        @@media print {
+            .toolbar { display: none; }
+            body { margin: 0.35in; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button type="button" class="btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+    <h1>SI Requests</h1>
+    <div class="meta">
+        Generated: @generated.ToString("f")
+        <text> | Total Requests: @Model.TotalRequests</text>
+        @if (!string.IsNullOrWhiteSpace(Model.CurrentStatus))
+        {
+            <text> | Status Filter: @Model.CurrentStatus</text>
+        }
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Professor</th>
+                <th>Submitted</th>
+                <th>Request Status</th>
+                <th>Leader Review</th>
+                <th>Potential SI Leaders</th>
+            </tr>
+        </thead>
+        <tbody>
+        @if (!Model.Requests.Any())
+        {
+            <tr>
+                <td colspan="6">No SI requests found.</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Model.Requests)
+            {
+                <tr>
+                    <td>@CourseDisplay(item)</td>
+                    <td>@item.ProfessorName (@item.ProfessorEmail)</td>
+                    <td>@item.SubmittedAtUtc.ToLocalTime().ToString("f")</td>
+                    <td>@StatusDisplay(item.Status)</td>
+                    <td>@LeaderStatusDisplay(item.PotentialSiLeaderStatus)</td>
+                    <td>@LeaderDisplay(item)</td>
+                </tr>
+            }
+        }
+        </tbody>
+    </table>
+</body>
+</html>

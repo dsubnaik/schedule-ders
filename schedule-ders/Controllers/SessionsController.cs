@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using schedule_ders.Models;
 using schedule_ders.Utilities;
 using schedule_ders.ViewModels;
+using System.Text;
 
 namespace schedule_ders.Controllers;
 
@@ -218,6 +219,86 @@ public class SessionsController : Controller
         };
 
         return View(vm);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportCsv(string? search, string? day, int? courseId, string? time, string? leader, string? location, int? semesterId)
+    {
+        if (!semesterId.HasValue && SemesterContextHelper.ReadSelectedSemesterId(Request) is int cookieSemesterId)
+        {
+            semesterId = cookieSemesterId;
+        }
+
+        var searchValue = search?.Trim() ?? string.Empty;
+        var dayValue = day?.Trim() ?? string.Empty;
+        var timeValue = time?.Trim() ?? string.Empty;
+        var leaderValue = leader?.Trim() ?? string.Empty;
+        var locationValue = location?.Trim() ?? string.Empty;
+        var hasSearchTime = TimeSearchHelper.TryParseSearchTime(timeValue, out _);
+
+        var query = BuildFilteredSessionsQuery(searchValue, dayValue, courseId, timeValue, leaderValue, locationValue, semesterId);
+
+        var sessions = await query
+            .OrderBy(s => s.Course!.CourseName)
+            .ThenBy(s => s.Course!.CourseSection)
+            .ThenBy(s => s.Day)
+            .ThenBy(s => s.Time)
+            .ThenBy(s => s.Location)
+            .ToListAsync();
+
+        sessions = sessions
+            .OrderBy(s => s.Course?.CourseName)
+            .ThenBy(s => s.Course?.CourseSection)
+            .ThenBy(s => DaySortOrder(s.Day))
+            .ThenBy(s => s.Day)
+            .ThenBy(s => s.Time)
+            .ThenBy(s => s.Location)
+            .ToList();
+
+        if (hasSearchTime)
+        {
+            sessions = sessions
+                .Where(s =>
+                    TimeSearchHelper.MatchesTimeRange(s.Time, timeValue) ||
+                    TimeSearchHelper.MatchesTimeText(s.Time, timeValue))
+                .ToList();
+        }
+
+        var semesterIds = sessions
+            .Select(s => s.Course?.SemesterId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
+            .Distinct()
+            .ToList();
+
+        var semesterLookup = await _context.Semesters
+            .AsNoTracking()
+            .Where(s => semesterIds.Contains(s.SemesterId))
+            .ToDictionaryAsync(
+                s => s.SemesterId,
+                s => SemesterCodeFormatter.ToDisplayName(s.SemesterCode));
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Course,Course Title,Section,Professor,SI Leader,Day,Time,Location,Semester");
+
+        foreach (var session in sessions)
+        {
+            csv.AppendLine(string.Join(",",
+                CsvEscape(session.Course?.CourseName),
+                CsvEscape(session.Course?.CourseTitle),
+                CsvEscape(session.Course?.CourseSection),
+                CsvEscape(session.Course?.CourseProfessor),
+                CsvEscape(session.Course?.CourseLeader),
+                CsvEscape(session.Day),
+                CsvEscape(session.Time),
+                CsvEscape(session.Location),
+                CsvEscape(session.Course?.SemesterId is int currentSemesterId && semesterLookup.TryGetValue(currentSemesterId, out var semesterLabel)
+                    ? semesterLabel
+                    : string.Empty)));
+        }
+
+        var fileName = $"si-sessions-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
     }
 
     public async Task<IActionResult> Create(int? courseId, int? semesterId = null, string? returnUrl = null)
@@ -850,5 +931,15 @@ public class SessionsController : Controller
             .ToList();
 
         return parts.Count == 0 ? "-" : string.Join(Environment.NewLine, parts);
+    }
+
+    private static string CsvEscape(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "\"\"";
+        }
+
+        return $"\"{value.Replace("\"", "\"\"")}\"";
     }
 }

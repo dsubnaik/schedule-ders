@@ -7,6 +7,7 @@ using schedule_ders.Models;
 using schedule_ders.Services.Interfaces;
 using schedule_ders.Utilities;
 using schedule_ders.ViewModels;
+using System.Text;
 
 namespace schedule_ders.Controllers;
 
@@ -24,24 +25,61 @@ public class AdminRequestsController : Controller
 
     public async Task<IActionResult> Index(string? status)
     {
-        var query = _context.SIRequests
-            .AsNoTracking()
-            .Include(r => r.Course)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SIRequestStatus>(status, true, out var parsedStatus))
-        {
-            query = query.Where(r => r.Status == parsedStatus);
-        }
-
-        ViewData["CurrentStatus"] = status ?? string.Empty;
-        ViewBag.Statuses = new SelectList(Enum.GetNames<SIRequestStatus>());
-
-        var requests = await query
+        var requests = await BuildFilteredRequestsQuery(status)
             .OrderByDescending(r => r.SubmittedAtUtc)
             .ToListAsync();
 
-        return View(requests);
+        ViewData["CurrentStatus"] = status ?? string.Empty;
+        ViewBag.Statuses = new SelectList(Enum.GetNames<SIRequestStatus>());
+        return View(new AdminRequestsIndexViewModel
+        {
+            CurrentStatus = status ?? string.Empty,
+            TotalRequests = requests.Count,
+            Requests = requests
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportPdf(string? status)
+    {
+        var requests = await BuildFilteredRequestsQuery(status)
+            .OrderByDescending(r => r.SubmittedAtUtc)
+            .ToListAsync();
+
+        return View(new AdminRequestsIndexViewModel
+        {
+            CurrentStatus = status ?? string.Empty,
+            TotalRequests = requests.Count,
+            Requests = requests
+        });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> ExportCsv(string? status)
+    {
+        var requests = await BuildFilteredRequestsQuery(status)
+            .OrderByDescending(r => r.SubmittedAtUtc)
+            .ToListAsync();
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Course,Professor,Professor Email,Submitted,Request Status,Leader Review Status,Potential SI Leaders,Request Notes,Admin Notes");
+
+        foreach (var request in requests)
+        {
+            csv.AppendLine(string.Join(",",
+                CsvEscape(BuildCourseDisplay(request)),
+                CsvEscape(request.ProfessorName),
+                CsvEscape(request.ProfessorEmail),
+                CsvEscape(request.SubmittedAtUtc.ToLocalTime().ToString("g")),
+                CsvEscape(GetRequestStatusDisplay(request.Status)),
+                CsvEscape(GetLeaderReviewStatusDisplay(request.PotentialSiLeaderStatus)),
+                CsvEscape(BuildLeaderCandidateDisplay(request)),
+                CsvEscape(request.RequestNotes),
+                CsvEscape(request.AdminNotes)));
+        }
+
+        var fileName = $"si-requests-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+        return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
     }
 
     public async Task<IActionResult> Update(int id)
@@ -165,6 +203,66 @@ public class AdminRequestsController : Controller
 
         var code = string.IsNullOrWhiteSpace(section) ? name : $"{name} ({section})";
         return string.IsNullOrWhiteSpace(title) ? code : $"{code} - {title}";
+    }
+
+    private IQueryable<SIRequest> BuildFilteredRequestsQuery(string? status)
+    {
+        var query = _context.SIRequests
+            .AsNoTracking()
+            .Include(r => r.Course)
+            .Include(r => r.LeaderCandidates)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<SIRequestStatus>(status, true, out var parsedStatus))
+        {
+            query = query.Where(r => r.Status == parsedStatus);
+        }
+
+        return query;
+    }
+
+    private static string BuildLeaderCandidateDisplay(SIRequest request)
+    {
+        if (request.LeaderCandidates.Count > 0)
+        {
+            return string.Join(", ",
+                request.LeaderCandidates
+                    .OrderBy(candidate => candidate.CandidateName)
+                    .ThenBy(candidate => candidate.CandidateANumber)
+                    .Select(candidate => new LeaderCandidateEntry(candidate.CandidateName, candidate.CandidateANumber).DisplayName));
+        }
+
+        var parsed = LeaderCandidateCodec.Parse(request.PotentialSiLeaderName);
+        return parsed.Count == 0
+            ? "Not provided"
+            : string.Join(", ", parsed.Select(candidate => candidate.DisplayName));
+    }
+
+    private static string GetRequestStatusDisplay(SIRequestStatus status) => status switch
+    {
+        SIRequestStatus.Pending => "Submitted",
+        SIRequestStatus.UnderReview => "Under Review",
+        SIRequestStatus.SiLeaderFound => "SI Leader Found",
+        SIRequestStatus.Approved => "Approved",
+        SIRequestStatus.Denied => "Not Moving Forward",
+        _ => status.ToString()
+    };
+
+    private static string GetLeaderReviewStatusDisplay(SILeaderReviewStatus status) => status switch
+    {
+        SILeaderReviewStatus.NotSubmitted => "Not Submitted",
+        SILeaderReviewStatus.UnderReview => "Under Review",
+        _ => status.ToString()
+    };
+
+    private static string CsvEscape(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return "\"\"";
+        }
+
+        return $"\"{value.Replace("\"", "\"\"")}\"";
     }
 
     private static SILeaderReviewStatus MapAggregateLeaderStatus(IEnumerable<SIRequestLeaderCandidate> candidates)

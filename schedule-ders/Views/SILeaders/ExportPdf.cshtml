@@ -66,6 +66,7 @@
     <h1>@Model.ExportTitle</h1>
     <div class="meta">
         Generated: @generated.ToString("f")
+        <text> | Total SI Leaders: @Model.TotalLeaders</text>
         @if (!string.IsNullOrWhiteSpace(Model.Search))
         {
             <text> | Filter: @Model.Search</text>
