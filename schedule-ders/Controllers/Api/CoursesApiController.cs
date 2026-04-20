@@ -6,6 +6,7 @@ namespace schedule_ders.Controllers.Api;
 
 [ApiController]
 [Route("api/v1/courses")]
+[RequestSizeLimit(65_536)]
 public class CoursesApiController : ControllerBase
 {
     private readonly IScheduleQueryService _scheduleQueryService;

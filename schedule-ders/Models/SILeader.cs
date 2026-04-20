@@ -16,6 +16,7 @@ public class SILeader
     [Display(Name = "SI Leader Name")]
     public string LeaderName { get; set; } = string.Empty;
 
+    [StringLength(2000)]
     [Display(Name = "Stored Course Assignments")]
     public string StoredCourseAssignments { get; set; } = string.Empty;
 

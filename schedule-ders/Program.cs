@@ -1,17 +1,45 @@
 using schedule_ders.Data;
+using schedule_ders.Infrastructure;
 using schedule_ders.Models;
-using schedule_ders.Options;
 using schedule_ders.Services;
 using schedule_ders.Services.Interfaces;
 using schedule_ders.Utilities;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Trust Railway's proxy so X-Forwarded-For contains the real client IP.
+// KnownNetworks/KnownProxies are cleared because Railway's internal proxy
+// IP is not fixed — this is safe because Railway controls the edge.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// Reject request bodies larger than 512 KB before they reach any controller.
+builder.WebHost.ConfigureKestrel(k => k.Limits.MaxRequestBodySize = 512 * 1024);
+
+// Cap individual form field values at 16 KB and total form body at 512 KB.
+builder.Services.Configure<FormOptions>(o =>
+{
+    o.ValueLengthLimit = 16 * 1024;
+    o.MultipartBodyLengthLimit = 512 * 1024;
+});
+
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Trim leading/trailing whitespace from every string bound through model binding.
+    options.ModelBinderProviders.Insert(0, new TrimStringModelBinderProvider());
+});
 builder.Services.AddRazorPages();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -24,22 +52,87 @@ builder.Services.AddDbContext<ScheduleContext>(options =>
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
+
     options.Password.RequireDigit = true;
     options.Password.RequireUppercase = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireNonAlphanumeric = true;
     options.Password.RequiredLength = 8;
     options.Password.RequiredUniqueChars = 1;
+
+    // Lock account for 15 minutes after 5 consecutive failed logins.
+    // Works alongside rate limiting as a second layer — rate limiting stops
+    // brute force at the network level; lockout stops it at the identity level
+    // even if requests come from different IPs.
+    options.Lockout.AllowedForNewUsers = true;
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
 })
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ScheduleContext>();
 
-builder.Services.Configure<SendGridOptions>(
-    builder.Configuration.GetSection(SendGridOptions.SectionName));
-builder.Services.AddHttpClient<IEmailSender, SendGridEmailSender>();
+builder.Services.AddSingleton<IEmailSender, Microsoft.AspNetCore.Identity.UI.Services.NoOpEmailSender>();
 builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
 builder.Services.AddScoped<IProfessorRequestService, ProfessorRequestService>();
 builder.Services.AddScoped<IAdminRequestService, AdminRequestService>();
+
+builder.Services.AddRateLimiter(options =>
+{
+    // Two partitions keyed by client IP:
+    //   auth:{ip}   — 5 POST submissions per 15 min on all /Identity/Account/* routes
+    //   global:{ip} — 500 requests per minute everywhere else
+    // Note: if deployed behind a reverse proxy, configure UseForwardedHeaders so
+    // RemoteIpAddress reflects the real client IP rather than the proxy address.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        var isAuthPost = context.Request.Method == HttpMethods.Post
+            && context.Request.Path.StartsWithSegments("/Identity/Account", StringComparison.OrdinalIgnoreCase);
+
+        if (isAuthPost)
+        {
+            return RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: $"auth:{ip}",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 5,
+                    Window = TimeSpan.FromMinutes(15),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = 0
+                });
+        }
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: $"global:{ip}",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 500,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
+
+        var isAuthRoute = context.HttpContext.Request.Path
+            .StartsWithSegments("/Identity/Account", StringComparison.OrdinalIgnoreCase);
+
+        var message = isAuthRoute
+            ? "Too many attempts. Please wait 15 minutes before trying again."
+            : "Too many requests. Please try again later.";
+
+        await context.HttpContext.Response.WriteAsync(message, cancellationToken);
+    };
+});
 
 var app = builder.Build();
 
@@ -73,13 +166,29 @@ else
     app.UseSwaggerUI();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+    await next();
+});
+
 app.UseRouting();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseRateLimiter();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
+app.MapStaticAssets().DisableRateLimiting();
 
 app.MapControllerRoute(
     name: "default",

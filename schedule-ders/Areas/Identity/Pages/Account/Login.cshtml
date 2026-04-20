@@ -12,14 +12,14 @@
         <partial name="_StatusMessage" model="Model.StatusMessage" />
         <form id="account" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger mb-2" role="alert"></div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Email" class="form-control auth-input" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+            <div class="mb-3">
                 <label asp-for="Input.Email" class="form-label">Email</label>
+                <input asp-for="Input.Email" class="form-control auth-input" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                 <span asp-validation-for="Input.Email" class="text-danger" id="Input_Email-error"></span>
             </div>
-            <div class="form-floating mb-3">
-                <input asp-for="Input.Password" class="form-control auth-input" autocomplete="current-password" aria-required="true" placeholder="password" />
+            <div class="mb-3">
                 <label asp-for="Input.Password" class="form-label">Password</label>
+                <input asp-for="Input.Password" class="form-control auth-input" autocomplete="current-password" aria-required="true" placeholder="Password" />
                 <span asp-validation-for="Input.Password" class="text-danger" id="Input_Password-error"></span>
             </div>
             <div class="checkbox mb-3">
