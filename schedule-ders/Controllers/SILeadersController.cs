@@ -38,6 +38,12 @@ public class SILeadersController : Controller
             return RedirectToAction(nameof(Index), new { search = input.Search });
         }
 
+        if (aNumber.Length > 20 || leaderName.Length > 120)
+        {
+            TempData["SILeaderError"] = "A-Number must be 20 characters or fewer and Name must be 120 characters or fewer.";
+            return RedirectToAction(nameof(Index), new { search = input.Search });
+        }
+
         var exists = await _context.SILeaders
             .AnyAsync(l => l.ANumber == aNumber);
 
@@ -92,6 +98,12 @@ public class SILeadersController : Controller
             return RedirectToAction(nameof(Index), new { search });
         }
 
+        if (normalizedANumber.Length > 20 || normalizedLeaderName.Length > 120)
+        {
+            TempData["SILeaderError"] = "A-Number must be 20 characters or fewer and Name must be 120 characters or fewer.";
+            return RedirectToAction(nameof(Index), new { search });
+        }
+
         var aNumberConflict = await _context.SILeaders
             .AnyAsync(l => l.SILeaderID != id && l.ANumber == normalizedANumber);
         if (aNumberConflict)
@@ -140,6 +152,12 @@ public class SILeadersController : Controller
         if (string.IsNullOrWhiteSpace(fieldName))
         {
             TempData["SILeaderError"] = "Column name is required.";
+            return RedirectToAction(nameof(Index), new { search });
+        }
+
+        if (fieldName.Length > 80)
+        {
+            TempData["SILeaderError"] = "Column name must be 80 characters or fewer.";
             return RedirectToAction(nameof(Index), new { search });
         }
 
@@ -577,10 +595,14 @@ public class SILeadersController : Controller
             }
 
             var value = (form[key].ToString() ?? string.Empty).Trim();
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                values[fieldId] = value;
-            }
+            if (string.IsNullOrWhiteSpace(value))
+                continue;
+
+            // SILeaderCustomValue.Value has [StringLength(500)]; enforce here before EF validates.
+            if (value.Length > 500)
+                value = value[..500];
+
+            values[fieldId] = value;
         }
 
         return values;

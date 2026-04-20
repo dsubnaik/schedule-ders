@@ -9,6 +9,7 @@ namespace schedule_ders.Controllers.Api;
 [ApiController]
 [Route("api/v1/professor/requests")]
 [Authorize(Roles = "Professor")]
+[RequestSizeLimit(65_536)]
 public class ProfessorRequestsApiController : ControllerBase
 {
     private readonly IProfessorRequestService _professorRequestService;

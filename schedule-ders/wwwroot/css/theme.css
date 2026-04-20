@@ -15,6 +15,22 @@
   --sd-shadow-soft: 0 12px 24px rgba(20, 50, 80, 0.06);
   --sd-shadow-card: 0 10px 20px rgba(14, 41, 74, 0.08);
   --sd-danger-soft: #fff1f3;
+  --sd-input-border: #bfd3e8;
+  --sd-input-border-focus: #76ade7;
+  --sd-btn-secondary-bg: #dbe8f4;
+  --sd-btn-secondary-bg-hover: #cddff0;
+  --sd-btn-secondary-border: #8fb4d9;
+  --sd-btn-secondary-border-hover: #7ea8d4;
+  --sd-btn-secondary-color: #0053a0;
+  --sd-btn-secondary-color-hover: #00457f;
+  --sd-status-pending-bg: #eef3f8;
+  --sd-status-pending-color: #47617b;
+  --sd-status-review-bg: #e8f7ff;
+  --sd-status-review-color: #0f6e9a;
+  --sd-status-approved-bg: #e6f7ef;
+  --sd-status-approved-color: #16744e;
+  --sd-status-denied-bg: #ffecef;
+  --sd-status-denied-color: #8d2a3a;
 }
 /* Dark theme: page foundation */
 html[data-theme="dark"] body {
@@ -23,6 +39,22 @@ html[data-theme="dark"] body {
 }
 html[data-theme="dark"] {
   --sd-border: #007F3E;
+  --sd-input-border: #3a5068;
+  --sd-input-border-focus: #5b8fbf;
+  --sd-btn-secondary-bg: rgba(142, 194, 255, 0.18);
+  --sd-btn-secondary-bg-hover: rgba(142, 194, 255, 0.28);
+  --sd-btn-secondary-border: rgba(142, 194, 255, 0.5);
+  --sd-btn-secondary-border-hover: rgba(142, 194, 255, 0.72);
+  --sd-btn-secondary-color: #d7eaff;
+  --sd-btn-secondary-color-hover: #f2f8ff;
+  --sd-status-pending-bg: #2a3b4d;
+  --sd-status-pending-color: #d2deea;
+  --sd-status-review-bg: #1d4158;
+  --sd-status-review-color: #a9ddf6;
+  --sd-status-approved-bg: #1d4335;
+  --sd-status-approved-color: #a9f1cf;
+  --sd-status-denied-bg: #4b2830;
+  --sd-status-denied-color: #ffc5cf;
 }
 /* Dark theme: navbar */
 html[data-theme="dark"] .navbar {
@@ -96,7 +128,8 @@ html[data-theme="dark"] .student-session-location {
   background: #21354d !important;
   color: #eef6ff !important;
 }
-html[data-theme="dark"] .student-section-badge {
+html[data-theme="dark"] .student-section-badge,
+html[data-theme="dark"] .session-meta-badge-sections {
   background: #203247;
   border-color: #4e7094;
   color: #e3effb;
@@ -416,12 +449,7 @@ html[data-theme="dark"] .auth-input:focus {
   border-color: #78aee7;
   box-shadow: 0 0 0 0.2rem rgba(120, 174, 231, 0.2);
 }
-html[data-theme="dark"] .auth-card .form-floating > label {
-  color: #a9c4dd !important;
-}
-html[data-theme="dark"] .auth-card .form-floating > .form-control::placeholder {
-  color: #9fb5cc;
-}
+
 html[data-theme="dark"] .auth-links a,
 html[data-theme="dark"] .auth-link-row a {
   color: #9ec8f5;

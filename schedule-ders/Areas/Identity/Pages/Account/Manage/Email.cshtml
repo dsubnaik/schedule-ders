@@ -19,13 +19,7 @@
             }
         </div>
     </div>
-    @if (!Model.IsEmailConfirmed)
-    {
-        <div class="mb-3">
-            <button id="email-verification" type="submit" asp-page-handler="SendVerificationEmail" class="btn btn-outline-secondary btn-sm">Send verification email</button>
-        </div>
-    }
-    <div class="mb-3">
+<div class="mb-3">
         <label asp-for="Input.NewEmail" class="form-label"></label>
         <input asp-for="Input.NewEmail" class="form-control" autocomplete="email" aria-required="true" />
         <span asp-validation-for="Input.NewEmail" class="text-danger"></span>

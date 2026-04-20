@@ -8,8 +8,14 @@ namespace schedule_ders.Controllers.Api;
 [ApiController]
 [Route("api/v1/admin/requests")]
 [Authorize(Roles = "Admin")]
+[RequestSizeLimit(65_536)]
 public class AdminRequestsApiController : ControllerBase
 {
+    private static readonly HashSet<string> ValidStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "pending", "underreview", "under review", "approved", "denied"
+    };
+
     private readonly IAdminRequestService _adminRequestService;
 
     public AdminRequestsApiController(IAdminRequestService adminRequestService)
@@ -26,6 +32,15 @@ public class AdminRequestsApiController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
+        if (status is not null && !ValidStatuses.Contains(status))
+            return BadRequest(new { message = "Invalid status value." });
+
+        if (course is not null && course.Length > 120)
+            return BadRequest(new { message = "course filter must be 120 characters or fewer." });
+
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var result = await _adminRequestService.GetRequestsAsync(status, course, from, to, page, pageSize);
         return Ok(result);
     }
