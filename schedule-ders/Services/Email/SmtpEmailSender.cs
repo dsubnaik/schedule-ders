@@ -9,6 +9,7 @@ public class SmtpEmailSender : IEmailSender
 {
     private readonly SmtpEmailOptions _options;
     private readonly ILogger<SmtpEmailSender> _logger;
+    private const int SendTimeoutMilliseconds = 15_000;
 
     public SmtpEmailSender(IOptions<SmtpEmailOptions> options, ILogger<SmtpEmailSender> logger)
     {
@@ -27,6 +28,15 @@ public class SmtpEmailSender : IEmailSender
             return;
         }
 
+        _logger.LogInformation(
+            "Sending email via SMTP. Host='{Host}', Port={Port}, EnableSsl={EnableSsl}, From='{From}', To='{To}', Subject='{Subject}'",
+            _options.Host,
+            _options.Port,
+            _options.EnableSsl,
+            _options.FromAddress,
+            email,
+            subject);
+
         using var message = new MailMessage
         {
             From = new MailAddress(_options.FromAddress, _options.FromName),
@@ -38,7 +48,8 @@ public class SmtpEmailSender : IEmailSender
 
         using var client = new SmtpClient(_options.Host, _options.Port)
         {
-            EnableSsl = _options.EnableSsl
+            EnableSsl = _options.EnableSsl,
+            Timeout = SendTimeoutMilliseconds
         };
 
         if (!string.IsNullOrWhiteSpace(_options.Username))
@@ -46,6 +57,15 @@ public class SmtpEmailSender : IEmailSender
             client.Credentials = new NetworkCredential(_options.Username, _options.Password);
         }
 
-        await client.SendMailAsync(message);
+        try
+        {
+            await client.SendMailAsync(message);
+            _logger.LogInformation("Email sent successfully. To='{To}', Subject='{Subject}'", email, subject);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SMTP email send failed. To='{To}', Subject='{Subject}'", email, subject);
+            throw;
+        }
     }
 }
