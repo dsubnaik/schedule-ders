@@ -3,3 +3,191 @@
 @import url("./base.css");
 @import url("./components.css");
 @import url("./theme.css");
+
+/* Design overrides: Sora font, no gradients, polished components */
+
+body {
+  font-family: 'Sora', system-ui, sans-serif;
+  background: #cde8d8;
+}
+
+/* Remove gradients — dashboard action button */
+.dashboard-action-btn {
+  background: var(--sd-accent-blue) !important;
+  border-color: var(--sd-accent-blue) !important;
+  box-shadow: 0 4px 12px rgba(0, 89, 170, 0.18) !important;
+}
+.dashboard-action-btn:hover,
+.dashboard-action-btn:focus {
+  background: #0053a0 !important;
+  border-color: #0053a0 !important;
+  box-shadow: 0 6px 16px rgba(0, 79, 151, 0.22) !important;
+  transform: translateY(-1px);
+}
+
+/* Remove gradient — surface card soft */
+.surface-card-soft {
+  background: #ffffff !important;
+}
+
+/* Remove gradient — delete modal header */
+.request-delete-modal .modal-header {
+  background: #f8fbff !important;
+}
+
+/* Navbar */
+.navbar {
+  background-color: #f0f4f7 !important;
+}
+
+/* Card radius */
+.surface-card,
+.surface-card-soft,
+.form-card,
+.card {
+  border-radius: 10px !important;
+}
+
+/* Page title accent bar */
+.page-title {
+  padding-left: 0.75rem;
+  border-left: 4px solid var(--sd-accent-blue);
+}
+
+/* Buttons */
+.btn {
+  letter-spacing: 0.015em;
+}
+.btn-primary {
+  box-shadow: 0 2px 8px rgba(0, 89, 170, 0.2);
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  box-shadow: 0 4px 12px rgba(0, 79, 151, 0.26);
+  transform: translateY(-1px);
+}
+
+/* Table headers */
+.data-table thead th,
+.table thead th {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Status pills */
+.status-pill {
+  font-size: 0.74rem;
+  padding: 0.24rem 0.6rem;
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+}
+
+/* Empty state */
+.empty-state {
+  border-color: var(--sd-border);
+  border-style: solid;
+  border-width: var(--sd-border-width);
+}
+
+/* Footer */
+footer.footer {
+  font-size: 0.88rem;
+  padding: 0.7rem 0;
+}
+
+/* Student schedule hero */
+.student-schedule-hero {
+  background: #f0f8ff !important;
+}
+
+/* Form section */
+.form-section {
+  background: #fafcff !important;
+}
+
+/* Nav link active */
+.navbar .nav-link.active {
+  font-weight: 700;
+}
+
+/* Auth card radius */
+.auth-card {
+  border-radius: 12px !important;
+}
+
+/* Details items */
+.details-value {
+  font-size: 1.06rem;
+}
+.details-label {
+  font-size: 0.74rem;
+}
+
+/* Manage nav active */
+.manage-nav .nav-link.active {
+  background: var(--sd-accent-blue) !important;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+
+/* Dark mode: no gradients */
+html[data-theme="dark"] .dashboard-action-btn {
+  background: #1a73c2 !important;
+  border-color: #1560a0 !important;
+  box-shadow: 0 4px 12px rgba(16, 56, 94, 0.35) !important;
+}
+html[data-theme="dark"] .dashboard-action-btn:hover,
+html[data-theme="dark"] .dashboard-action-btn:focus {
+  background: #145994 !important;
+  border-color: #104a7a !important;
+  box-shadow: 0 6px 16px rgba(13, 47, 79, 0.45) !important;
+}
+html[data-theme="dark"] .request-delete-modal .modal-header {
+  background: #1a2c43 !important;
+}
+
+/* Dark mode: richer body */
+html[data-theme="dark"] body {
+  background: #0d1b2a !important;
+}
+
+/* Dark mode: deeper navbar */
+html[data-theme="dark"] .navbar {
+  background-color: #1c2a38 !important;
+}
+
+/* Dark mode: warmer cards */
+html[data-theme="dark"] .surface-card,
+html[data-theme="dark"] .surface-card-soft,
+html[data-theme="dark"] .form-card,
+html[data-theme="dark"] .card {
+  background-color: #162030 !important;
+}
+
+/* Dark mode: table surfaces */
+html[data-theme="dark"] .table,
+html[data-theme="dark"] .data-table {
+  --bs-table-bg: #162030 !important;
+  --bs-table-striped-bg: #1c2a3c !important;
+  --bs-table-hover-bg: #223348 !important;
+}
+html[data-theme="dark"] .table thead th,
+html[data-theme="dark"] .data-table thead th {
+  background: #1a2e44 !important;
+}
+
+/* Dark mode: footer */
+html[data-theme="dark"] .footer {
+  background: #0a1320 !important;
+}
+
+/* Dark mode: student schedule hero */
+html[data-theme="dark"] .student-schedule-hero {
+  background: #172840 !important;
+}
+
+/* Dark mode: form section */
+html[data-theme="dark"] .form-section {
+  background: #152233 !important;
+}
