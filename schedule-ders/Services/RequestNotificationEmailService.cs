@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
 using schedule_ders.Models;
 using schedule_ders.Services.Email;
@@ -9,16 +8,16 @@ namespace schedule_ders.Services;
 
 public class RequestNotificationEmailService : IRequestNotificationEmailService
 {
-    private readonly IEmailSender _emailSender;
+    private readonly IBackgroundEmailQueue _emailQueue;
     private readonly NotificationEmailOptions _options;
     private readonly ILogger<RequestNotificationEmailService> _logger;
 
     public RequestNotificationEmailService(
-        IEmailSender emailSender,
+        IBackgroundEmailQueue emailQueue,
         IOptions<NotificationEmailOptions> options,
         ILogger<RequestNotificationEmailService> logger)
     {
-        _emailSender = emailSender;
+        _emailQueue = emailQueue;
         _options = options.Value;
         _logger = logger;
     }
@@ -39,7 +38,7 @@ public class RequestNotificationEmailService : IRequestNotificationEmailService
             "A professor edited an existing SI request.");
     }
 
-    public async Task NotifyRequestStatusUpdatedAsync(SIRequest request)
+    public Task NotifyRequestStatusUpdatedAsync(SIRequest request)
     {
         var recipient = string.IsNullOrWhiteSpace(_options.ProfessorStatusRecipientOverride)
             ? request.ProfessorEmail
@@ -50,14 +49,14 @@ public class RequestNotificationEmailService : IRequestNotificationEmailService
             _logger.LogWarning(
                 "Status notification not sent because no recipient is configured for SI request {RequestId}.",
                 request.SIRequestID);
-            return;
+            return Task.CompletedTask;
         }
 
         var originalRecipientNote = string.Equals(recipient, request.ProfessorEmail, StringComparison.OrdinalIgnoreCase)
             ? string.Empty
             : $"<p><strong>Demo original recipient:</strong> {WebUtility.HtmlEncode(request.ProfessorEmail)}</p>";
 
-        await TrySendEmailAsync(
+        QueueEmail(
             recipient,
             $"SI request status updated: {BuildCourseDisplay(request)}",
             $"""
@@ -65,41 +64,32 @@ public class RequestNotificationEmailService : IRequestNotificationEmailService
             {originalRecipientNote}
             {BuildRequestDetailsHtml(request)}
             """);
+        return Task.CompletedTask;
     }
 
-    private async Task SendAdminNotificationAsync(SIRequest request, string subject, string intro)
+    private Task SendAdminNotificationAsync(SIRequest request, string subject, string intro)
     {
         if (string.IsNullOrWhiteSpace(_options.AdminRecipient))
         {
             _logger.LogWarning(
                 "Admin notification not sent because Notifications:AdminRecipient is not configured for SI request {RequestId}.",
                 request.SIRequestID);
-            return;
+            return Task.CompletedTask;
         }
 
-        await TrySendEmailAsync(
+        QueueEmail(
             _options.AdminRecipient,
             $"{subject}: {BuildCourseDisplay(request)}",
             $"""
             <p>{WebUtility.HtmlEncode(intro)}</p>
             {BuildRequestDetailsHtml(request)}
             """);
+        return Task.CompletedTask;
     }
 
-    private async Task TrySendEmailAsync(string recipient, string subject, string htmlMessage)
+    private void QueueEmail(string recipient, string subject, string htmlMessage)
     {
-        try
-        {
-            await _emailSender.SendEmailAsync(recipient, subject, htmlMessage);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(
-                ex,
-                "Notification email failed. To='{Recipient}', Subject='{Subject}'",
-                recipient,
-                subject);
-        }
+        _emailQueue.QueueEmail(recipient, subject, htmlMessage);
     }
 
     private static string BuildRequestDetailsHtml(SIRequest request)
