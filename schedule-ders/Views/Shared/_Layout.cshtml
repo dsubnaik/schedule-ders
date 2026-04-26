@@ -101,6 +101,12 @@
                                asp-action="Index"
                                aria-current="@(currentController == "StudentSchedule" ? "page" : null)">SI Schedule</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark @((currentController == "Home" && currentAction == "Help") ? "active" : string.Empty)"
+                               asp-controller="Home"
+                               asp-action="Help"
+                               aria-current="@((currentController == "Home" && currentAction == "Help") ? "page" : null)">Help</a>
+                        </li>
                     </ul>
 
                     <button type="button"

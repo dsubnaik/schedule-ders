@@ -100,6 +100,16 @@ public static class IdentitySeeder
             }
         }
 
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            var confirmResult = await userManager.UpdateAsync(user);
+            if (!confirmResult.Succeeded)
+            {
+                throw new InvalidOperationException($"Failed to confirm demo user '{email}': {string.Join(", ", confirmResult.Errors.Select(e => e.Description))}");
+            }
+        }
+
         if (!await userManager.IsInRoleAsync(user, role))
         {
             var addRoleResult = await userManager.AddToRoleAsync(user, role);

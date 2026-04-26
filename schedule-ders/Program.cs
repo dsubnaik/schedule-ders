@@ -2,6 +2,7 @@ using schedule_ders.Data;
 using schedule_ders.Infrastructure;
 using schedule_ders.Models;
 using schedule_ders.Services;
+using schedule_ders.Services.Email;
 using schedule_ders.Services.Interfaces;
 using schedule_ders.Utilities;
 using Microsoft.AspNetCore.Http.Features;
@@ -49,7 +50,7 @@ builder.Services.AddDbContext<ScheduleContext>(options =>
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedAccount = true;
 
     options.Password.RequireDigit = true;
     options.Password.RequireUppercase = true;
@@ -66,10 +67,13 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ScheduleContext>();
 
-builder.Services.AddSingleton<IEmailSender, Microsoft.AspNetCore.Identity.UI.Services.NoOpEmailSender>();
+builder.Services.Configure<SmtpEmailOptions>(builder.Configuration.GetSection("Email:Smtp"));
+builder.Services.Configure<NotificationEmailOptions>(builder.Configuration.GetSection("Notifications"));
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
 builder.Services.AddScoped<IProfessorRequestService, ProfessorRequestService>();
 builder.Services.AddScoped<IAdminRequestService, AdminRequestService>();
+builder.Services.AddScoped<IRequestNotificationEmailService, RequestNotificationEmailService>();
 
 
 var app = builder.Build();

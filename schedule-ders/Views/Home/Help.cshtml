@@ -1,0 +1,826 @@
+@{
+    ViewData["Title"] = "User Manual";
+}
+
+<section class="page-shell help-page">
+    <div class="page-header mb-3">
+        <div>
+            <h1 class="page-title">User Manual</h1>
+            <p class="page-subtitle">Step-by-step visual guide for each role.</p>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-4" id="helpTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="student-tab" data-bs-toggle="tab" data-bs-target="#student-panel"
+                    type="button" role="tab" aria-controls="student-panel" aria-selected="true">Student</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="professor-tab" data-bs-toggle="tab" data-bs-target="#professor-panel"
+                    type="button" role="tab" aria-controls="professor-panel" aria-selected="false">Professor</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin-panel"
+                    type="button" role="tab" aria-controls="admin-panel" aria-selected="false">Admin</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="helpTabContent">
+
+        <!-- ==================== STUDENT ==================== -->
+        <div class="tab-pane fade show active" id="student-panel" role="tabpanel" aria-labelledby="student-tab">
+
+            <div class="help-role-intro surface-card p-4 mb-4">
+                <h2 class="h5 mb-1">Student Guide</h2>
+                <p class="mb-0">Use the SI Schedule to find session times and locations for your courses. No account is required — the schedule is public.</p>
+            </div>
+
+            <div class="help-flow">
+
+                <!-- Step 1 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">1</div>
+                        <div>
+                            <h3 class="help-step-title">Open the SI Schedule</h3>
+                            <p class="help-step-desc">Click <strong>SI Schedule</strong> in the top navigation bar. This page is public — no login needed.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Navigation bar</div>
+                        <nav class="help-preview-nav">
+                            <span class="help-preview-brand">Schedule-Ders</span>
+                            <ul class="help-preview-nav-links">
+                                <li><span class="nav-link text-dark">Home</span></li>
+                                <li>
+                                    <span class="nav-link text-dark help-highlight-target">
+                                        SI Schedule
+                                        <span class="help-callout-arrow">← click here</span>
+                                    </span>
+                                </li>
+                                <li><span class="nav-link text-dark">Help</span></li>
+                                <li><span class="btn btn-outline-secondary btn-sm">Login</span></li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <!-- Step 2 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">2</div>
+                        <div>
+                            <h3 class="help-step-title">Search for your course</h3>
+                            <p class="help-step-desc">Type a course name, section, professor name, or location in the <strong>Search</strong> box. Use the <strong>Day</strong>, <strong>Time</strong>, or <strong>Semester</strong> dropdowns to narrow results further. Click <strong>Apply</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">SI Schedule — search bar</div>
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-lg-4">
+                                        <label class="form-label mb-1">Search</label>
+                                        <input class="form-control" value="MATH 1301" readonly tabindex="-1" />
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label mb-1">Time</label>
+                                        <input class="form-control" placeholder="e.g. 10:00am" readonly tabindex="-1" />
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label mb-1">Day</label>
+                                        <select class="form-select" tabindex="-1" disabled>
+                                            <option>All days</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label mb-1">Professor</label>
+                                        <input class="form-control" placeholder="Professor name" readonly tabindex="-1" />
+                                    </div>
+                                    <div class="col-lg-2 d-grid">
+                                        <button class="btn btn-primary help-highlight-target" tabindex="-1">Apply
+                                            <span class="help-callout-arrow">← click</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <span class="btn btn-outline-secondary btn-sm" tabindex="-1">Clear Filters</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <!-- Step 3 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">3</div>
+                        <div>
+                            <h3 class="help-step-title">Read a course card</h3>
+                            <p class="help-step-desc">Each result card shows the course name, all section numbers, the professor, the SI Leader, and every session time and location. Sessions are sorted Monday → Sunday then by time.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Sample course card</div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-8">
+                                <article class="card h-100 shadow-sm student-course-card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                                            <h2 class="h5 mb-0">
+                                                <span class="fw-bold">MATH 1301</span>
+                                                <span class="text-muted"> - College Algebra</span>
+                                            </h2>
+                                            <span class="badge student-section-badge">Sections 001, 002</span>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                                            <span class="badge session-meta-badge session-meta-badge-professor">Professor: Dr. Smith</span>
+                                            <span class="badge session-meta-badge session-meta-badge-leader">SI Leader: Jane Doe</span>
+                                        </div>
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="student-session-item">
+                                                <div class="student-session-day">Monday</div>
+                                                <div class="student-session-time">10:00am</div>
+                                                <div class="student-session-location">Main Hall 210</div>
+                                            </div>
+                                            <div class="student-session-item">
+                                                <div class="student-session-day">Wednesday</div>
+                                                <div class="student-session-time">2:00pm</div>
+                                                <div class="student-session-location">Main Hall 210</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <!-- Step 4 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">4</div>
+                        <div>
+                            <h3 class="help-step-title">Save a favorite course (optional)</h3>
+                            <p class="help-step-desc">Log in with a student account, then click <strong>Add Favorite</strong> on any course card. Favorited courses always appear at the top of your results. Click <strong>Favorited</strong> again to remove it.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Favorite button on a course card</div>
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge student-section-badge">Sections 001</span>
+                                <button class="btn btn-sm btn-outline-secondary help-highlight-target" tabindex="-1">
+                                    Add Favorite
+                                    <span class="help-callout-arrow">← click to save</span>
+                                </button>
+                            </div>
+                            <span class="text-muted">then becomes →</span>
+                            <button class="btn btn-sm btn-warning" tabindex="-1">Favorited</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================== PROFESSOR ==================== -->
+        <div class="tab-pane fade" id="professor-panel" role="tabpanel" aria-labelledby="professor-tab">
+
+            <div class="help-role-intro surface-card p-4 mb-4">
+                <h2 class="h5 mb-1">Professor Guide</h2>
+                <p class="mb-0">Submit SI requests for your courses and track them as the admin team reviews, finds a leader, and approves them.</p>
+            </div>
+
+            <div class="help-flow">
+
+                <!-- Step 1 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">1</div>
+                        <div>
+                            <h3 class="help-step-title">Log in</h3>
+                            <p class="help-step-desc">Click <strong>Login</strong> in the top-right corner and enter your email and password. After logging in you will land on <strong>My Requests</strong>. If you don't have an account, contact your administrator.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Navigation bar (logged out)</div>
+                        <nav class="help-preview-nav">
+                            <span class="help-preview-brand">Schedule-Ders</span>
+                            <ul class="help-preview-nav-links">
+                                <li><span class="nav-link text-dark">Home</span></li>
+                                <li><span class="nav-link text-dark">SI Schedule</span></li>
+                                <li>
+                                    <span class="btn btn-outline-secondary btn-sm help-highlight-target" tabindex="-1">
+                                        Login
+                                        <span class="help-callout-arrow">← click here</span>
+                                    </span>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <!-- Step 2 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">2</div>
+                        <div>
+                            <h3 class="help-step-title">Create a new SI request</h3>
+                            <p class="help-step-desc">From <strong>My Requests</strong>, click <strong>New Request</strong> in the top-right corner. This opens the request form.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">My Requests page header</div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-2">
+                            <h2 class="h5 mb-0 page-title" style="font-size:1rem">My SI Requests</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-primary help-highlight-target" tabindex="-1">
+                                    New Request
+                                    <span class="help-callout-arrow">← click here</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <!-- Step 3 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">3</div>
+                        <div>
+                            <h3 class="help-step-title">Fill in the request form</h3>
+                            <p class="help-step-desc">Type your course code — existing courses appear as suggestions. Add the course title, section, and a note explaining why SI support is needed. Optionally suggest a student as an SI Leader candidate. Click <strong>Submit Request</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">New SI Request form</div>
+                        <div class="form-card" style="pointer-events:none">
+                            <div class="mb-3">
+                                <label class="form-label">Course Code</label>
+                                <input class="form-control" value="MATH 1301" readonly tabindex="-1" />
+                                <div class="form-text">Pick an existing course code from suggestions or enter a new one.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Course Title</label>
+                                <input class="form-control" value="College Algebra" readonly tabindex="-1" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Section</label>
+                                <input class="form-control" value="001" readonly tabindex="-1" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Request Notes</label>
+                                <textarea class="form-control" rows="3" readonly tabindex="-1">Students are struggling with algebra fundamentals. Requesting SI support for Monday/Wednesday sections.</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Suggest an SI Leader Candidate <span class="text-muted fw-normal">(Optional)</span></label>
+                                <div data-potential-leader-list="true" class="d-flex flex-column gap-2">
+                                    <div class="d-flex flex-column flex-md-row gap-2 align-items-stretch">
+                                        <div class="flex-fill">
+                                            <input type="text" class="form-control" placeholder="Optional: suggest a student for SI leader" tabindex="-1" readonly value="Alex Johnson" />
+                                        </div>
+                                        <div class="candidate-anumber-field">
+                                            <input type="text" class="form-control" placeholder="A-number" tabindex="-1" readonly value="A87654321" />
+                                        </div>
+                                        <button type="button" class="btn btn-outline-secondary" tabindex="-1">Remove</button>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2 help-highlight-target" tabindex="-1">
+                                    Add Candidate
+                                    <span class="help-callout-arrow">← add another</span>
+                                </button>
+                            </div>
+                            <div class="form-submit-row">
+                                <button class="btn btn-primary help-highlight-target" tabindex="-1">Submit Request
+                                    <span class="help-callout-arrow">← click to submit</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <!-- Step 4 -->
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">4</div>
+                        <div>
+                            <h3 class="help-step-title">Track your request status</h3>
+                            <p class="help-step-desc">Your request appears in the list with a status pill. Use the filter chips at the top to focus on a specific status. Click <strong>Status</strong> on a pending or under-review request to see the full detail view.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">My Requests list — status chips and table row</div>
+                        <div class="quick-status-chips mb-3">
+                            <span class="quick-status-chip is-active">All</span>
+                            <span class="quick-status-chip help-highlight-target">Pending
+                                <span class="help-callout-arrow">← filter by status</span>
+                            </span>
+                            <span class="quick-status-chip">Under Review</span>
+                            <span class="quick-status-chip">Approved</span>
+                            <span class="quick-status-chip">SI Leader Found</span>
+                            <span class="quick-status-chip">Not Moving Forward</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle data-table-compact">
+                                <thead>
+                                    <tr>
+                                        <th>Course</th>
+                                        <th>Submitted</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>MATH 1301 (001) - College Algebra</th>
+                                        <td>
+                                            <div>4/24/2026 9:00 AM</div>
+                                            <span class="relative-time-pill">just now</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-pill status-pill-pending">Submitted</span>
+                                            <div class="mt-1"><span class="status-pill status-pill-pending">Leader: None</span></div>
+                                        </td>
+                                        <td class="text-nowrap text-end">
+                                            <span class="professor-request-actions">
+                                                <span class="request-action-link request-action-link-priority help-highlight-target">Status
+                                                    <span class="help-callout-arrow">← track</span>
+                                                </span>
+                                                <span class="request-action-link">Edit</span>
+                                                <span class="request-action-link request-action-delete">Delete</span>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ==================== ADMIN ==================== -->
+        <div class="tab-pane fade" id="admin-panel" role="tabpanel" aria-labelledby="admin-tab">
+
+            <div class="help-role-intro surface-card p-4 mb-4">
+                <h2 class="h5 mb-1">Admin Guide</h2>
+                <p class="mb-0">Manage courses, sessions, professor SI requests, and SI leaders from the navigation bar.</p>
+            </div>
+
+            <!-- COURSES sub-section -->
+            <h2 class="help-section-group-title">Courses</h2>
+            <div class="help-flow">
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">1</div>
+                        <div>
+                            <h3 class="help-step-title">View and filter courses</h3>
+                            <p class="help-step-desc">Click <strong>Courses</strong> in the nav. Use the filter bar to search by CRN, course code, professor, day, time, or semester. Click <strong>Apply</strong> to filter or <strong>Reset</strong> to clear.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Courses filter bar</div>
+                        <div class="row g-2 mb-2 surface-card surface-toolbar p-2" style="pointer-events:none">
+                            <div class="col">
+                                <label class="filter-label">CRN</label>
+                                <input class="form-control" placeholder="CRN" tabindex="-1" readonly />
+                            </div>
+                            <div class="col">
+                                <label class="filter-label">Course</label>
+                                <input class="form-control" placeholder="Course or name" tabindex="-1" readonly />
+                            </div>
+                            <div class="col">
+                                <label class="filter-label">Professor</label>
+                                <input class="form-control" placeholder="Professor" tabindex="-1" readonly />
+                            </div>
+                            <div class="col-auto d-flex filter-row-actions">
+                                <button class="btn btn-outline-secondary help-highlight-target" tabindex="-1">Apply</button>
+                            </div>
+                            <div class="col-auto d-flex filter-row-actions">
+                                <button class="btn btn-outline-secondary" tabindex="-1">Reset</button>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle data-table-compact">
+                                <thead>
+                                    <tr>
+                                        <th>CRN</th><th>Course</th><th>Title</th><th>Section</th><th>Professor</th><th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>12345</td>
+                                        <th>MATH 1301</th>
+                                        <td>College Algebra</td>
+                                        <td>001</td>
+                                        <td>Dr. Smith</td>
+                                        <td class="text-nowrap">
+                                            <span class="professor-request-actions course-row-actions">
+                                                <span class="request-action-link request-action-link-compact">Details</span>
+                                                <span class="request-action-link request-action-link-compact help-highlight-target">Edit
+                                                    <span class="help-callout-arrow">← update course</span>
+                                                </span>
+                                                <span class="request-action-link request-action-link-compact">Sessions</span>
+                                                <span class="request-action-link request-action-delete request-action-link-compact">Delete</span>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">2</div>
+                        <div>
+                            <h3 class="help-step-title">Add a new course</h3>
+                            <p class="help-step-desc">Click <strong>Add Course</strong> in the top-right of the Courses page. Fill in the CRN, course code, title, section, semester, professor, and meeting days/time. Save to add it to the list.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Courses page header</div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-2">
+                            <h2 class="h5 mb-0 page-title" style="font-size:1rem">Courses</h2>
+                            <div class="page-actions">
+                                <button class="btn btn-outline-secondary" tabindex="-1">Add Semester</button>
+                                <button class="btn btn-primary help-highlight-target" tabindex="-1">Add Course
+                                    <span class="help-callout-arrow">← click here</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SESSIONS sub-section -->
+            <h2 class="help-section-group-title mt-4">Sessions</h2>
+            <div class="help-flow">
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">3</div>
+                        <div>
+                            <h3 class="help-step-title">Add a new session</h3>
+                            <p class="help-step-desc">Click <strong>Sessions</strong> in the nav, then click <strong>New Session</strong>. Select the course, pick the day using the toggle buttons, choose start and end times, and enter the location. Click <strong>Create Session</strong> to save.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Add Session form</div>
+                        <div class="form-card" style="pointer-events:none">
+                            <div class="mb-3">
+                                <label class="form-label">Course</label>
+                                <select class="form-select" tabindex="-1" disabled>
+                                    <option>MATH 1301 (001) - College Algebra</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Day</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle" tabindex="-1">Mon</button>
+                                    <button type="button" class="btn btn-primary session-day-toggle" tabindex="-1">Tue</button>
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle help-highlight-target" tabindex="-1">Wed
+                                        <span class="help-callout-arrow">← select day</span>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle" tabindex="-1">Thu</button>
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle" tabindex="-1">Fri</button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Time</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">Start</label>
+                                        <select class="form-select" tabindex="-1" disabled>
+                                            <option>10:00am</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">End</label>
+                                        <select class="form-select" tabindex="-1" disabled>
+                                            <option>11:00am</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input class="form-control" value="CASA101E" readonly tabindex="-1" />
+                            </div>
+                            <div class="form-submit-row">
+                                <button class="btn btn-primary help-highlight-target" tabindex="-1">Create Session
+                                    <span class="help-callout-arrow">← saves the session</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">4</div>
+                        <div>
+                            <h3 class="help-step-title">Edit an existing session</h3>
+                            <p class="help-step-desc">From the Sessions list, click <strong>Edit</strong> on any row. You can update the course, day, time, location, and assign the <strong>SI Leader</strong> for that session. Click <strong>Save</strong> when done.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Edit Session form — includes SI Leader field</div>
+                        <div class="form-card" style="pointer-events:none">
+                            <div class="mb-3">
+                                <label class="form-label">Course</label>
+                                <select class="form-select" tabindex="-1" disabled>
+                                    <option>MATH 1301 (001) - College Algebra</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Day</label>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle" tabindex="-1">Mon</button>
+                                    <button type="button" class="btn btn-primary session-day-toggle" tabindex="-1">Tue</button>
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle" tabindex="-1">Wed</button>
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle" tabindex="-1">Thu</button>
+                                    <button type="button" class="btn btn-outline-primary session-day-toggle" tabindex="-1">Fri</button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Time</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">Start</label>
+                                        <select class="form-select" tabindex="-1" disabled>
+                                            <option>10:00am</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1">End</label>
+                                        <select class="form-select" tabindex="-1" disabled>
+                                            <option>11:00am</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input class="form-control" value="CASA101E" readonly tabindex="-1" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label help-highlight-target">SI Leader
+                                    <span class="help-callout-arrow">← assign the leader</span>
+                                </label>
+                                <input class="form-control" value="Jane Doe" readonly tabindex="-1" />
+                            </div>
+                            <div class="form-submit-row">
+                                <button class="btn btn-primary help-highlight-target" tabindex="-1">Save
+                                    <span class="help-callout-arrow">← saves changes</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SI REQUESTS sub-section -->
+            <h2 class="help-section-group-title mt-4">SI Requests</h2>
+            <div class="help-flow">
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">5</div>
+                        <div>
+                            <h3 class="help-step-title">Review incoming requests</h3>
+                            <p class="help-step-desc">Click <strong>SI Requests</strong> in the nav. Use the status chips to filter. Requests with a <em>Submitted</em> or <em>Under Review</em> status show a highlighted <strong>Review</strong> link — click it to open the request.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">SI Requests list</div>
+                        <div class="quick-status-chips mb-3">
+                            <span class="quick-status-chip is-active">All</span>
+                            <span class="quick-status-chip help-highlight-target">Pending
+                                <span class="help-callout-arrow">← filter</span>
+                            </span>
+                            <span class="quick-status-chip">Under Review</span>
+                            <span class="quick-status-chip">Approved</span>
+                            <span class="quick-status-chip">SI Leader Found</span>
+                            <span class="quick-status-chip">Not Moving Forward</span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle data-table-compact">
+                                <thead>
+                                    <tr><th>Course</th><th>Professor</th><th>Submitted</th><th>Status</th><th>Actions</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>MATH 1301 (001)</th>
+                                        <td>Dr. Smith</td>
+                                        <td><div>4/24/2026</div><span class="relative-time-pill">2h ago</span></td>
+                                        <td>
+                                            <span class="status-pill status-pill-pending">Submitted</span>
+                                            <div class="mt-1"><span class="status-pill status-pill-pending">Leader: None</span></div>
+                                        </td>
+                                        <td class="text-center text-nowrap">
+                                            <span class="request-action-link request-action-link-priority help-highlight-target">Review
+                                                <span class="help-callout-arrow">← open</span>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">6</div>
+                        <div>
+                            <h3 class="help-step-title">Update the request pipeline</h3>
+                            <p class="help-step-desc">Inside a request, click the dot on the pipeline to move the request forward: <em>Submitted → Under Review → SI Leader Found → Approved</em>. Use the red dot for <em>Not Moving Forward</em>. Add admin notes if needed, then click <strong>Save Status</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Course Request Pipeline</div>
+                        <div class="surface-card p-3 admin-track-panel" style="pointer-events:none">
+                            <div class="progress request-progress mb-2" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="25">
+                                <div class="progress-bar request-progress-warning" style="width:25%"></div>
+                            </div>
+                            <div class="candidate-checkpoint-list">
+                                <div class="candidate-checkpoint is-complete">
+                                    <button type="button" class="checkpoint-dot-btn" tabindex="-1"></button>
+                                    <span class="candidate-checkpoint-label">Submitted</span>
+                                </div>
+                                <div class="candidate-checkpoint is-current help-highlight-target">
+                                    <button type="button" class="checkpoint-dot-btn" tabindex="-1"></button>
+                                    <span class="candidate-checkpoint-label">Under Review
+                                        <span class="help-callout-arrow">← current step</span>
+                                    </span>
+                                </div>
+                                <div class="candidate-checkpoint is-pending">
+                                    <button type="button" class="checkpoint-dot-btn" tabindex="-1"></button>
+                                    <span class="candidate-checkpoint-label">SI Leader Found</span>
+                                </div>
+                                <div class="candidate-checkpoint is-pending">
+                                    <button type="button" class="checkpoint-dot-btn" tabindex="-1"></button>
+                                    <span class="candidate-checkpoint-label">Approved</span>
+                                </div>
+                                <div class="candidate-checkpoint is-pending">
+                                    <button type="button" class="checkpoint-dot-btn checkpoint-dot-btn-danger" tabindex="-1"></button>
+                                    <span class="candidate-checkpoint-label">Not Moving Forward</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SI LEADERS sub-section -->
+            <h2 class="help-section-group-title mt-4">SI Leaders</h2>
+            <div class="help-flow">
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">7</div>
+                        <div>
+                            <h3 class="help-step-title">Add an SI Leader</h3>
+                            <p class="help-step-desc">Click <strong>SI Leaders</strong> in the nav. Fill in the <strong>A-Number</strong> and <strong>Leader Name</strong> at the top of the page. Assign the courses and sections they will lead. Click <strong>Add SI Leader</strong>.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Add SI Leader form</div>
+                        <div class="surface-card p-3 mb-3" style="pointer-events:none">
+                            <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+                                <div>
+                                    <p class="fw-semibold mb-0">Add SI Leader</p>
+                                    <p class="text-muted small mb-0">Create a leader profile with assignments.</p>
+                                </div>
+                                <button class="btn btn-primary help-highlight-target" tabindex="-1">Add SI Leader
+                                    <span class="help-callout-arrow">← click to save</span>
+                                </button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">A-Number</label>
+                                    <input class="form-control" value="A12345678" readonly tabindex="-1" />
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">SI Leader Name</label>
+                                    <input class="form-control" value="Jane Doe" readonly tabindex="-1" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Courses</label>
+                                    <input class="form-control" value="MATH 1301" readonly tabindex="-1" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Sections</label>
+                                    <input class="form-control" value="001, 002" readonly tabindex="-1" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">8</div>
+                        <div>
+                            <h3 class="help-step-title">Edit or remove a leader</h3>
+                            <p class="help-step-desc">In the leaders table, click <strong>Edit</strong> to update a leader's details in a popup without leaving the page. Click <strong>Delete</strong> to remove the record permanently.</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">SI Leaders table row</div>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle data-table-compact">
+                                <thead>
+                                    <tr><th>A-Number</th><th>SI Leader Name</th><th>Courses Teaching</th><th>Sections</th><th>Actions</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>A12345678</th>
+                                        <td>Jane Doe</td>
+                                        <td>MATH 1301</td>
+                                        <td>001, 002</td>
+                                        <td class="text-nowrap">
+                                            <span class="request-action-link help-highlight-target">Edit
+                                                <span class="help-callout-arrow">← opens modal</span>
+                                            </span>
+                                            <span class="request-action-link request-action-delete ms-2">Delete</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-flow-arrow" aria-hidden="true">↓</div>
+
+                <div class="help-step">
+                    <div class="help-step-meta">
+                        <div class="help-step-number">9</div>
+                        <div>
+                            <h3 class="help-step-title">Export data</h3>
+                            <p class="help-step-desc">Use <strong>Export PDF</strong> or <strong>Export CSV</strong> buttons at the top of SI Requests, SI Leaders, and Sessions pages. The export reflects only what is currently shown on screen (current filter or search).</p>
+                        </div>
+                    </div>
+                    <div class="help-preview" aria-hidden="true">
+                        <div class="help-preview-label">Export buttons (top of SI Requests / SI Leaders / Sessions)</div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap p-2">
+                            <h2 class="h5 mb-0 me-auto page-title" style="font-size:1rem">SI Requests</h2>
+                            <button class="btn btn-outline-secondary help-highlight-target" tabindex="-1">Export PDF
+                                <span class="help-callout-arrow">← downloads PDF</span>
+                            </button>
+                            <button class="btn btn-outline-secondary" tabindex="-1">Export CSV</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    (function () {
+        var hash = window.location.hash;
+        if (hash) {
+            var tab = document.querySelector('[data-bs-target="' + hash + '-panel"]');
+            if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+        }
+        document.querySelectorAll('#helpTabs .nav-link').forEach(function (btn) {
+            btn.addEventListener('shown.bs.tab', function () {
+                history.replaceState(null, '', '#' + btn.id.replace('-tab', ''));
+            });
+        });
+    })();
+</script>
+}

@@ -96,6 +96,381 @@ footer.footer {
   padding: 0.7rem 0;
 }
 
+/* Help page */
+.help-role-intro {
+  border-left: 4px solid var(--sd-accent-blue);
+}
+
+/* Flow layout */
+.help-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.help-step {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  background: var(--sd-surface, #fff);
+  border: 1px solid var(--sd-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .help-step {
+    grid-template-columns: 1fr 1.4fr;
+    align-items: start;
+    gap: 1.5rem;
+  }
+}
+
+.help-step-meta {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.help-step-number {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--sd-accent-blue, #0059aa);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.1rem;
+}
+
+.help-step-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.help-step-desc {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 0;
+  color: var(--sd-text, inherit);
+}
+
+/* Preview pane */
+.help-preview {
+  background: var(--sd-bg-subtle, #f8fafc);
+  border: 1px solid var(--sd-border, #e2e8f0);
+  border-radius: 8px;
+  padding: 0.75rem 1rem 1rem;
+  overflow: auto;
+  user-select: none;
+}
+
+.help-preview-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sd-text-muted, #6b7280);
+  margin-bottom: 0.6rem;
+}
+
+/* Simulated navbar inside preview */
+.help-preview-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f0f4f7;
+  border: 1px solid var(--sd-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  flex-wrap: wrap;
+}
+.help-preview-brand {
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--sd-accent-blue, #0059aa);
+}
+.help-preview-nav-links {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Highlighted element + callout arrow */
+.help-highlight-target {
+  position: relative;
+  outline: 2px solid var(--sd-accent-blue, #0059aa);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.help-callout-arrow {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--sd-accent-blue, #0059aa);
+  white-space: nowrap;
+  margin-left: 0.35rem;
+}
+
+/* Arrow between steps */
+.help-flow-arrow {
+  text-align: center;
+  font-size: 1.4rem;
+  color: var(--sd-text-muted, #9ca3af);
+  padding: 0.2rem 0;
+  line-height: 1;
+}
+
+/* Sub-section heading inside admin tab */
+.help-section-group-title {
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sd-text-muted, #6b7280);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--sd-border, #e2e8f0);
+}
+
+/* Force light mode for the entire help page (step cards + previews) */
+html[data-theme="dark"] .help-page .page-title,
+html[data-theme="dark"] .help-page .page-subtitle {
+  color: #d8e8fa !important;
+}
+html[data-theme="dark"] .help-role-intro {
+  background: #ffffff !important;
+  color: #002E57 !important;
+  border-color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .help-step {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #002E57 !important;
+}
+html[data-theme="dark"] .help-step-number {
+  background: #0059aa !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .help-step-title {
+  color: #002E57 !important;
+}
+html[data-theme="dark"] .help-step-desc {
+  color: #334155 !important;
+}
+html[data-theme="dark"] .help-step-desc strong {
+  color: #002E57 !important;
+}
+html[data-theme="dark"] .help-step-desc a {
+  color: #0059aa !important;
+}
+html[data-theme="dark"] .help-section-group-title {
+  color: #475569 !important;
+  border-color: #e2e8f0 !important;
+}
+html[data-theme="dark"] .help-flow-arrow {
+  color: #94a3b8 !important;
+}
+
+/* Force light mode inside help previews regardless of current theme */
+html[data-theme="dark"] .help-preview {
+  background: #f8fafc !important;
+  color: #002E57 !important;
+  border-color: #cbd5e1 !important;
+  --sd-border: #0067C5;
+  --sd-input-border: #bfd3e8;
+  --sd-btn-secondary-bg: #dbe8f4;
+  --sd-btn-secondary-border: #8fb4d9;
+  --sd-btn-secondary-color: #0053a0;
+  --sd-status-pending-bg: #eef3f8;
+  --sd-status-pending-color: #47617b;
+  --sd-status-review-bg: #e8f7ff;
+  --sd-status-review-color: #0f6e9a;
+  --sd-status-approved-bg: #e6f7ef;
+  --sd-status-approved-color: #16744e;
+  --sd-status-denied-bg: #ffecef;
+  --sd-status-denied-color: #8d2a3a;
+}
+html[data-theme="dark"] .help-preview .surface-card,
+html[data-theme="dark"] .help-preview .surface-card-soft,
+html[data-theme="dark"] .help-preview .form-card,
+html[data-theme="dark"] .help-preview .card,
+html[data-theme="dark"] .help-preview .admin-track-panel {
+  background-color: #ffffff !important;
+  border-color: #bfd3e8 !important;
+  color: #002E57 !important;
+}
+html[data-theme="dark"] .help-preview .form-control,
+html[data-theme="dark"] .help-preview .form-select,
+html[data-theme="dark"] .help-preview input,
+html[data-theme="dark"] .help-preview textarea,
+html[data-theme="dark"] .help-preview select {
+  background-color: #ffffff !important;
+  border-color: #bfd3e8 !important;
+  color: #002E57 !important;
+}
+html[data-theme="dark"] .help-preview input::placeholder,
+html[data-theme="dark"] .help-preview textarea::placeholder {
+  color: #94a3b8 !important;
+}
+html[data-theme="dark"] .help-preview .table {
+  --bs-table-bg: #ffffff;
+  --bs-table-color: #002E57;
+  --bs-table-border-color: #bfd3e8;
+  --bs-table-striped-bg: #f0f6fb;
+  --bs-table-striped-color: #002E57;
+  --bs-table-hover-bg: #e6f0f8;
+  background-color: #ffffff !important;
+  color: #002E57 !important;
+  border-color: #bfd3e8 !important;
+}
+html[data-theme="dark"] .help-preview .table td,
+html[data-theme="dark"] .help-preview .table th {
+  color: #002E57 !important;
+  border-color: #bfd3e8 !important;
+}
+html[data-theme="dark"] .help-preview .table thead th,
+html[data-theme="dark"] .help-preview .data-table thead th {
+  background: #e6f0f8 !important;
+  color: #002E57 !important;
+  border-bottom-color: #bfd3e8 !important;
+}
+html[data-theme="dark"] .help-preview .text-muted {
+  color: #64748b !important;
+}
+html[data-theme="dark"] .help-preview .form-text {
+  color: #64748b !important;
+}
+html[data-theme="dark"] .help-preview .quick-status-chip {
+  background: #eef3f8 !important;
+  border-color: #93b8d9 !important;
+  color: #003d7a !important;
+}
+html[data-theme="dark"] .help-preview .quick-status-chip.is-active {
+  background: #0059aa !important;
+  border-color: #0059aa !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .help-preview .status-pill-pending {
+  background: #eef3f8 !important;
+  color: #47617b !important;
+}
+html[data-theme="dark"] .help-preview .status-pill-review {
+  background: #e8f7ff !important;
+  color: #0f6e9a !important;
+}
+html[data-theme="dark"] .help-preview .status-pill-approved {
+  background: #e6f7ef !important;
+  color: #16744e !important;
+}
+html[data-theme="dark"] .help-preview .status-pill-denied {
+  background: #ffecef !important;
+  color: #8d2a3a !important;
+}
+html[data-theme="dark"] .help-preview .relative-time-pill {
+  background: #e8f0f8 !important;
+  border-color: #93b8d9 !important;
+  color: #2d5275 !important;
+}
+html[data-theme="dark"] .help-preview .request-action-link {
+  background: #dbe8f4 !important;
+  border-color: #8fb4d9 !important;
+  color: #0053a0 !important;
+}
+html[data-theme="dark"] .help-preview .request-action-link-priority {
+  background: #d0e8ff !important;
+  border-color: #4d9de0 !important;
+  color: #003d7a !important;
+}
+html[data-theme="dark"] .help-preview .request-action-delete {
+  background: #ffecef !important;
+  border-color: #f4a0aa !important;
+  color: #8d2a3a !important;
+}
+html[data-theme="dark"] .help-preview .btn-primary {
+  background: #0059aa !important;
+  border-color: #0059aa !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .help-preview .btn-outline-secondary {
+  background: #dbe8f4 !important;
+  border-color: #8fb4d9 !important;
+  color: #0053a0 !important;
+}
+html[data-theme="dark"] .help-preview .btn-outline-primary {
+  background: transparent !important;
+  border-color: #0059aa !important;
+  color: #0059aa !important;
+}
+html[data-theme="dark"] .help-preview .btn-primary.session-day-toggle {
+  background: #0059aa !important;
+  border-color: #0059aa !important;
+  color: #ffffff !important;
+}
+html[data-theme="dark"] .help-preview .btn-outline-primary.session-day-toggle {
+  background: transparent !important;
+  border-color: #0059aa !important;
+  color: #0059aa !important;
+}
+html[data-theme="dark"] .help-preview .btn-warning {
+  background: #ffc107 !important;
+  border-color: #ffc107 !important;
+  color: #000 !important;
+}
+html[data-theme="dark"] .help-preview .badge {
+  color: inherit;
+}
+html[data-theme="dark"] .help-preview .help-preview-nav {
+  background: #f0f4f7 !important;
+  border-color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .help-preview .help-preview-brand {
+  color: #0059aa !important;
+}
+html[data-theme="dark"] .help-preview .nav-link {
+  color: #334155 !important;
+}
+html[data-theme="dark"] .help-preview .progress {
+  background: #e2e8f0 !important;
+}
+html[data-theme="dark"] .help-preview .candidate-checkpoint-label {
+  color: #334155 !important;
+}
+html[data-theme="dark"] .help-preview .candidate-checkpoint.is-complete .candidate-checkpoint-label {
+  color: #16744e !important;
+}
+html[data-theme="dark"] .help-preview .candidate-checkpoint.is-current .candidate-checkpoint-label {
+  color: #002E57 !important;
+}
+html[data-theme="dark"] .help-preview .candidate-checkpoint.is-pending .candidate-checkpoint-label {
+  color: #64748b !important;
+}
+html[data-theme="dark"] .help-preview .help-preview-label {
+  color: #64748b !important;
+}
+html[data-theme="dark"] .help-preview .help-callout-arrow {
+  color: #0059aa !important;
+}
+html[data-theme="dark"] .help-preview .filter-label {
+  color: #334155 !important;
+}
+html[data-theme="dark"] .help-preview .form-label {
+  color: #334155 !important;
+}
+html[data-theme="dark"] .help-preview small,
+html[data-theme="dark"] .help-preview .small {
+  color: #64748b !important;
+}
+
 /* Student schedule hero */
 .student-schedule-hero {
   background: #f0f8ff !important;
@@ -190,4 +565,159 @@ html[data-theme="dark"] .student-schedule-hero {
 /* Dark mode: form section */
 html[data-theme="dark"] .form-section {
   background: #152233 !important;
+}
+
+/* Dark mode: help manual */
+html[data-theme="dark"] .help-page .help-role-intro.surface-card {
+  background: #142338 !important;
+  border-color: #4b6888 !important;
+  color: #dcecff !important;
+}
+html[data-theme="dark"] .help-page .help-role-intro h2,
+html[data-theme="dark"] .help-page .help-role-intro p {
+  color: #dcecff !important;
+}
+html[data-theme="dark"] .help-page .help-step {
+  background: #142338 !important;
+  border-color: #4b6888 !important;
+  color: #dcecff !important;
+}
+html[data-theme="dark"] .help-page .help-step-title {
+  color: #f2f8ff !important;
+}
+html[data-theme="dark"] .help-page .help-step-desc,
+html[data-theme="dark"] .help-page .help-step-desc strong {
+  color: #dcecff !important;
+}
+html[data-theme="dark"] .help-page .help-preview,
+html[data-theme="dark"] .help-page .help-preview .surface-card,
+html[data-theme="dark"] .help-page .help-preview .surface-card-soft,
+html[data-theme="dark"] .help-page .help-preview .form-card,
+html[data-theme="dark"] .help-page .help-preview .form-section,
+html[data-theme="dark"] .help-page .help-preview .card,
+html[data-theme="dark"] .help-page .help-preview .card-body,
+html[data-theme="dark"] .help-page .help-preview .admin-track-panel {
+  background-color: #101c2d !important;
+  border-color: #43617f !important;
+  color: #dcecff !important;
+}
+html[data-theme="dark"] .help-page .help-preview {
+  background-color: #0f1b2a !important;
+}
+html[data-theme="dark"] .help-page .help-preview .help-preview-nav {
+  background: #17263a !important;
+  border-color: #4b6888 !important;
+}
+html[data-theme="dark"] .help-page .help-preview .help-preview-brand,
+html[data-theme="dark"] .help-page .help-preview .nav-link,
+html[data-theme="dark"] .help-page .help-preview .form-label,
+html[data-theme="dark"] .help-page .help-preview .filter-label,
+html[data-theme="dark"] .help-page .help-preview .candidate-checkpoint-label {
+  color: #dcecff !important;
+}
+html[data-theme="dark"] .help-page .help-preview .help-preview-label,
+html[data-theme="dark"] .help-page .help-section-group-title,
+html[data-theme="dark"] .help-page .help-preview .text-muted,
+html[data-theme="dark"] .help-page .help-preview .form-text,
+html[data-theme="dark"] .help-page .help-preview small,
+html[data-theme="dark"] .help-page .help-preview .small {
+  color: #adc3dc !important;
+}
+html[data-theme="dark"] .help-page .help-preview .form-control,
+html[data-theme="dark"] .help-page .help-preview .form-select,
+html[data-theme="dark"] .help-page .help-preview input,
+html[data-theme="dark"] .help-page .help-preview textarea,
+html[data-theme="dark"] .help-page .help-preview select {
+  background-color: #0d1725 !important;
+  border-color: #5a7898 !important;
+  color: #f2f8ff !important;
+}
+html[data-theme="dark"] .help-page .help-preview input::placeholder,
+html[data-theme="dark"] .help-page .help-preview textarea::placeholder {
+  color: #9fb5cc !important;
+}
+html[data-theme="dark"] .help-page .help-preview .table,
+html[data-theme="dark"] .help-page .help-preview .data-table {
+  --bs-table-bg: #101c2d !important;
+  --bs-table-color: #dcecff !important;
+  --bs-table-border-color: #43617f !important;
+  --bs-table-striped-bg: #17263a !important;
+  --bs-table-striped-color: #dcecff !important;
+  --bs-table-hover-bg: #1d3048 !important;
+  --bs-table-hover-color: #f2f8ff !important;
+  background-color: #101c2d !important;
+  color: #dcecff !important;
+}
+html[data-theme="dark"] .help-page .help-preview .table thead th,
+html[data-theme="dark"] .help-page .help-preview .data-table thead th {
+  background: #1a2e44 !important;
+  color: #f2f8ff !important;
+}
+html[data-theme="dark"] .help-page .help-preview .table td,
+html[data-theme="dark"] .help-page .help-preview .table th {
+  color: #dcecff !important;
+  border-color: #43617f !important;
+}
+html[data-theme="dark"] .help-page .nav-tabs {
+  border-bottom-color: #6f849b;
+}
+html[data-theme="dark"] .help-page .nav-tabs .nav-link {
+  color: #8ec2ff;
+}
+html[data-theme="dark"] .help-page .nav-tabs .nav-link.active {
+  background: #142338;
+  border-color: #6f849b #6f849b #142338;
+  color: #f2f8ff;
+}
+
+/* Help manual tabs */
+.help-page .nav-tabs {
+  border-bottom-color: #8fb4a1;
+}
+.help-page .nav-tabs .nav-link {
+  border-color: transparent;
+  color: #0059aa;
+}
+.help-page .nav-tabs .nav-link:hover,
+.help-page .nav-tabs .nav-link:focus {
+  border-color: #bad1c4 #bad1c4 #8fb4a1;
+}
+.help-page .nav-tabs .nav-link.active {
+  background: #ffffff;
+  border-color: #8fb4a1 #8fb4a1 #ffffff;
+  color: #0f172a;
+}
+
+html[data-theme="dark"] .help-page .page-title {
+  border-left-color: #0a8f4e;
+}
+html[data-theme="dark"] .help-page .help-role-intro {
+  border-left-color: #0a8f4e !important;
+}
+html[data-theme="dark"] .help-page .help-step-number {
+  background: #0a8f4e !important;
+}
+html[data-theme="dark"] .help-page .help-highlight-target {
+  outline-color: #0a8f4e;
+}
+html[data-theme="dark"] .help-page .help-callout-arrow,
+html[data-theme="dark"] .help-page .help-preview .help-callout-arrow {
+  color: #8de6b9 !important;
+}
+html[data-theme="dark"] .help-page .nav-tabs {
+  border-bottom-color: #0a8f4e;
+}
+html[data-theme="dark"] .help-page .nav-tabs .nav-link {
+  color: #8de6b9;
+  border-color: transparent;
+}
+html[data-theme="dark"] .help-page .nav-tabs .nav-link:hover,
+html[data-theme="dark"] .help-page .nav-tabs .nav-link:focus {
+  border-color: #0a8f4e #0a8f4e #0a8f4e;
+  color: #c8f7dd;
+}
+html[data-theme="dark"] .help-page .nav-tabs .nav-link.active {
+  background: #142338;
+  border-color: #0a8f4e #0a8f4e #142338;
+  color: #f2fff8;
 }

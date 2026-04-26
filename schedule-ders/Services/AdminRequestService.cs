@@ -9,10 +9,14 @@ namespace schedule_ders.Services;
 public class AdminRequestService : IAdminRequestService
 {
     private readonly ScheduleContext _context;
+    private readonly IRequestNotificationEmailService _notificationEmailService;
 
-    public AdminRequestService(ScheduleContext context)
+    public AdminRequestService(
+        ScheduleContext context,
+        IRequestNotificationEmailService notificationEmailService)
     {
         _context = context;
+        _notificationEmailService = notificationEmailService;
     }
 
     public async Task<PagedResultDto<AdminRequestListItemDto>> GetRequestsAsync(
@@ -107,6 +111,7 @@ public class AdminRequestService : IAdminRequestService
         }
 
         await _context.SaveChangesAsync();
+        await _notificationEmailService.NotifyRequestStatusUpdatedAsync(request);
 
         return new SiRequestSummaryDto
         {
