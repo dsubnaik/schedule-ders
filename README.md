@@ -86,14 +86,14 @@ Demo users are only seeded in `Development` and only when a demo password is con
 From the repo root:
 
 ```powershell
-dotnet user-secrets set "Seed:DemoUserPassword" "Admin123!" --project schedule-ders
+dotnet user-secrets set "Seed:DemoUserPassword" "Password1!" --project schedule-ders
 dotnet run --project schedule-ders
 ```
 
 Or from inside `schedule-ders/schedule-ders`:
 
 ```powershell
-dotnet user-secrets set "Seed:DemoUserPassword" "Admin123!"
+dotnet user-secrets set "Seed:DemoUserPassword" "Password1!"
 dotnet run
 ```
 
@@ -103,7 +103,7 @@ Local demo logins:
 - Student: `student@email.com`
 
 Example password:
-- `Admin123!`
+- `Password1!`
 
 ## Railway Deploy Notes
 Production is intended to use Railway PostgreSQL.

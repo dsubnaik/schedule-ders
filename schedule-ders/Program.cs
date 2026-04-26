@@ -90,7 +90,8 @@ using (var migrationScope = app.Services.CreateScope())
         connection.Database);
 }
 
-await IdentitySeeder.SeedAsync(app.Services, app.Environment.IsDevelopment());
+var seedDemoUsers = app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Seed:EnableDemoUsers");
+await IdentitySeeder.SeedAsync(app.Services, seedDemoUsers);
 var removedDuplicateSessions = await SessionDeduper.DeduplicateAsync(app.Services);
 if (removedDuplicateSessions > 0)
 {
