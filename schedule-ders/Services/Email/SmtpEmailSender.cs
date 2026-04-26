@@ -7,9 +7,10 @@ namespace schedule_ders.Services.Email;
 
 public class SmtpEmailSender : IEmailSender
 {
+    private const int SendTimeoutMilliseconds = 15_000;
+
     private readonly SmtpEmailOptions _options;
     private readonly ILogger<SmtpEmailSender> _logger;
-    private const int SendTimeoutMilliseconds = 15_000;
 
     public SmtpEmailSender(IOptions<SmtpEmailOptions> options, ILogger<SmtpEmailSender> logger)
     {

@@ -67,8 +67,8 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ScheduleContext>();
 
-builder.Services.Configure<SmtpEmailOptions>(builder.Configuration.GetSection("Email:Smtp"));
 builder.Services.Configure<NotificationEmailOptions>(builder.Configuration.GetSection("Notifications"));
+builder.Services.Configure<SmtpEmailOptions>(builder.Configuration.GetSection("Email:Smtp"));
 builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
 builder.Services.AddScoped<IProfessorRequestService, ProfessorRequestService>();
