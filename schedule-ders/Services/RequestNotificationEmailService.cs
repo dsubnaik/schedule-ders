@@ -57,7 +57,7 @@ public class RequestNotificationEmailService : IRequestNotificationEmailService
             ? string.Empty
             : $"<p><strong>Demo original recipient:</strong> {WebUtility.HtmlEncode(request.ProfessorEmail)}</p>";
 
-        await _emailSender.SendEmailAsync(
+        await TrySendEmailAsync(
             recipient,
             $"SI request status updated: {BuildCourseDisplay(request)}",
             $"""
@@ -77,13 +77,29 @@ public class RequestNotificationEmailService : IRequestNotificationEmailService
             return;
         }
 
-        await _emailSender.SendEmailAsync(
+        await TrySendEmailAsync(
             _options.AdminRecipient,
             $"{subject}: {BuildCourseDisplay(request)}",
             $"""
             <p>{WebUtility.HtmlEncode(intro)}</p>
             {BuildRequestDetailsHtml(request)}
             """);
+    }
+
+    private async Task TrySendEmailAsync(string recipient, string subject, string htmlMessage)
+    {
+        try
+        {
+            await _emailSender.SendEmailAsync(recipient, subject, htmlMessage);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Notification email failed. To='{Recipient}', Subject='{Subject}'",
+                recipient,
+                subject);
+        }
     }
 
     private static string BuildRequestDetailsHtml(SIRequest request)
