@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] | Schedule-Ders</title>
     <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script>
         (function () {
             try {
@@ -98,6 +100,12 @@
                                asp-controller="StudentSchedule"
                                asp-action="Index"
                                aria-current="@(currentController == "StudentSchedule" ? "page" : null)">SI Schedule</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark @((currentController == "Home" && currentAction == "Help") ? "active" : string.Empty)"
+                               asp-controller="Home"
+                               asp-action="Help"
+                               aria-current="@((currentController == "Home" && currentAction == "Help") ? "page" : null)">Help</a>
                         </li>
                     </ul>
 

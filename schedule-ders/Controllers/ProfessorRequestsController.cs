@@ -17,15 +17,18 @@ public class ProfessorRequestsController : Controller
     private readonly ScheduleContext _context;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly IProfessorRequestService _professorRequestService;
+    private readonly IRequestNotificationEmailService _notificationEmailService;
 
     public ProfessorRequestsController(
         ScheduleContext context,
         UserManager<IdentityUser> userManager,
-        IProfessorRequestService professorRequestService)
+        IProfessorRequestService professorRequestService,
+        IRequestNotificationEmailService notificationEmailService)
     {
         _context = context;
         _userManager = userManager;
         _professorRequestService = professorRequestService;
+        _notificationEmailService = notificationEmailService;
     }
 
     public async Task<IActionResult> Index(string? status)
@@ -248,6 +251,7 @@ public class ProfessorRequestsController : Controller
         request.LastUpdatedAtUtc = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+        await _notificationEmailService.NotifyRequestEditedAsync(request);
         return RedirectToAction(nameof(Details), new { id = request.SIRequestID });
     }
 

@@ -2,15 +2,14 @@ using schedule_ders.Data;
 using schedule_ders.Infrastructure;
 using schedule_ders.Models;
 using schedule_ders.Services;
+using schedule_ders.Services.Email;
 using schedule_ders.Services.Interfaces;
 using schedule_ders.Utilities;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,7 +50,7 @@ builder.Services.AddDbContext<ScheduleContext>(options =>
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false;
+    options.SignIn.RequireConfirmedAccount = true;
 
     options.Password.RequireDigit = true;
     options.Password.RequireUppercase = true;
@@ -61,9 +60,6 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     options.Password.RequiredUniqueChars = 1;
 
     // Lock account for 15 minutes after 5 consecutive failed logins.
-    // Works alongside rate limiting as a second layer — rate limiting stops
-    // brute force at the network level; lockout stops it at the identity level
-    // even if requests come from different IPs.
     options.Lockout.AllowedForNewUsers = true;
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
@@ -71,68 +67,14 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ScheduleContext>();
 
-builder.Services.AddSingleton<IEmailSender, Microsoft.AspNetCore.Identity.UI.Services.NoOpEmailSender>();
+builder.Services.Configure<SmtpEmailOptions>(builder.Configuration.GetSection("Email:Smtp"));
+builder.Services.Configure<NotificationEmailOptions>(builder.Configuration.GetSection("Notifications"));
+builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<IScheduleQueryService, ScheduleQueryService>();
 builder.Services.AddScoped<IProfessorRequestService, ProfessorRequestService>();
 builder.Services.AddScoped<IAdminRequestService, AdminRequestService>();
+builder.Services.AddScoped<IRequestNotificationEmailService, RequestNotificationEmailService>();
 
-builder.Services.AddRateLimiter(options =>
-{
-    // Two partitions keyed by client IP:
-    //   auth:{ip}   — 5 POST submissions per 15 min on all /Identity/Account/* routes
-    //   global:{ip} — 500 requests per minute everywhere else
-    // Note: if deployed behind a reverse proxy, configure UseForwardedHeaders so
-    // RemoteIpAddress reflects the real client IP rather than the proxy address.
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-    {
-        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-        var isAuthPost = context.Request.Method == HttpMethods.Post
-            && context.Request.Path.StartsWithSegments("/Identity/Account", StringComparison.OrdinalIgnoreCase);
-
-        if (isAuthPost)
-        {
-            return RateLimitPartition.GetFixedWindowLimiter(
-                partitionKey: $"auth:{ip}",
-                factory: _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 5,
-                    Window = TimeSpan.FromMinutes(15),
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0
-                });
-        }
-
-        return RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: $"global:{ip}",
-            factory: _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 500,
-                Window = TimeSpan.FromMinutes(1),
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 0
-            });
-    });
-
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-    options.OnRejected = async (context, cancellationToken) =>
-    {
-        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-
-        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
-            context.HttpContext.Response.Headers.RetryAfter = ((int)retryAfter.TotalSeconds).ToString();
-
-        var isAuthRoute = context.HttpContext.Request.Path
-            .StartsWithSegments("/Identity/Account", StringComparison.OrdinalIgnoreCase);
-
-        var message = isAuthRoute
-            ? "Too many attempts. Please wait 15 minutes before trying again."
-            : "Too many requests. Please try again later.";
-
-        await context.HttpContext.Response.WriteAsync(message, cancellationToken);
-    };
-});
 
 var app = builder.Build();
 
@@ -180,15 +122,10 @@ app.Use(async (context, next) =>
 
 app.UseRouting();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseRateLimiter();
-}
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets().DisableRateLimiting();
+app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",

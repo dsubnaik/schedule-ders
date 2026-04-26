@@ -10,10 +10,14 @@ namespace schedule_ders.Services;
 public class ProfessorRequestService : IProfessorRequestService
 {
     private readonly ScheduleContext _context;
+    private readonly IRequestNotificationEmailService _notificationEmailService;
 
-    public ProfessorRequestService(ScheduleContext context)
+    public ProfessorRequestService(
+        ScheduleContext context,
+        IRequestNotificationEmailService notificationEmailService)
     {
         _context = context;
+        _notificationEmailService = notificationEmailService;
     }
 
     public async Task<SiRequestSummaryDto> CreateRequestAsync(CreateSiRequestDto input, string createdByUserId)
@@ -77,6 +81,8 @@ public class ProfessorRequestService : IProfessorRequestService
             }));
             await _context.SaveChangesAsync();
         }
+
+        await _notificationEmailService.NotifyRequestSubmittedAsync(request);
 
         return new SiRequestSummaryDto
         {
