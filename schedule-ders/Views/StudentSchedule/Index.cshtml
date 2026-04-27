@@ -84,7 +84,7 @@
                            id="studentScheduleTime"
                            value="@Model.Time"
                            class="form-control"
-                           list="student-search-time-options"
+                           data-autocomplete-source="student-search-time-options"
                            placeholder="e.g. 10:03 or 1003" />
                     <datalist id="student-search-time-options">
                         @foreach (var option in timeSuggestions)

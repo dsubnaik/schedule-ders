@@ -68,7 +68,7 @@
                name="professor"
                value="@currentProfessor"
                class="form-control"
-               list="course-professor-options"
+               data-autocomplete-source="course-professor-options"
                placeholder="Professor" />
         <datalist id="course-professor-options">
             @foreach (var option in professorOptions)
@@ -84,7 +84,7 @@
                name="day"
                value="@currentDay"
                class="form-control"
-               list="course-day-options"
+               data-autocomplete-source="course-day-options"
                placeholder="Meeting day(s)" />
         <datalist id="course-day-options">
             @foreach (var option in dayFilterOptions)
@@ -100,7 +100,7 @@
                name="time"
                value="@currentTime"
                class="form-control"
-               list="course-search-time-options"
+               data-autocomplete-source="course-search-time-options"
                placeholder="Time (e.g. 10:03)" />
         <datalist id="course-search-time-options">
             @foreach (var option in timeSuggestions)

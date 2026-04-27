@@ -506,10 +506,7 @@
     };
 
     const initDatalistDropdowns = () => {
-        const inputs = Array.from(document.querySelectorAll("input[list]"));
-        if (inputs.length === 0) {
-            return;
-        }
+        const inputs = Array.from(document.querySelectorAll("input[list], input[data-autocomplete-source]"));
 
         const closeAll = (exceptMenu = null) => {
             document.querySelectorAll("[data-autocomplete-menu='true']").forEach((menu) => {
@@ -573,7 +570,7 @@
                 return;
             }
 
-            const sourceId = input.getAttribute("list");
+            const sourceId = input.getAttribute("data-autocomplete-source") || input.getAttribute("list");
             if (!sourceId) {
                 return;
             }
@@ -581,7 +578,7 @@
             input.setAttribute("data-autocomplete-enhanced", "true");
             input.setAttribute("data-autocomplete-source", sourceId);
             input.removeAttribute("list");
-            input.setAttribute("autocomplete", "off");
+            input.setAttribute("autocomplete", "new-password");
 
             const host = input.parentElement;
             if (!host) {
@@ -628,11 +625,11 @@
                         return;
                     }
 
-                    if (node.matches("input[list]")) {
+                    if (node.matches("input[list], input[data-autocomplete-source]")) {
                         enhanceInput(node);
                     }
 
-                    node.querySelectorAll("input[list]").forEach((input) => {
+                    node.querySelectorAll("input[list], input[data-autocomplete-source]").forEach((input) => {
                         enhanceInput(input);
                     });
                 });
@@ -640,6 +637,26 @@
         });
 
         observer.observe(document.body, { childList: true, subtree: true });
+    };
+
+    const initNativeSearchSuggestionSuppression = () => {
+        const selector = [
+            ".surface-toolbar input:not([type='hidden'])",
+            "[data-live-filter-form='true'] input:not([type='hidden'])",
+            "[data-course-filter-form='true'] input:not([type='hidden'])",
+            "[data-student-schedule-form='true'] input:not([type='hidden'])",
+            "input[name='search']:not([type='hidden'])"
+        ].join(",");
+
+        document.querySelectorAll(selector).forEach((input) => {
+            if (!(input instanceof HTMLInputElement)) {
+                return;
+            }
+
+            input.setAttribute("autocomplete", "new-password");
+            input.setAttribute("autocapitalize", "off");
+            input.setAttribute("spellcheck", "false");
+        });
     };
 
     const initSessionFormEnhancer = () => {
@@ -1410,9 +1427,9 @@
                                         id="${inputId}"
                                         class="form-control"
                                         data-potential-leader-input="true"
-                                        list="siLeaderOptions"
+                                        data-autocomplete-source="siLeaderOptions"
                                         placeholder="Optional: suggest a student for SI leader"
-                                        autocomplete="off"
+                                        autocomplete="new-password"
                                         value="${htmlEncode(value)}" />
                              </div>
                              <div class="candidate-anumber-field">
@@ -2161,6 +2178,7 @@
     document.addEventListener("DOMContentLoaded", () => {
         initThemeToggle();
         initDatalistDropdowns();
+        initNativeSearchSuggestionSuppression();
         initTimePickerDropdowns();
         initCourseFormEnhancer();
         initSessionFormEnhancer();

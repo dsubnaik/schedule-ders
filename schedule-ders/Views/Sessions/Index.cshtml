@@ -90,7 +90,7 @@
                name="time"
                value="@currentTime"
                class="form-control"
-               list="session-search-time-options"
+               data-autocomplete-source="session-search-time-options"
                placeholder="Time (e.g. 10:03)" />
         <datalist id="session-search-time-options">
             @foreach (var option in timeSuggestions)
@@ -106,7 +106,7 @@
                name="leader"
                value="@currentLeader"
                class="form-control"
-               list="session-leader-options"
+               data-autocomplete-source="session-leader-options"
                placeholder="SI leader" />
         <datalist id="session-leader-options">
             @foreach (var option in leaderOptions)
@@ -122,7 +122,7 @@
                name="location"
                value="@currentLocation"
                class="form-control"
-               list="session-location-options"
+               data-autocomplete-source="session-location-options"
                placeholder="Location" />
         <datalist id="session-location-options">
             @foreach (var option in locationOptions)
