@@ -505,6 +505,143 @@
         });
     };
 
+    const initDatalistDropdowns = () => {
+        const inputs = Array.from(document.querySelectorAll("input[list]"));
+        if (inputs.length === 0) {
+            return;
+        }
+
+        const closeAll = (exceptMenu = null) => {
+            document.querySelectorAll("[data-autocomplete-menu='true']").forEach((menu) => {
+                if (menu !== exceptMenu) {
+                    menu.classList.remove("show");
+                }
+            });
+        };
+
+        const getOptions = (sourceId) => {
+            const datalist = document.getElementById(sourceId);
+            if (!(datalist instanceof HTMLDataListElement)) {
+                return [];
+            }
+
+            return Array.from(datalist.querySelectorAll("option"))
+                .map((option) => (option.getAttribute("value") || "").trim())
+                .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+        };
+
+        const renderOptions = (input, menu) => {
+            const sourceId = input.getAttribute("data-autocomplete-source") || "";
+            const options = getOptions(sourceId);
+            const normalizedFilter = String(input.value || "").trim().toLowerCase();
+            const filtered = normalizedFilter
+                ? options.filter((option) => option.toLowerCase().includes(normalizedFilter))
+                : options;
+
+            menu.innerHTML = "";
+            if (filtered.length === 0) {
+                menu.classList.remove("show");
+                return;
+            }
+
+            const fragment = document.createDocumentFragment();
+            filtered.slice(0, 60).forEach((value) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "app-autocomplete-option";
+                button.textContent = value;
+                button.addEventListener("mousedown", (event) => {
+                    event.preventDefault();
+                });
+                button.addEventListener("click", () => {
+                    input.value = value;
+                    input.dispatchEvent(new Event("input", { bubbles: true }));
+                    input.dispatchEvent(new Event("change", { bubbles: true }));
+                    menu.classList.remove("show");
+                    input.focus();
+                });
+                fragment.appendChild(button);
+            });
+
+            menu.appendChild(fragment);
+            closeAll(menu);
+            menu.classList.add("show");
+        };
+
+        const enhanceInput = (input) => {
+            if (!(input instanceof HTMLInputElement) || input.getAttribute("data-autocomplete-enhanced") === "true") {
+                return;
+            }
+
+            const sourceId = input.getAttribute("list");
+            if (!sourceId) {
+                return;
+            }
+
+            input.setAttribute("data-autocomplete-enhanced", "true");
+            input.setAttribute("data-autocomplete-source", sourceId);
+            input.removeAttribute("list");
+            input.setAttribute("autocomplete", "off");
+
+            const host = input.parentElement;
+            if (!host) {
+                return;
+            }
+
+            if (host.querySelector(":scope > [data-autocomplete-menu='true']")) {
+                return;
+            }
+
+            host.classList.add("app-autocomplete-host");
+            const menu = document.createElement("div");
+            menu.className = "app-autocomplete-menu";
+            menu.setAttribute("data-autocomplete-menu", "true");
+            host.appendChild(menu);
+
+            input.addEventListener("focus", () => renderOptions(input, menu));
+            input.addEventListener("input", () => renderOptions(input, menu));
+            input.addEventListener("keydown", (event) => {
+                if (event.key === "Escape") {
+                    menu.classList.remove("show");
+                }
+            });
+            input.addEventListener("blur", () => {
+                window.setTimeout(() => menu.classList.remove("show"), 120);
+            });
+        };
+
+        inputs.forEach((input) => {
+            enhanceInput(input);
+        });
+
+        document.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element) || !target.closest(".app-autocomplete-host")) {
+                closeAll();
+            }
+        });
+
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (!(node instanceof Element)) {
+                        return;
+                    }
+
+                    if (node.matches("input[list]")) {
+                        enhanceInput(node);
+                    }
+
+                    node.querySelectorAll("input[list]").forEach((input) => {
+                        enhanceInput(input);
+                    });
+                });
+            });
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+    };
+
     const initSessionFormEnhancer = () => {
         const marker = document.querySelector("[data-session-form-enhancer='true']");
         if (!marker) {
@@ -1657,7 +1794,7 @@
                     </td>
                     <td class="text-nowrap text-center">
                         <a class="request-action-link ${requestReviewActionClass(item.status)}" href="${reviewUrl}">Review</a>
-                        ${canRemove ? `<button type="button" class="request-action-link request-action-delete request-action-link-inline" data-admin-request-remove-btn="true" data-remove-url="${removeUrl}" data-request-id="${item.requestId}">Remove</button>` : ""}
+                        ${canRemove ? `<button type="button" class="request-action-link request-action-delete request-action-link-inline" data-admin-request-remove-btn="true" data-remove-url="${removeUrl}" data-request-id="${item.requestId}" data-course-display="${htmlEncode(item.courseDisplay || "Manual Course Entry")}" data-bs-toggle="modal" data-bs-target="#removeAdminRequestModal">Remove</button>` : ""}
                     </td>
                 </tr>`;
             }).join("");
@@ -1701,7 +1838,9 @@
             });
         });
 
-        tbody.addEventListener("click", async (event) => {
+        let pendingRemoveUrl = "";
+
+        tbody.addEventListener("click", (event) => {
             const target = event.target;
             if (!(target instanceof HTMLElement)) {
                 return;
@@ -1719,13 +1858,21 @@
                 return;
             }
 
-            const confirmed = window.confirm("Remove this request from the list?");
-            if (!confirmed) {
+            pendingRemoveUrl = removeUrl;
+            const displayTarget = document.getElementById("removeAdminRequestName");
+            if (displayTarget instanceof HTMLElement) {
+                displayTarget.textContent = removeButton.getAttribute("data-course-display") || "Manual Course Entry";
+            }
+        });
+
+        const confirmRemoveButton = document.getElementById("confirmAdminRequestRemoveButton");
+        confirmRemoveButton?.addEventListener("click", async () => {
+            if (!pendingRemoveUrl) {
                 return;
             }
 
             try {
-                const response = await fetch(removeUrl, {
+                const response = await fetch(pendingRemoveUrl, {
                     method: "DELETE",
                     credentials: "same-origin"
                 });
@@ -1735,6 +1882,12 @@
                     return;
                 }
 
+                const modalElement = document.getElementById("removeAdminRequestModal");
+                const modal = modalElement && window.bootstrap?.Modal
+                    ? window.bootstrap.Modal.getOrCreateInstance(modalElement)
+                    : null;
+                modal?.hide();
+                pendingRemoveUrl = "";
                 await load();
             } catch {
                 showApiError(form, "Network error while removing request.");
@@ -2007,6 +2160,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
         initThemeToggle();
+        initDatalistDropdowns();
         initTimePickerDropdowns();
         initCourseFormEnhancer();
         initSessionFormEnhancer();
@@ -2038,6 +2192,30 @@
             idsAttribute: "data-session-ids",
             displayAttribute: "data-session-display",
             defaultDisplayText: "Session"
+        });
+        initDeleteModalBinding({
+            triggerSelector: "[data-semester-delete-trigger='true']",
+            idInputId: "deleteSemesterIdInput",
+            displayTargetId: "deleteSemesterName",
+            idAttribute: "data-semester-id",
+            displayAttribute: "data-semester-display",
+            defaultDisplayText: "Semester"
+        });
+        initDeleteModalBinding({
+            triggerSelector: "[data-si-leader-field-delete-trigger='true']",
+            idInputId: "deleteSiLeaderFieldIdInput",
+            displayTargetId: "deleteSiLeaderFieldName",
+            idAttribute: "data-field-id",
+            displayAttribute: "data-field-display",
+            defaultDisplayText: "Custom Column"
+        });
+        initDeleteModalBinding({
+            triggerSelector: "[data-si-leader-delete-trigger='true']",
+            idInputId: "deleteSiLeaderIdInput",
+            displayTargetId: "deleteSiLeaderName",
+            idAttribute: "data-leader-id",
+            displayAttribute: "data-leader-display",
+            defaultDisplayText: "SI Leader"
         });
         initProfessorTrackApiRefresh();
         initAdminRequestsApiList();

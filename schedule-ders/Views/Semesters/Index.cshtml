@@ -35,7 +35,6 @@
 
     <div class="table-responsive data-table">
         <table class="table table-striped table-hover align-middle data-table-compact">
-            <caption>Configured semesters, including course and session totals, plus whether each term can be deleted.</caption>
             <thead>
                 <tr>
                     <th scope="col">Semester</th>
@@ -64,11 +63,13 @@
                         <td class="text-nowrap">
                             @if (semester.CanDelete)
                             {
-                                <form asp-action="Delete" method="post" class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@semester.SemesterId" />
-                                    <button type="submit" class="request-action-link request-action-delete">Delete</button>
-                                </form>
+                                <button type="button"
+                                        class="request-action-link request-action-delete"
+                                        data-semester-delete-trigger="true"
+                                        data-semester-id="@semester.SemesterId"
+                                        data-semester-display="@($"{semester.DisplayName} ({semester.SemesterCode})")"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteSemesterModal">Delete</button>
                             }
                             else
                             {
@@ -82,3 +83,26 @@
         </table>
     </div>
 </section>
+
+<div class="modal fade" id="deleteSemesterModal" tabindex="-1" aria-labelledby="deleteSemesterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content request-delete-modal">
+            <div class="modal-header">
+                <h2 class="modal-title h5 mb-0" id="deleteSemesterModalLabel">Delete Semester</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to delete this semester?</p>
+                <p class="mb-0 text-muted"><strong>Semester:</strong> <span id="deleteSemesterName">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteSemesterIdInput" />
+                    <button type="submit" class="btn btn-danger">Delete Semester</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
