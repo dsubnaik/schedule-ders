@@ -508,6 +508,27 @@
     const initDatalistDropdowns = () => {
         const inputs = Array.from(document.querySelectorAll("input[list], input[data-autocomplete-source]"));
 
+        const guardAgainstNativeSuggestions = (input) => {
+            if (!(input instanceof HTMLInputElement) || input.getAttribute("data-native-suggestion-guard") === "true") {
+                return;
+            }
+
+            input.setAttribute("data-native-suggestion-guard", "true");
+            input.readOnly = true;
+
+            const unlock = () => {
+                window.setTimeout(() => {
+                    input.readOnly = false;
+                }, 0);
+            };
+
+            input.addEventListener("focus", unlock);
+            input.addEventListener("keydown", unlock);
+            input.addEventListener("blur", () => {
+                input.readOnly = true;
+            });
+        };
+
         const closeAll = (exceptMenu = null) => {
             document.querySelectorAll("[data-autocomplete-menu='true']").forEach((menu) => {
                 if (menu !== exceptMenu) {
@@ -578,7 +599,11 @@
             input.setAttribute("data-autocomplete-enhanced", "true");
             input.setAttribute("data-autocomplete-source", sourceId);
             input.removeAttribute("list");
-            input.setAttribute("autocomplete", "new-password");
+            input.setAttribute("autocomplete", "off");
+            input.setAttribute("aria-autocomplete", "list");
+            input.setAttribute("autocapitalize", "off");
+            input.setAttribute("spellcheck", "false");
+            guardAgainstNativeSuggestions(input);
 
             const host = input.parentElement;
             if (!host) {
@@ -653,9 +678,24 @@
                 return;
             }
 
-            input.setAttribute("autocomplete", "new-password");
+            input.setAttribute("autocomplete", "off");
             input.setAttribute("autocapitalize", "off");
             input.setAttribute("spellcheck", "false");
+            input.setAttribute("data-native-suggestions-disabled", "true");
+            if (input.getAttribute("data-native-suggestion-guard") !== "true") {
+                input.setAttribute("data-native-suggestion-guard", "true");
+                input.readOnly = true;
+                const unlock = () => {
+                    window.setTimeout(() => {
+                        input.readOnly = false;
+                    }, 0);
+                };
+                input.addEventListener("focus", unlock);
+                input.addEventListener("keydown", unlock);
+                input.addEventListener("blur", () => {
+                    input.readOnly = true;
+                });
+            }
         });
     };
 
