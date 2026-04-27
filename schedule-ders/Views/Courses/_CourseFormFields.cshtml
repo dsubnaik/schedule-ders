@@ -39,7 +39,7 @@
     </div>
     <div class="col-12 col-md-4">
         <label asp-for="CourseName" class="form-label" for="courseNameInput"></label>
-        <input asp-for="CourseName" class="form-control" id="courseNameInput" list="courseNameOptions" />
+        <input asp-for="CourseName" class="form-control" id="courseNameInput" data-autocomplete-source="courseNameOptions" />
         <span asp-validation-for="CourseName" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-5">
@@ -119,12 +119,12 @@
 <div class="row g-3 mb-3">
     <div class="col-12 col-md-6">
         <label asp-for="CourseProfessor" class="form-label" for="courseProfessorInput"></label>
-        <input asp-for="CourseProfessor" class="form-control" list="professorOptions" id="courseProfessorInput" />
+        <input asp-for="CourseProfessor" class="form-control" data-autocomplete-source="professorOptions" id="courseProfessorInput" />
         <span asp-validation-for="CourseProfessor" class="text-danger"></span>
     </div>
     <div class="col-12 col-md-6">
         <label asp-for="CourseLeader" class="form-label" for="courseLeaderInput"></label>
-        <input asp-for="CourseLeader" class="form-control" id="courseLeaderInput" list="courseLeaderOptions" />
+        <input asp-for="CourseLeader" class="form-control" id="courseLeaderInput" data-autocomplete-source="courseLeaderOptions" />
         <span asp-validation-for="CourseLeader" class="text-danger"></span>
     </div>
 </div>

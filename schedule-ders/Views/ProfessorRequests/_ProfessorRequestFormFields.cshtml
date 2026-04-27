@@ -19,7 +19,7 @@
     <input asp-for="RequestedCourseName"
            class="form-control"
            placeholder="Start typing course code"
-           list="courseCodeOptions"
+           data-autocomplete-source="courseCodeOptions"
            autocomplete="off" />
     <datalist id="courseCodeOptions">
         @foreach (var courseCode in courseCodeOptions)
@@ -36,7 +36,7 @@
     <input asp-for="RequestedCourseTitle"
            class="form-control"
            placeholder="Start typing course name"
-           list="courseTitleOptions"
+           data-autocomplete-source="courseTitleOptions"
            autocomplete="off" />
     <datalist id="courseTitleOptions">
         @foreach (var courseTitle in courseTitleOptions)
@@ -74,7 +74,7 @@
                            id="@candidateInputId"
                            class="form-control"
                            data-potential-leader-input="true"
-                           list="siLeaderOptions"
+                           data-autocomplete-source="siLeaderOptions"
                            placeholder="Optional: suggest a student for SI leader"
                            autocomplete="off"
                            value="@candidate.CandidateName" />
