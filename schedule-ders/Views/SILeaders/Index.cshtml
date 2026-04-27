@@ -93,13 +93,16 @@
                 {
                     @foreach (var field in Model.CustomFields)
                     {
-                        <form asp-action="DeleteField" method="post" class="si-leaders-chip">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@field.SILeaderCustomFieldId" />
-                            <input type="hidden" name="search" value="@Model.Search" />
+                        <div class="si-leaders-chip">
                             <span class="si-leaders-chip-name">@field.Name</span>
-                            <button type="submit" class="request-action-link request-action-delete request-action-link-compact">Delete</button>
-                        </form>
+                            <button type="button"
+                                    class="request-action-link request-action-delete request-action-link-compact"
+                                    data-si-leader-field-delete-trigger="true"
+                                    data-field-id="@field.SILeaderCustomFieldId"
+                                    data-field-display="@field.Name"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#deleteSiLeaderFieldModal">Delete</button>
+                        </div>
                     }
                 }
             </div>
@@ -280,12 +283,13 @@
                                 class="request-action-link"
                                 data-bs-toggle="modal"
                                 data-bs-target="#@editModalId">Edit</button>
-                        <form asp-action="Delete" method="post" class="d-inline ms-2">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@item.SILeaderID" />
-                            <input type="hidden" name="search" value="@Model.Search" />
-                            <button type="submit" class="request-action-link request-action-delete">Delete</button>
-                        </form>
+                        <button type="button"
+                                class="request-action-link request-action-delete ms-2"
+                                data-si-leader-delete-trigger="true"
+                                data-leader-id="@item.SILeaderID"
+                                data-leader-display="@item.LeaderName"
+                                data-bs-toggle="modal"
+                                data-bs-target="#deleteSiLeaderModal">Delete</button>
                     </td>
                 </tr>
             }
@@ -294,6 +298,54 @@
     </table>
 </div>
 </section>
+
+<div class="modal fade" id="deleteSiLeaderFieldModal" tabindex="-1" aria-labelledby="deleteSiLeaderFieldModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content request-delete-modal">
+            <div class="modal-header">
+                <h2 class="modal-title h5 mb-0" id="deleteSiLeaderFieldModalLabel">Delete Custom Column</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to delete this custom column?</p>
+                <p class="mb-0 text-muted"><strong>Column:</strong> <span id="deleteSiLeaderFieldName">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="DeleteField" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteSiLeaderFieldIdInput" />
+                    <input type="hidden" name="search" value="@Model.Search" />
+                    <button type="submit" class="btn btn-danger">Delete Column</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteSiLeaderModal" tabindex="-1" aria-labelledby="deleteSiLeaderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content request-delete-modal">
+            <div class="modal-header">
+                <h2 class="modal-title h5 mb-0" id="deleteSiLeaderModalLabel">Delete SI Leader</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to delete this SI leader?</p>
+                <p class="mb-0 text-muted"><strong>SI Leader:</strong> <span id="deleteSiLeaderName">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <form asp-action="Delete" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteSiLeaderIdInput" />
+                    <input type="hidden" name="search" value="@Model.Search" />
+                    <button type="submit" class="btn btn-danger">Delete SI Leader</button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @foreach (var item in Model.Leaders)
 {

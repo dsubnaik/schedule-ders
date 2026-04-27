@@ -219,6 +219,65 @@ html[data-theme="dark"] input::placeholder,
 html[data-theme="dark"] textarea::placeholder {
   color: #9db3ca;
 }
+html[data-theme="dark"] .form-control:focus,
+html[data-theme="dark"] .form-select:focus,
+html[data-theme="dark"] .auth-input:focus,
+html[data-theme="dark"] input:focus,
+html[data-theme="dark"] textarea:focus,
+html[data-theme="dark"] select:focus {
+  background-color: #101b29 !important;
+  border-color: #5b8fbf !important;
+  color: #f2f8ff !important;
+  box-shadow: 0 0 0 0.2rem rgba(91, 143, 191, 0.28) !important;
+}
+html[data-theme="dark"] input:-webkit-autofill,
+html[data-theme="dark"] input:-webkit-autofill:hover,
+html[data-theme="dark"] input:-webkit-autofill:focus,
+html[data-theme="dark"] textarea:-webkit-autofill,
+html[data-theme="dark"] textarea:-webkit-autofill:hover,
+html[data-theme="dark"] textarea:-webkit-autofill:focus,
+html[data-theme="dark"] select:-webkit-autofill,
+html[data-theme="dark"] select:-webkit-autofill:hover,
+html[data-theme="dark"] select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #d7e3f0;
+  box-shadow: 0 0 0 1000px #101b29 inset !important;
+  caret-color: #f2f8ff;
+}
+html[data-theme="dark"] input[type="search"]::-webkit-search-cancel-button,
+html[data-theme="dark"] input[type="search"]::-webkit-search-decoration {
+  filter: invert(1) brightness(1.35);
+}
+html[data-theme="dark"] .form-select option {
+  background-color: #152233;
+  color: #d7e3f0;
+}
+html[data-theme="dark"] .dropdown-menu {
+  background-color: #152233;
+  border-color: var(--sd-border);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42);
+}
+html[data-theme="dark"] .dropdown-item {
+  color: #d7e3f0;
+}
+html[data-theme="dark"] .dropdown-item:hover,
+html[data-theme="dark"] .dropdown-item:focus,
+html[data-theme="dark"] .dropdown-item:active {
+  background-color: #22364d;
+  color: #f2f8ff;
+}
+html[data-theme="dark"] .app-autocomplete-menu {
+  background: #152233;
+  border-color: var(--sd-border);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42);
+}
+html[data-theme="dark"] .app-autocomplete-option {
+  color: #d7e3f0;
+}
+html[data-theme="dark"] .app-autocomplete-option:hover,
+html[data-theme="dark"] .app-autocomplete-option:focus {
+  background: #22364d;
+  color: #f2f8ff;
+}
 /* Dark theme: controls */
 html[data-theme="dark"] .btn-secondary,
 html[data-theme="dark"] .btn-outline-secondary,
@@ -692,5 +751,3 @@ html[data-theme="dark"] .si-leaders-chip {
 html[data-theme="dark"] .si-leaders-chip-name {
   color: #e7f0fa;
 }
-
-

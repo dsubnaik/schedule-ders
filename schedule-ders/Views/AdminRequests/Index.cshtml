@@ -124,7 +124,10 @@
                             <button type="button"
                                     class="request-action-link request-action-delete request-action-link-inline"
                                     data-admin-request-remove-btn="true"
-                                    data-request-id="@item.SIRequestID">Remove</button>
+                                    data-request-id="@item.SIRequestID"
+                                    data-course-display="@courseDisplay"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#removeAdminRequestModal">Remove</button>
                         }
                     </td>
                 </tr>
@@ -134,3 +137,22 @@
     </table>
 </div>
 </section>
+
+<div class="modal fade" id="removeAdminRequestModal" tabindex="-1" aria-labelledby="removeAdminRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content request-delete-modal">
+            <div class="modal-header">
+                <h2 class="modal-title h5 mb-0" id="removeAdminRequestModalLabel">Remove Request</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-1">Are you sure you want to remove this request from the list?</p>
+                <p class="mb-0 text-muted"><strong>Course:</strong> <span id="removeAdminRequestName">-</span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="confirmAdminRequestRemoveButton">Remove Request</button>
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
