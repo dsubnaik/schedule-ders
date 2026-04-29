@@ -3,12 +3,16 @@
 #nullable disable
 
 using System;
+using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Hosting;
 
 namespace schedule_ders.Areas.Identity.Pages.Account
 {
@@ -17,11 +21,16 @@ namespace schedule_ders.Areas.Identity.Pages.Account
     {
         private readonly UserManager<IdentityUser> _userManager;
         private readonly IEmailSender _sender;
+        private readonly IWebHostEnvironment _environment;
 
-        public RegisterConfirmationModel(UserManager<IdentityUser> userManager, IEmailSender sender)
+        public RegisterConfirmationModel(
+            UserManager<IdentityUser> userManager,
+            IEmailSender sender,
+            IWebHostEnvironment environment)
         {
             _userManager = userManager;
             _sender = sender;
+            _environment = environment;
         }
 
         /// <summary>
@@ -57,7 +66,18 @@ namespace schedule_ders.Areas.Identity.Pages.Account
             }
 
             Email = email;
-            DisplayConfirmAccountLink = false;
+            DisplayConfirmAccountLink = _environment.IsDevelopment();
+            if (DisplayConfirmAccountLink)
+            {
+                var userId = await _userManager.GetUserIdAsync(user);
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                EmailConfirmationUrl = Url.Page(
+                    "/Account/ConfirmEmail",
+                    pageHandler: null,
+                    values: new { area = "Identity", userId, code, returnUrl },
+                    protocol: Request.Scheme);
+            }
 
             return Page();
         }

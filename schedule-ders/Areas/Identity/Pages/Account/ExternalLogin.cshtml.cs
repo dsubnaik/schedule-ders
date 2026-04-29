@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using schedule_ders.Utilities;
 
 namespace schedule_ders.Areas.Identity.Pages.Account
 {
@@ -151,6 +152,15 @@ namespace schedule_ders.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
+                var role = EmailRoleResolver.ResolveRole(Input.Email);
+                if (role is null)
+                {
+                    ModelState.AddModelError("Input.Email", EmailRoleResolver.GetSupportedDomainsMessage());
+                    ProviderDisplayName = info.ProviderDisplayName;
+                    ReturnUrl = returnUrl;
+                    return Page();
+                }
+
                 var user = CreateUser();
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
@@ -159,6 +169,20 @@ namespace schedule_ders.Areas.Identity.Pages.Account
                 var result = await _userManager.CreateAsync(user);
                 if (result.Succeeded)
                 {
+                    var addRoleResult = await _userManager.AddToRoleAsync(user, role);
+                    if (!addRoleResult.Succeeded)
+                    {
+                        await _userManager.DeleteAsync(user);
+                        foreach (var error in addRoleResult.Errors)
+                        {
+                            ModelState.AddModelError(string.Empty, error.Description);
+                        }
+
+                        ProviderDisplayName = info.ProviderDisplayName;
+                        ReturnUrl = returnUrl;
+                        return Page();
+                    }
+
                     result = await _userManager.AddLoginAsync(user, info);
                     if (result.Succeeded)
                     {
