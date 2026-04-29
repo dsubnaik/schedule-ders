@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using schedule_ders.Utilities;
 
 namespace schedule_ders.Areas.Identity.Pages.Account
 {
@@ -98,10 +99,6 @@ namespace schedule_ders.Areas.Identity.Pages.Account
             [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
             public string ConfirmPassword { get; set; }
 
-            [Required]
-            [Display(Name = "Role")]
-            [RegularExpression("Student|Professor", ErrorMessage = "Please choose Student or Professor.")]
-            public string Role { get; set; }
         }
 
 
@@ -117,6 +114,13 @@ namespace schedule_ders.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
+                var role = EmailRoleResolver.ResolveRole(Input.Email);
+                if (role is null)
+                {
+                    ModelState.AddModelError("Input.Email", EmailRoleResolver.GetSupportedDomainsMessage());
+                    return Page();
+                }
+
                 var user = CreateUser();
 
                 await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
@@ -125,7 +129,7 @@ namespace schedule_ders.Areas.Identity.Pages.Account
 
                 if (result.Succeeded)
                 {
-                    var addRoleResult = await _userManager.AddToRoleAsync(user, Input.Role);
+                    var addRoleResult = await _userManager.AddToRoleAsync(user, role);
                     if (!addRoleResult.Succeeded)
                     {
                         await _userManager.DeleteAsync(user);
