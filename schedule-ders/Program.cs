@@ -69,7 +69,16 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 
 builder.Services.Configure<NotificationEmailOptions>(builder.Configuration.GetSection("Notifications"));
 builder.Services.Configure<SmtpEmailOptions>(builder.Configuration.GetSection("Email:Smtp"));
-builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
+builder.Services.Configure<ResendEmailOptions>(builder.Configuration.GetSection("Email:Resend"));
+builder.Services.AddTransient<SmtpEmailSender>();
+builder.Services.AddHttpClient<ResendEmailSender>();
+builder.Services.AddTransient<IEmailSender>(sp =>
+{
+    var resendOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<ResendEmailOptions>>().Value;
+    return string.IsNullOrWhiteSpace(resendOptions.ApiKey)
+        ? sp.GetRequiredService<SmtpEmailSender>()
+        : sp.GetRequiredService<ResendEmailSender>();
+});
 builder.Services.AddSingleton<BackgroundEmailQueue>();
 builder.Services.AddSingleton<IBackgroundEmailQueue>(sp => sp.GetRequiredService<BackgroundEmailQueue>());
 builder.Services.AddHostedService(sp => sp.GetRequiredService<BackgroundEmailQueue>());
