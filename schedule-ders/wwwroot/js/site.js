@@ -1965,6 +1965,10 @@
             return;
         }
 
+        if (form.querySelector("[name^='LeaderCandidates[']")) {
+            return;
+        }
+
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 

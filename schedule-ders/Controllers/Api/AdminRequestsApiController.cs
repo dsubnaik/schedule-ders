@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using schedule_ders.Contracts.Api.V1.Requests;
 using schedule_ders.Services.Interfaces;
+using schedule_ders.Utilities;
 
 namespace schedule_ders.Controllers.Api;
 
@@ -13,7 +14,7 @@ public class AdminRequestsApiController : ControllerBase
 {
     private static readonly HashSet<string> ValidStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
-        "pending", "underreview", "under review", "approved", "denied"
+        "pending", "underreview", "under review", "approved", "denied", "sileaderfound", "si leader found"
     };
 
     private readonly IAdminRequestService _adminRequestService;
@@ -48,7 +49,7 @@ public class AdminRequestsApiController : ControllerBase
     [HttpPatch("{id:int}/status")]
     public async Task<IActionResult> UpdateStatus([FromRoute] int id, [FromBody] UpdateRequestStatusDto input)
     {
-        var updated = await _adminRequestService.UpdateStatusAsync(id, input);
+        var updated = await _adminRequestService.UpdateStatusAsync(id, input, SemesterContextHelper.ReadSelectedSemesterId(Request));
         return updated is null ? NotFound() : Ok(updated);
     }
 

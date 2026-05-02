@@ -13,7 +13,7 @@ public interface IAdminRequestService
         int page,
         int pageSize);
 
-    Task<SiRequestSummaryDto?> UpdateStatusAsync(int requestId, UpdateRequestStatusDto input);
+    Task<SiRequestSummaryDto?> UpdateStatusAsync(int requestId, UpdateRequestStatusDto input, int? semesterId = null);
 
     Task<RemoveAdminRequestResult> RemoveRequestAsync(int requestId);
 }
