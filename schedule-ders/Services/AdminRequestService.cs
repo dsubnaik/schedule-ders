@@ -87,9 +87,11 @@ public class AdminRequestService : IAdminRequestService
         };
     }
 
-    public async Task<SiRequestSummaryDto?> UpdateStatusAsync(int requestId, UpdateRequestStatusDto input)
+    public async Task<SiRequestSummaryDto?> UpdateStatusAsync(int requestId, UpdateRequestStatusDto input, int? semesterId = null)
     {
         var request = await _context.SIRequests
+            .Include(r => r.Course)
+            .Include(r => r.LeaderCandidates)
             .FirstOrDefaultAsync(r => r.SIRequestID == requestId);
 
         if (request is null)
@@ -105,9 +107,14 @@ public class AdminRequestService : IAdminRequestService
         request.AdminNotes = input.AdminNotes?.Trim() ?? string.Empty;
         request.LastUpdatedAtUtc = DateTime.UtcNow;
 
-        if (request.Status == SIRequestStatus.Approved)
+        if (request.Status is SIRequestStatus.Approved or SIRequestStatus.SiLeaderFound)
         {
-            await EnsureCourseLinkedForApprovedRequestAsync(request);
+            await EnsureCourseLinkedForApprovedRequestAsync(request, semesterId);
+        }
+
+        if (request.Status == SIRequestStatus.SiLeaderFound)
+        {
+            await EnsureSiLeadersForHiredCandidatesAsync(request);
         }
 
         await _context.SaveChangesAsync();
@@ -163,13 +170,21 @@ public class AdminRequestService : IAdminRequestService
         return string.IsNullOrWhiteSpace(title) ? code : $"{code} - {title}";
     }
 
-    private async Task EnsureCourseLinkedForApprovedRequestAsync(SIRequest request)
+    private async Task EnsureCourseLinkedForApprovedRequestAsync(SIRequest request, int? semesterId)
     {
+        var validSemesterId = await ResolveValidSemesterIdAsync(semesterId);
+
         if (request.CourseID.HasValue)
         {
-            var linkedExists = await _context.Courses.AnyAsync(c => c.CourseID == request.CourseID.Value);
-            if (linkedExists)
+            var linkedCourse = await _context.Courses.FirstOrDefaultAsync(c => c.CourseID == request.CourseID.Value);
+            if (linkedCourse is not null)
             {
+                if (validSemesterId.HasValue && !linkedCourse.SemesterId.HasValue)
+                {
+                    linkedCourse.SemesterId = validSemesterId.Value;
+                }
+
+                request.Course = linkedCourse;
                 return;
             }
         }
@@ -191,7 +206,13 @@ public class AdminRequestService : IAdminRequestService
 
         if (existingCourse is not null)
         {
+            if (validSemesterId.HasValue && !existingCourse.SemesterId.HasValue)
+            {
+                existingCourse.SemesterId = validSemesterId.Value;
+            }
+
             request.CourseID = existingCourse.CourseID;
+            request.Course = existingCourse;
             return;
         }
 
@@ -207,11 +228,140 @@ public class AdminRequestService : IAdminRequestService
             CourseLeader = "TBD",
             OfficeHoursDay = string.Empty,
             OfficeHoursTime = string.Empty,
-            OfficeHoursLocation = string.Empty
+            OfficeHoursLocation = string.Empty,
+            SemesterId = validSemesterId
         };
 
         _context.Courses.Add(createdCourse);
         await _context.SaveChangesAsync();
         request.CourseID = createdCourse.CourseID;
+        request.Course = createdCourse;
+    }
+
+    private async Task<int?> ResolveValidSemesterIdAsync(int? semesterId)
+    {
+        if (!semesterId.HasValue)
+        {
+            return null;
+        }
+
+        return await _context.Semesters.AnyAsync(s => s.SemesterId == semesterId.Value)
+            ? semesterId.Value
+            : null;
+    }
+
+    private async Task EnsureSiLeadersForHiredCandidatesAsync(SIRequest request)
+    {
+        var hiredCandidates = request.LeaderCandidates
+            .Where(c => c.Status == SILeaderCandidateStatus.Hired)
+            .OrderBy(c => c.CandidateName)
+            .ThenBy(c => c.CandidateANumber)
+            .ToList();
+
+        if (hiredCandidates.Count == 0)
+        {
+            return;
+        }
+
+        var course = request.Course;
+        if (course is null && request.CourseID.HasValue)
+        {
+            course = await _context.Courses.FirstOrDefaultAsync(c => c.CourseID == request.CourseID.Value);
+        }
+
+        if (course is null)
+        {
+            return;
+        }
+
+        var primaryLeaderName = hiredCandidates[0].CandidateName.Trim();
+        if (!string.IsNullOrWhiteSpace(primaryLeaderName))
+        {
+            course.CourseLeader = primaryLeaderName;
+        }
+
+        foreach (var candidate in hiredCandidates)
+        {
+            var leaderName = candidate.CandidateName.Trim();
+            if (string.IsNullOrWhiteSpace(leaderName))
+            {
+                continue;
+            }
+
+            var aNumber = candidate.CandidateANumber.Trim();
+            SILeader? leader = null;
+            if (!string.IsNullOrWhiteSpace(aNumber))
+            {
+                leader = await _context.SILeaders
+                    .FirstOrDefaultAsync(l => l.ANumber == aNumber);
+            }
+
+            leader ??= await _context.SILeaders
+                .FirstOrDefaultAsync(l => l.LeaderName.ToLower() == leaderName.ToLower());
+
+            if (leader is null)
+            {
+                leader = new SILeader
+                {
+                    ANumber = string.IsNullOrWhiteSpace(aNumber) ? GeneratePlaceholderANumber() : aNumber,
+                    LeaderName = leaderName,
+                    StoredCourseAssignments = BuildAssignment(course.CourseName, course.CourseSection)
+                };
+                _context.SILeaders.Add(leader);
+                continue;
+            }
+
+            leader.LeaderName = leaderName;
+            leader.StoredCourseAssignments = MergeAssignments(
+                leader.StoredCourseAssignments,
+                course.CourseName,
+                course.CourseSection);
+        }
+    }
+
+    private static string BuildAssignment(string courseName, string courseSection)
+    {
+        return $"{courseName.Trim()}|{courseSection.Trim()}";
+    }
+
+    private static string MergeAssignments(string? existingAssignments, string courseName, string courseSection)
+    {
+        var combined = ParseAssignments(existingAssignments)
+            .Append((courseName.Trim(), courseSection.Trim()))
+            .Distinct()
+            .Select(x => $"{x.Item1}|{x.Item2}")
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase);
+
+        return string.Join(Environment.NewLine, combined);
+    }
+
+    private static List<(string CourseName, string CourseSection)> ParseAssignments(string? rawAssignments)
+    {
+        if (string.IsNullOrWhiteSpace(rawAssignments))
+        {
+            return [];
+        }
+
+        return rawAssignments
+            .Replace("\r", "\n")
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line =>
+            {
+                var parts = line.Split('|', StringSplitOptions.TrimEntries);
+                if (parts.Length < 2)
+                {
+                    return (CourseName: string.Empty, CourseSection: string.Empty);
+                }
+
+                return (CourseName: parts[0], CourseSection: parts[1]);
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.CourseName) && !string.IsNullOrWhiteSpace(x.CourseSection))
+            .Distinct()
+            .ToList();
+    }
+
+    private static string GeneratePlaceholderANumber()
+    {
+        return $"TMP{Guid.NewGuid():N}"[..11].ToUpperInvariant();
     }
 }

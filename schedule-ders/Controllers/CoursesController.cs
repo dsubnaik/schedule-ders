@@ -24,6 +24,12 @@ public class CoursesController : Controller
             semesterId = cookieSemesterId;
         }
 
+        if (semesterId.HasValue && !await _context.Semesters.AsNoTracking().AnyAsync(s => s.SemesterId == semesterId.Value))
+        {
+            semesterId = null;
+            Response.Cookies.Delete(SemesterContextHelper.AdminSemesterCookieKey);
+        }
+
         var crnValue = crn?.Trim() ?? string.Empty;
         var courseValue = course?.Trim() ?? string.Empty;
         var timeValue = time?.Trim() ?? string.Empty;

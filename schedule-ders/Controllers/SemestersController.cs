@@ -91,9 +91,9 @@ public class SemestersController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult SetCurrent(int? semesterId, string? returnUrl)
+    public async Task<IActionResult> SetCurrent(int? semesterId, string? returnUrl)
     {
-        if (semesterId.HasValue)
+        if (semesterId.HasValue && await _context.Semesters.AsNoTracking().AnyAsync(s => s.SemesterId == semesterId.Value))
         {
             Response.Cookies.Append(
                 SemesterContextHelper.AdminSemesterCookieKey,

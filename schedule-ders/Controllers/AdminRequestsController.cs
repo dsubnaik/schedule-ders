@@ -180,7 +180,7 @@ public class AdminRequestsController : Controller
             {
                 Status = request.Status,
                 AdminNotes = request.AdminNotes
-            });
+            }, SemesterContextHelper.ReadSelectedSemesterId(Request));
         }
 
         return RedirectToAction(nameof(Index));
