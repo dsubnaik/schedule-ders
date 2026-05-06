@@ -303,18 +303,6 @@ footer.footer a:focus {
 .professor-requests-table .request-actions-col {
   width: 220px;
 }
-.admin-courses-table {
-  min-width: 104rem;
-}
-.admin-courses-table th:nth-child(9),
-.admin-courses-table td:nth-child(9) {
-  white-space: nowrap;
-  width: 11rem;
-}
-.admin-courses-table th:nth-child(10),
-.admin-courses-table td:nth-child(10) {
-  width: 13.5rem;
-}
 .table-helper-text {
   color: #446381;
   font-size: 0.86rem;
