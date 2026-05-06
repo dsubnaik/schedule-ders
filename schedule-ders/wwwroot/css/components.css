@@ -235,6 +235,9 @@ footer.footer a:focus {
   overflow: hidden;
   border: 1px solid var(--sd-border);
 }
+.table-responsive.data-table {
+  overflow-x: auto;
+}
 .data-table table {
   margin-bottom: 0;
 }
@@ -299,6 +302,18 @@ footer.footer a:focus {
 }
 .professor-requests-table .request-actions-col {
   width: 220px;
+}
+.admin-courses-table {
+  min-width: 104rem;
+}
+.admin-courses-table th:nth-child(9),
+.admin-courses-table td:nth-child(9) {
+  white-space: nowrap;
+  width: 11rem;
+}
+.admin-courses-table th:nth-child(10),
+.admin-courses-table td:nth-child(10) {
+  width: 13.5rem;
 }
 .table-helper-text {
   color: #446381;
@@ -1906,4 +1921,3 @@ main[role="main"] > .row > [class*="col-"] > form {
     grid-template-columns: 1fr;
   }
 }
-
