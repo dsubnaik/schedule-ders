@@ -1,61 +1,117 @@
-# schedule-ders
+# Schedule-Ders
 
-ASP.NET Core app for managing courses, SI sessions, SI requests, and SI leaders.
+Schedule-Ders is a web application for managing Supplemental Instruction (SI) scheduling, course support requests, SI leader assignments, and public student schedule lookup.
 
-## Stack
-- ASP.NET Core MVC + Razor Pages
+The application gives administrators one place to maintain courses, sessions, semesters, SI leaders, and request status updates. Professors can submit and track SI support requests, while students can quickly search available SI sessions without needing an account.
+
+## Key Features
+
+- Public SI schedule search by course, professor, day, time, semester, and location
+- Student favorite courses for faster access after login
+- Professor SI request submission and request tracking
+- Admin request review workflow with status updates and notes
+- Course, semester, session, and SI leader management
+- SI leader candidate tracking on professor requests
+- PDF and CSV exports for requests, sessions, and SI leader records
+- Role-based dashboards for Admin, Professor, and Student users
+- Email notification support through SMTP or Resend
+- Built-in help page with role-specific user guidance
+
+## User Roles
+
+### Students
+
+Students can view the public SI schedule, search for their courses, and see session days, times, locations, professors, and assigned SI leaders. Logged-in students can save favorite courses.
+
+### Professors
+
+Professors can submit SI requests for their courses, include request notes, suggest potential SI leader candidates, and track each request as it moves through the review process.
+
+### Administrators
+
+Administrators can manage courses, semesters, sessions, SI leaders, and incoming SI requests. They can update request statuses, assign leaders, maintain course/session data, and export operational records.
+
+## Technology Stack
+
+- ASP.NET Core MVC and Razor Pages
+- ASP.NET Core Identity with role-based access
 - Entity Framework Core
-- PostgreSQL locally and on Railway
-- ASP.NET Core Identity
+- PostgreSQL
+- Bootstrap, custom CSS, and Razor views
+- Swagger in local development
 
-## UI / Theme Notes
-The current UI uses a shared CSS token setup with light and dark theme support.
+## Production Notes
 
-Theme files:
-- `schedule-ders/wwwroot/css/site.css`
-- `schedule-ders/wwwroot/css/base.css`
-- `schedule-ders/wwwroot/css/components.css`
-- `schedule-ders/wwwroot/css/theme.css`
+The app is designed to run with PostgreSQL and supports Railway-style deployment.
 
-Primary light-theme tokens live in `schedule-ders/wwwroot/css/theme.css` under `:root`.
-Current core colors:
-- Accent blue: `#0067C5`
-- Accent green: `#007F3E`
-- Ink: `#002E57`
+Connection string resolution order:
 
-If you are making visual changes, start in `theme.css` for colors and `components.css` for shared component styling.
+1. `DATABASE_URL`
+2. `ConnectionStrings:DefaultConnection`
 
-## Clone And Run
+On startup, the application automatically applies pending Entity Framework migrations.
 
-### 1. Prerequisites
+## Configuration
+
+Required production configuration depends on the deployment environment, but the main settings are:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": ""
+  },
+  "Notifications": {
+    "AdminRecipient": "",
+    "ProfessorStatusRecipientOverride": ""
+  },
+  "Email": {
+    "Smtp": {
+      "FromAddress": "",
+      "FromName": "Schedule DERS",
+      "Host": "",
+      "Port": 587,
+      "Username": "",
+      "Password": "",
+      "EnableSsl": true
+    },
+    "Resend": {
+      "ApiKey": "",
+      "FromAddress": "",
+      "FromName": "Schedule DERS"
+    }
+  }
+}
+```
+
+If `Email:Resend:ApiKey` is configured, the app uses Resend for email delivery. Otherwise, it falls back to SMTP.
+
+## Local Development
+
+### Prerequisites
+
 - .NET SDK 10
-- PostgreSQL running locally
+- PostgreSQL
+- Entity Framework Core tools
 
-Default local database settings used by the app:
+Default local database connection:
 
 ```text
 Host=localhost;Port=5432;Database=ScheduleDB;Username=postgres;Password=postgres;SSL Mode=Disable
 ```
 
-### 2. Create the local database
-If PostgreSQL is installed but the app database does not exist yet:
+Create the local database if it does not already exist:
 
 ```powershell
 createdb -h localhost -p 5432 -U postgres ScheduleDB
 ```
 
-If `createdb` is not on your PATH, use the PostgreSQL install location, for example:
+If `createdb` is not on your PATH, use the PostgreSQL install path, for example:
 
 ```powershell
 & 'C:\Program Files\PostgreSQL\17\bin\createdb.exe' -h localhost -p 5432 -U postgres ScheduleDB
 ```
 
-### 3. From the repo root
-Run these commands from:
-
-```text
-C:\Users\<your-user>\source\repos\schedule-ders
-```
+From the repository root:
 
 ```powershell
 dotnet restore
@@ -64,14 +120,7 @@ dotnet ef database update --project schedule-ders --context ScheduleContext
 dotnet run --project schedule-ders
 ```
 
-### 4. If you are already inside the app folder
-If your terminal is already in:
-
-```text
-...\schedule-ders\schedule-ders
-```
-
-use:
+If your terminal is already inside `schedule-ders/schedule-ders`, use:
 
 ```powershell
 dotnet restore
@@ -80,70 +129,62 @@ dotnet ef database update --context ScheduleContext
 dotnet run
 ```
 
-## Optional Local Admin Login
-Demo users are only seeded in `Development` and only when a demo password is configured.
+## Demo Users
 
-From the repo root:
+Demo users are seeded only in `Development`, or when `Seed:EnableDemoUsers` is enabled, and only when a demo password is configured.
+
+From the repository root:
 
 ```powershell
 dotnet user-secrets set "Seed:DemoUserPassword" "Password1!" --project schedule-ders
 dotnet run --project schedule-ders
 ```
 
-Or from inside `schedule-ders/schedule-ders`:
+Demo login emails:
 
-```powershell
-dotnet user-secrets set "Seed:DemoUserPassword" "Password1!"
-dotnet run
-```
-
-Local demo logins:
 - Admin: `admin@email.com`
 - Professor: `professor@email.com`
 - Student: `student@email.com`
 
-Example password:
-- `Password1!`
+Use the password configured in `Seed:DemoUserPassword`.
 
-## Railway Deploy Notes
-Production is intended to use Railway PostgreSQL.
+## Deployment Checklist
 
-Connection string resolution order:
-1. `DATABASE_URL`
-2. `ConnectionStrings:DefaultConnection`
+- Provision a PostgreSQL database
+- Configure `DATABASE_URL` or `ConnectionStrings:DefaultConnection`
+- Configure email delivery through Resend or SMTP
+- Set notification recipient values
+- Confirm production users and roles
+- Verify migrations apply successfully on startup
+- Confirm the public SI schedule, professor request flow, admin request workflow, and exports
 
-Recommended Railway setup:
-1. Create a Railway project.
-2. Add a PostgreSQL service.
-3. Add a web service from this repo.
-4. Set the app service `DATABASE_URL`.
-5. Optionally set `Seed__DemoUserPassword` for non-production demo data scenarios.
-
-## Migrations
-Old SQL Server migrations remain in `schedule-ders/Migrations` for reference only and are excluded from compilation.
+## Database Migrations
 
 Current PostgreSQL migrations live in:
-- `schedule-ders/PostgresMigrations`
 
-To add a new PostgreSQL migration:
+```text
+schedule-ders/PostgresMigrations
+```
+
+To add a new migration:
 
 ```powershell
 dotnet ef migrations add <MigrationName> --project schedule-ders --context ScheduleContext --output-dir PostgresMigrations
 ```
 
-Then apply it:
+To apply migrations manually:
 
 ```powershell
 dotnet ef database update --project schedule-ders --context ScheduleContext
 ```
 
-## Troubleshooting
+Older SQL Server migrations remain in `schedule-ders/Migrations` for reference and are excluded from compilation.
 
-### PostgreSQL connection refused on `localhost:5432`
-That usually means PostgreSQL is not installed or its Windows service is not running.
+## Support Notes
 
-### `--project schedule-ders` says the path does not exist
-You are probably already inside the `schedule-ders/schedule-ders` folder. In that case use `dotnet run` directly or point `--project` to `.\schedule-ders.csproj`.
+- The public schedule is available without login.
+- Account registration uses ASP.NET Core Identity and requires confirmed accounts.
+- Admin, Professor, and Student access is controlled through Identity roles.
+- Request body and form sizes are limited for safer production operation.
+- Forwarded headers are enabled for Railway and other reverse-proxy hosting environments.
 
-### App starts but no admin account exists
-Set `Seed:DemoUserPassword` with `dotnet user-secrets set ...` and start the app again.
